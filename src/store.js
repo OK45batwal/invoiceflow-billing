@@ -684,6 +684,39 @@ export function authenticateUser(username, password) {
   return sanitizeUser(user);
 }
 
+function validateNewPassword(value) {
+  const newPassword = String(value || "");
+  if (newPassword.trim().length < 6) {
+    throw new Error("New password must be at least 6 characters.");
+  }
+  return newPassword;
+}
+
+export function changeUserPassword(userId, input = {}) {
+  const store = ensurePersistedStore();
+  const numericId = Number(userId);
+  const user = store.users.find((entry) => entry.id === numericId);
+  if (!user) {
+    return null;
+  }
+
+  const bypassCurrentPassword = input.bypassCurrentPassword === true;
+  if (!bypassCurrentPassword) {
+    const currentPassword = String(input.currentPassword || "");
+    if (!currentPassword) {
+      throw new Error("Current password is required.");
+    }
+    if (!verifyPassword(currentPassword, user.passwordHash)) {
+      throw new Error("Current password is incorrect.");
+    }
+  }
+
+  const newPassword = validateNewPassword(input.newPassword);
+  user.passwordHash = hashPassword(newPassword);
+  writeStore(store);
+  return sanitizeUser(user);
+}
+
 export function listUsers() {
   const store = ensurePersistedStore();
   return store.users.map((user) => sanitizeUser(user));

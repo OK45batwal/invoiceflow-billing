@@ -68,6 +68,9 @@ const topCustomersBody = document.querySelector("#top-customers-body");
 const topProductsBody = document.querySelector("#top-products-body");
 
 const settingsForm = document.querySelector("#settings-form");
+const changePasswordForm = document.querySelector("#change-password-form");
+const adminResetPasswordForm = document.querySelector("#admin-reset-password-form");
+const passwordUserSelect = document.querySelector("#password-user-id");
 
 const metricRevenue = document.querySelector("#metric-revenue");
 const metricOutstanding = document.querySelector("#metric-outstanding");
@@ -88,6 +91,7 @@ const CURRENCY = new Intl.NumberFormat("en-IN", {
 const state = {
   token: localStorage.getItem("billing_token") || "",
   user: null,
+  users: [],
   customers: [],
   products: [],
   invoices: [],
@@ -138,6 +142,7 @@ function setStatus(message, isError = false) {
 function resetAuthState() {
   state.token = "";
   state.user = null;
+  state.users = [];
   localStorage.removeItem("billing_token");
   loginView.classList.remove("hidden");
   workspaceView.classList.add("hidden");
@@ -715,6 +720,26 @@ function renderSettings() {
   });
 }
 
+function renderPasswordUserOptions() {
+  if (!passwordUserSelect) {
+    return;
+  }
+
+  if (!isAdmin()) {
+    passwordUserSelect.innerHTML = "";
+    return;
+  }
+
+  if (state.users.length === 0) {
+    passwordUserSelect.innerHTML = '<option value="">No users</option>';
+    return;
+  }
+
+  passwordUserSelect.innerHTML = state.users
+    .map((user) => `<option value="${user.id}">${escapeHtml(user.name)} (${escapeHtml(user.username)})</option>`)
+    .join("");
+}
+
 async function openCustomerStatement(customerId) {
   try {
     const statement = await requestJson(`/api/customers/${customerId}/statement`);
@@ -787,17 +812,19 @@ async function loadReport() {
 }
 
 async function refreshBaseData() {
-  [state.customers, state.products, state.settings] = await Promise.all([
+  const [customers, products, settings, users, recurringTemplates] = await Promise.all([
     requestJson("/api/customers"),
     requestJson("/api/products"),
-    requestJson("/api/settings")
+    requestJson("/api/settings"),
+    isAdmin() ? requestJson("/api/users") : Promise.resolve([]),
+    isAdmin() ? requestJson("/api/recurring") : Promise.resolve([])
   ]);
 
-  if (isAdmin()) {
-    state.recurringTemplates = await requestJson("/api/recurring");
-  } else {
-    state.recurringTemplates = [];
-  }
+  state.customers = customers;
+  state.products = products;
+  state.settings = settings;
+  state.users = users;
+  state.recurringTemplates = recurringTemplates;
 
   await Promise.all([loadInvoices(), loadReport()]);
 
@@ -810,6 +837,7 @@ async function refreshBaseData() {
   renderReports();
   renderOverview();
   renderSettings();
+  renderPasswordUserOptions();
 }
 
 async function login(username, password) {
@@ -1111,6 +1139,58 @@ async function saveSettings() {
   renderSettings();
   setStatus("Settings saved.");
 }
+
+async function updateMyPassword() {
+  const formData = new FormData(changePasswordForm);
+  const currentPassword = String(formData.get("currentPassword") || "");
+  const newPassword = String(formData.get("newPassword") || "");
+  const confirmPassword = String(formData.get("confirmPassword") || "");
+
+  if (newPassword !== confirmPassword) {
+    setStatus("New password and confirmation do not match.", true);
+    return;
+  }
+
+  await requestJson("/api/auth/password", {
+    method: "PUT",
+    body: JSON.stringify({ currentPassword, newPassword })
+  });
+
+  changePasswordForm.reset();
+  setStatus("Password updated.");
+}
+
+async function adminResetUserPassword() {
+  if (!isAdmin()) {
+    setStatus("Only admin can reset user passwords.", true);
+    return;
+  }
+
+  const formData = new FormData(adminResetPasswordForm);
+  const userId = Number(formData.get("userId"));
+  const newPassword = String(formData.get("newPassword") || "");
+  const confirmPassword = String(formData.get("confirmPassword") || "");
+
+  if (!Number.isInteger(userId) || userId <= 0) {
+    setStatus("Select a valid user.", true);
+    return;
+  }
+
+  if (newPassword !== confirmPassword) {
+    setStatus("New password and confirmation do not match.", true);
+    return;
+  }
+
+  await requestJson(`/api/users/${userId}/password`, {
+    method: "PUT",
+    body: JSON.stringify({ newPassword })
+  });
+
+  adminResetPasswordForm.reset();
+  renderPasswordUserOptions();
+  setStatus("User password reset.");
+}
+
 loginForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   const formData = new FormData(loginForm);
@@ -1369,6 +1449,24 @@ settingsForm?.addEventListener("submit", async (event) => {
   event.preventDefault();
   try {
     await saveSettings();
+  } catch (error) {
+    setStatus(error.message, true);
+  }
+});
+
+changePasswordForm?.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  try {
+    await updateMyPassword();
+  } catch (error) {
+    setStatus(error.message, true);
+  }
+});
+
+adminResetPasswordForm?.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  try {
+    await adminResetUserPassword();
   } catch (error) {
     setStatus(error.message, true);
   }

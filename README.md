@@ -76,6 +76,7 @@ If you need fully permanent storage later, move to a paid plan and attach a disk
 
 `admin` can manage settings, recurring templates, and destructive actions.
 `staff` can create invoices and add payments.
+After login, go to **Overview -> Account Security** to change passwords.
 
 ## API Endpoints
 
@@ -83,7 +84,9 @@ If you need fully permanent storage later, move to a paid plan and attach a disk
 - `POST /api/auth/login`
 - `POST /api/auth/logout`
 - `GET /api/auth/me`
+- `PUT /api/auth/password`
 - `GET /api/users`
+- `PUT /api/users/:id/password`
 - `GET /api/customers`
 - `POST /api/customers`
 - `GET /api/customers/:id/statement`

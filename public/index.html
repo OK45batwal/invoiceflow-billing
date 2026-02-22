@@ -89,6 +89,48 @@
               </table>
             </div>
           </div>
+
+          <div class="panel">
+            <div class="panel-head">
+              <h2>Account Security</h2>
+              <p>Change login passwords from inside the app.</p>
+            </div>
+            <div class="split-panels">
+              <form id="change-password-form" class="form-grid two">
+                <h3 class="full">Change My Password</h3>
+                <label>
+                  Current Password
+                  <input name="currentPassword" type="password" required />
+                </label>
+                <label>
+                  New Password
+                  <input name="newPassword" type="password" minlength="6" required />
+                </label>
+                <label class="full">
+                  Confirm New Password
+                  <input name="confirmPassword" type="password" minlength="6" required />
+                </label>
+                <button type="submit">Update Password</button>
+              </form>
+
+              <form id="admin-reset-password-form" class="form-grid two admin-only">
+                <h3 class="full">Admin Reset User Password</h3>
+                <label>
+                  User
+                  <select id="password-user-id" name="userId"></select>
+                </label>
+                <label>
+                  New Password
+                  <input name="newPassword" type="password" minlength="6" required />
+                </label>
+                <label class="full">
+                  Confirm New Password
+                  <input name="confirmPassword" type="password" minlength="6" required />
+                </label>
+                <button type="submit" class="secondary-btn">Reset Password</button>
+              </form>
+            </div>
+          </div>
         </section>
 
         <section class="tab-panel" data-panel="invoices">

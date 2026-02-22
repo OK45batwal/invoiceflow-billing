@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import {
   addInvoicePayment,
   authenticateUser,
+  changeUserPassword,
   createCustomer,
   createInvoice,
   createProduct,
@@ -106,8 +107,43 @@ app.get("/api/auth/me", requireAuth, (req, res) => {
   res.json({ user: req.auth.user });
 });
 
+app.put("/api/auth/password", requireAuth, (req, res) => {
+  try {
+    const user = changeUserPassword(req.auth.user.id, {
+      currentPassword: req.body?.currentPassword,
+      newPassword: req.body?.newPassword
+    });
+    if (!user) {
+      return res.status(404).json({ error: "User not found." });
+    }
+    return res.json({ message: "Password updated.", user });
+  } catch (error) {
+    return res.status(400).json({ error: error.message });
+  }
+});
+
 app.get("/api/users", requireAuth, requireRole("admin"), (_req, res) => {
   res.json(listUsers());
+});
+
+app.put("/api/users/:id/password", requireAuth, requireRole("admin"), (req, res) => {
+  const userId = Number(req.params.id);
+  if (!Number.isInteger(userId) || userId <= 0) {
+    return res.status(400).json({ error: "User ID must be a positive integer." });
+  }
+
+  try {
+    const user = changeUserPassword(userId, {
+      newPassword: req.body?.newPassword,
+      bypassCurrentPassword: true
+    });
+    if (!user) {
+      return res.status(404).json({ error: "User not found." });
+    }
+    return res.json({ message: `Password updated for ${user.username}.`, user });
+  } catch (error) {
+    return res.status(400).json({ error: error.message });
+  }
 });
 
 app.get("/api/customers", requireAuth, (_req, res) => {
