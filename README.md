@@ -46,13 +46,13 @@ npm.cmd run dev
 
 `http://localhost:3000`
 
-## Permanent Hosting (Production-Style on Render)
+## Hosting On Render (No Payment)
 
-This repo now includes `render.yaml` for a persistent production deploy.
+This repo includes `render.yaml` configured for Render free web service.
 
 1. Push this project to GitHub.
 2. In Render, choose **New +** -> **Blueprint** and select your repo.
-3. Keep the generated service `invoiceflow-pro` and deploy.
+3. Deploy service `invoiceflow-pro` (free plan).
 4. Set strong values for:
 
 ```bash
@@ -63,9 +63,11 @@ DEFAULT_STAFF_PASSWORD
 5. Open your Render URL on mobile (for example: `https://invoiceflow-pro.onrender.com`).
 
 Notes:
-- Persistent data is stored on Render disk path `/var/data` via `DATA_DIR`.
-- Render persistent disks require a paid plan (the blueprint uses `starter`).
+- Free plan works without adding a paid persistent disk.
+- Data is not permanently guaranteed on free plan (it can reset on redeploy/restart).
 - Seed passwords are used when the store file is created for the first time.
+
+If you need fully permanent storage later, move to a paid plan and attach a disk.
 
 ## Login
 
