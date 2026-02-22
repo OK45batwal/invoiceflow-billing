@@ -1,0 +1,15 @@
+{
+  "name": "invoiceflow-pro",
+  "version": "1.0.0",
+  "description": "InvoiceFlow Pro billing app with customer, product, and invoice management",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "pdfkit": "^0.15.2",
+    "qrcode": "^1.5.4"
+  }
+}
