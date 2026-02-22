@@ -1,2 +1,5 @@
 node_modules/
 data/store.json
+data/store.sqlite
+data/store.sqlite-wal
+data/store.sqlite-shm

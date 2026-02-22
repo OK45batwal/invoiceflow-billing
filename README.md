@@ -20,7 +20,7 @@ A local-first billing app with:
 - Node.js
 - Express
 - Vanilla HTML/CSS/JS frontend
-- JSON file storage at `data/store.json`
+- Storage driver: JSON file (`data/store.json`) or SQLite (`data/store.sqlite`)
 
 ## Run Locally
 
@@ -47,6 +47,24 @@ npm.cmd run dev
 
 `http://localhost:3000`
 
+## Storage Options
+
+By default, the app uses JSON storage.
+
+- Default (JSON): no extra env needed.
+- SQLite mode:
+
+```bash
+STORAGE_DRIVER=sqlite
+# Optional custom DB path:
+# SQLITE_PATH=./data/store.sqlite
+```
+
+Notes:
+- SQLite mode uses Node's built-in `node:sqlite` module (Node 22+ required).
+- SQLite keeps all app data in one file and handles safer concurrent writes than plain JSON.
+- If `STORAGE_DRIVER=sqlite` is not set, app continues using JSON.
+
 ## Hosting On Render (No Payment)
 
 This repo includes `render.yaml` configured for Render free web service.
@@ -68,6 +86,7 @@ Notes:
 - Data is not permanently guaranteed on free plan (it can reset on redeploy/restart).
 - Seed passwords are used when the store file is created for the first time.
 - If users are still on default `admin123` / `staff123`, setting `DEFAULT_ADMIN_PASSWORD` / `DEFAULT_STAFF_PASSWORD` now will auto-migrate those default accounts on next deploy.
+- For `STORAGE_DRIVER=sqlite`, use `NODE_VERSION=24` (or another Node 22+ runtime).
 
 If you need fully permanent storage later, move to a paid plan and attach a disk.
 

@@ -1,8 +1,11 @@
 
 import fs from "node:fs";
+import { createRequire } from "node:module";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { hashPassword, sanitizeUser, verifyPassword } from "./auth.js";
+
+const require = createRequire(import.meta.url);
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -10,6 +13,15 @@ const dataDir = process.env.DATA_DIR
   ? path.resolve(String(process.env.DATA_DIR))
   : path.join(__dirname, "..", "data");
 const dataPath = path.join(dataDir, "store.json");
+const storageDriver = String(process.env.STORAGE_DRIVER || "json")
+  .trim()
+  .toLowerCase();
+const sqlitePath = process.env.SQLITE_PATH
+  ? path.resolve(String(process.env.SQLITE_PATH))
+  : path.join(dataDir, "store.sqlite");
+const sqliteStoreId = "invoiceflow_store";
+let sqliteDb = null;
+let DatabaseSyncClass = null;
 const FALLBACK_ADMIN_PASSWORD = "admin123";
 const FALLBACK_STAFF_PASSWORD = "staff123";
 const FALLBACK_ADMIN_HASH = hashPassword(FALLBACK_ADMIN_PASSWORD);
@@ -123,12 +135,56 @@ function maxId(items) {
   return max;
 }
 
-function ensureStoreFile() {
+function ensureDataDir() {
   if (!fs.existsSync(dataDir)) {
     fs.mkdirSync(dataDir, { recursive: true });
   }
+}
+
+function ensureSqliteDir() {
+  const sqliteDir = path.dirname(sqlitePath);
+  if (!fs.existsSync(sqliteDir)) {
+    fs.mkdirSync(sqliteDir, { recursive: true });
+  }
+}
+
+function ensureStoreFile() {
+  ensureDataDir();
   if (!fs.existsSync(dataPath)) {
     fs.writeFileSync(dataPath, JSON.stringify(DEFAULT_STORE, null, 2));
+  }
+}
+
+function getSqliteDb() {
+  if (sqliteDb) {
+    return sqliteDb;
+  }
+
+  if (!DatabaseSyncClass) {
+    try {
+      const sqliteModule = require("node:sqlite");
+      DatabaseSyncClass = sqliteModule.DatabaseSync;
+    } catch (_error) {
+      throw new Error(
+        "SQLite storage requires Node.js with built-in node:sqlite (use Node 22+), or set STORAGE_DRIVER=json."
+      );
+    }
+  }
+
+  ensureSqliteDir();
+  sqliteDb = new DatabaseSyncClass(sqlitePath);
+  sqliteDb.exec(
+    "CREATE TABLE IF NOT EXISTS app_store (id TEXT PRIMARY KEY, payload TEXT NOT NULL, updated_at TEXT NOT NULL)"
+  );
+  return sqliteDb;
+}
+
+function ensureSqliteStore() {
+  const db = getSqliteDb();
+  const row = db.prepare("SELECT id FROM app_store WHERE id = ?").get(sqliteStoreId);
+  if (!row) {
+    db.prepare("INSERT INTO app_store (id, payload, updated_at) VALUES (?, ?, ?)")
+      .run(sqliteStoreId, JSON.stringify(DEFAULT_STORE), new Date().toISOString());
   }
 }
 
@@ -400,13 +456,34 @@ function migrateStore(parsed) {
 }
 
 function readStore() {
-  ensureStoreFile();
-  const content = fs.readFileSync(dataPath, "utf8");
-  const parsed = JSON.parse(content);
+  let parsed;
+  if (storageDriver === "sqlite") {
+    ensureSqliteStore();
+    const db = getSqliteDb();
+    const row = db.prepare("SELECT payload FROM app_store WHERE id = ?").get(sqliteStoreId);
+    parsed = row?.payload ? JSON.parse(row.payload) : DEFAULT_STORE;
+  } else {
+    ensureStoreFile();
+    const content = fs.readFileSync(dataPath, "utf8");
+    parsed = JSON.parse(content);
+  }
   return migrateStore(parsed);
 }
 
 function writeStore(store) {
+  if (storageDriver === "sqlite") {
+    ensureSqliteStore();
+    const db = getSqliteDb();
+    db.prepare(
+      `INSERT INTO app_store (id, payload, updated_at)
+       VALUES (?, ?, ?)
+       ON CONFLICT(id) DO UPDATE SET
+         payload = excluded.payload,
+         updated_at = excluded.updated_at`
+    ).run(sqliteStoreId, JSON.stringify(store), new Date().toISOString());
+    return;
+  }
+
   fs.writeFileSync(dataPath, JSON.stringify(store, null, 2));
 }
 
