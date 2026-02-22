@@ -74,6 +74,27 @@ p {
   animation: rise-in 0.35s ease;
 }
 
+.brand-lockup {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  min-width: 0;
+}
+
+.brand-logo {
+  height: 46px;
+  width: auto;
+  max-width: min(240px, 40vw);
+  object-fit: contain;
+  display: block;
+  flex: 0 0 auto;
+}
+
+.login-brand .brand-logo {
+  height: 56px;
+  max-width: min(280px, 60vw);
+}
+
 .workspace {
   max-width: 1220px;
   margin: 0 auto;
@@ -542,5 +563,14 @@ th {
   .line-item {
     grid-template-columns: 1fr;
   }
-}
 
+  .topbar .brand-logo {
+    height: 40px;
+    max-width: min(190px, 48vw);
+  }
+
+  .login-brand .brand-logo {
+    height: 48px;
+    max-width: min(220px, 62vw);
+  }
+}

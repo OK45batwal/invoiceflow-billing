@@ -9,8 +9,13 @@
   <body>
     <section id="login-view" class="login-shell">
       <form id="login-form" class="login-card">
-        <p class="eyebrow">InvoiceFlow Pro</p>
-        <h1>Welcome Back</h1>
+        <div class="brand-lockup login-brand">
+          <img src="./logo.png" alt="InvoiceFlow Pro logo" class="brand-logo" />
+          <div>
+            <p class="eyebrow">InvoiceFlow Pro</p>
+            <h1>Welcome Back</h1>
+          </div>
+        </div>
         <p class="helper-text">Login to manage GST invoices, payments, recurring billing, and reports.</p>
 
         <label>
@@ -27,9 +32,12 @@
 
     <section id="workspace-view" class="workspace hidden">
       <header class="topbar">
-        <div>
+        <div class="brand-lockup">
+          <img src="./logo.png" alt="InvoiceFlow Pro logo" class="brand-logo" />
+          <div>
           <p class="eyebrow">InvoiceFlow Control Center</p>
           <h1>InvoiceFlow Pro</h1>
+          </div>
         </div>
         <div class="topbar-actions">
           <p id="current-user" class="user-badge"></p>
