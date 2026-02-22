@@ -12,6 +12,7 @@ import {
   deleteInvoiceById,
   deleteProductById,
   deleteRecurringTemplate,
+  exportBackupData,
   getCustomerStatement,
   getInvoiceById,
   getReportsSummary,
@@ -22,6 +23,7 @@ import {
   listRecurringTemplates,
   listUsers,
   runRecurringNow,
+  restoreBackupData,
   updateRecurringTemplate,
   updateSettings
 } from "./store.js";
@@ -34,7 +36,7 @@ const __dirname = path.dirname(__filename);
 const publicDir = path.join(__dirname, "..", "public");
 const port = process.env.PORT || 3000;
 
-app.use(express.json({ limit: "1mb" }));
+app.use(express.json({ limit: "10mb" }));
 app.use(express.static(publicDir));
 
 function getToken(req) {
@@ -385,6 +387,28 @@ app.put("/api/settings", requireAuth, requireRole("admin"), (req, res) => {
   try {
     const settings = updateSettings(req.body || {});
     return res.json(settings);
+  } catch (error) {
+    return res.status(400).json({ error: error.message });
+  }
+});
+
+app.get("/api/backup", requireAuth, requireRole("admin"), (_req, res) => {
+  const backup = exportBackupData();
+  const stamp = backup.exportedAt
+    .replaceAll(":", "")
+    .replaceAll("-", "")
+    .replaceAll(".", "")
+    .replace("T", "-")
+    .replace("Z", "");
+  res.setHeader("Content-Type", "application/json");
+  res.setHeader("Content-Disposition", `attachment; filename=invoiceflow-pro-backup-${stamp}.json`);
+  return res.json(backup);
+});
+
+app.post("/api/backup/restore", requireAuth, requireRole("admin"), (req, res) => {
+  try {
+    const summary = restoreBackupData(req.body);
+    return res.json({ message: "Backup restored.", summary });
   } catch (error) {
     return res.status(400).json({ error: error.message });
   }

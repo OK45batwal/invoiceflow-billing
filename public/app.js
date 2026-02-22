@@ -71,6 +71,9 @@ const settingsForm = document.querySelector("#settings-form");
 const changePasswordForm = document.querySelector("#change-password-form");
 const adminResetPasswordForm = document.querySelector("#admin-reset-password-form");
 const passwordUserSelect = document.querySelector("#password-user-id");
+const downloadBackupButton = document.querySelector("#download-backup-btn");
+const restoreBackupForm = document.querySelector("#restore-backup-form");
+const restoreBackupFileInput = document.querySelector("#restore-backup-file");
 
 const metricRevenue = document.querySelector("#metric-revenue");
 const metricOutstanding = document.querySelector("#metric-outstanding");
@@ -1140,6 +1143,84 @@ async function saveSettings() {
   setStatus("Settings saved.");
 }
 
+async function downloadBackup() {
+  if (!isAdmin()) {
+    setStatus("Only admin can download backup.", true);
+    return;
+  }
+
+  const response = await fetch("/api/backup", {
+    headers: {
+      Authorization: `Bearer ${state.token}`
+    }
+  });
+  if (!response.ok) {
+    let message = "Backup download failed.";
+    try {
+      const body = await response.json();
+      message = body.error || message;
+    } catch (_error) {
+      // Keep fallback message.
+    }
+    throw new Error(message);
+  }
+
+  const blob = await response.blob();
+  const contentDisposition = response.headers.get("content-disposition") || "";
+  const matched = contentDisposition.match(/filename=([^;]+)/i);
+  const filename = matched ? matched[1].replaceAll("\"", "").trim() : "invoiceflow-pro-backup.json";
+
+  const objectUrl = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = objectUrl;
+  anchor.download = filename;
+  document.body.append(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(objectUrl);
+  setStatus("Backup downloaded.");
+}
+
+async function restoreBackup() {
+  if (!isAdmin()) {
+    setStatus("Only admin can restore backup.", true);
+    return;
+  }
+  const backupFile = restoreBackupFileInput?.files?.[0];
+  if (!backupFile) {
+    setStatus("Select a backup JSON file first.", true);
+    return;
+  }
+
+  const rawText = await backupFile.text();
+  let payload;
+  try {
+    payload = JSON.parse(rawText);
+  } catch (_error) {
+    setStatus("Selected file is not valid JSON.", true);
+    return;
+  }
+
+  const confirmed = window.confirm(
+    "This will overwrite all current app data with the backup. Continue?"
+  );
+  if (!confirmed) {
+    return;
+  }
+
+  const response = await requestJson("/api/backup/restore", {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
+
+  restoreBackupForm.reset();
+  await refreshBaseData();
+  const summary = response.summary || {};
+  setStatus(
+    `Backup restored. Invoices: ${Number(summary.invoices || 0)}, Customers: ${Number(summary.customers || 0)}.`
+  );
+}
+
 async function updateMyPassword() {
   const formData = new FormData(changePasswordForm);
   const currentPassword = String(formData.get("currentPassword") || "");
@@ -1467,6 +1548,23 @@ adminResetPasswordForm?.addEventListener("submit", async (event) => {
   event.preventDefault();
   try {
     await adminResetUserPassword();
+  } catch (error) {
+    setStatus(error.message, true);
+  }
+});
+
+downloadBackupButton?.addEventListener("click", async () => {
+  try {
+    await downloadBackup();
+  } catch (error) {
+    setStatus(error.message, true);
+  }
+});
+
+restoreBackupForm?.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  try {
+    await restoreBackup();
   } catch (error) {
     setStatus(error.message, true);
   }

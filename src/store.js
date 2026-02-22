@@ -416,6 +416,10 @@ function ensurePersistedStore() {
   return store;
 }
 
+function cloneJson(value) {
+  return JSON.parse(JSON.stringify(value));
+}
+
 function getFinancialYearLabel(date, startMonth) {
   const year = date.getFullYear();
   const month = date.getMonth() + 1;
@@ -1242,4 +1246,39 @@ export function updateSettings(input) {
 
   writeStore(store);
   return { ...settings };
+}
+
+export function exportBackupData() {
+  const store = ensurePersistedStore();
+  return {
+    app: "invoiceflow-pro",
+    exportedAt: new Date().toISOString(),
+    store: cloneJson(store)
+  };
+}
+
+export function restoreBackupData(input) {
+  const payload =
+    input && typeof input === "object" && !Array.isArray(input)
+      ? input
+      : null;
+  if (!payload) {
+    throw new Error("Backup payload must be a valid JSON object.");
+  }
+
+  const source =
+    payload.store && typeof payload.store === "object" && !Array.isArray(payload.store)
+      ? payload.store
+      : payload;
+
+  const restored = migrateStore(source);
+  writeStore(restored);
+
+  return {
+    customers: restored.customers.length,
+    products: restored.products.length,
+    invoices: restored.invoices.length,
+    recurringTemplates: restored.recurringTemplates.length,
+    users: restored.users.length
+  };
 }

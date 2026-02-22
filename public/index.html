@@ -605,6 +605,32 @@
               <button type="submit">Save Settings</button>
             </form>
           </div>
+
+          <div class="panel">
+            <div class="panel-head">
+              <h2>Backup & Restore</h2>
+              <p>Download a full data backup or restore from a JSON backup file.</p>
+            </div>
+            <div class="split-panels">
+              <div class="panel inset">
+                <h3>Backup</h3>
+                <p class="helper-text">Exports customers, products, invoices, recurring templates, users, and settings.</p>
+                <div class="inline-actions" style="margin-top:0.6rem;">
+                  <button id="download-backup-btn" type="button" class="secondary-btn">Download Backup JSON</button>
+                </div>
+              </div>
+
+              <form id="restore-backup-form" class="panel inset form-grid two">
+                <h3 class="full">Restore</h3>
+                <p class="helper-text full">This will overwrite current app data with the selected backup.</p>
+                <label class="full">
+                  Backup File (.json)
+                  <input id="restore-backup-file" type="file" accept="application/json,.json" required />
+                </label>
+                <button type="submit" class="danger-btn">Restore Backup</button>
+              </form>
+            </div>
+          </div>
         </section>
       </main>
     </section>

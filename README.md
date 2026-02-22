@@ -12,6 +12,7 @@ A local-first billing app with:
 - Recurring invoice templates (weekly/monthly)
 - Invoice search and filters
 - Reports dashboard
+- Backup and restore (JSON)
 - Role-based login (`admin`, `staff`)
 
 ## Tech Stack
@@ -108,3 +109,5 @@ After login, go to **Overview -> Account Security** to change passwords.
 - `GET /api/reports/summary`
 - `GET /api/settings`
 - `PUT /api/settings`
+- `GET /api/backup`
+- `POST /api/backup/restore`
