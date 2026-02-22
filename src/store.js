@@ -10,6 +10,10 @@ const dataDir = process.env.DATA_DIR
   ? path.resolve(String(process.env.DATA_DIR))
   : path.join(__dirname, "..", "data");
 const dataPath = path.join(dataDir, "store.json");
+const FALLBACK_ADMIN_PASSWORD = "admin123";
+const FALLBACK_STAFF_PASSWORD = "staff123";
+const FALLBACK_ADMIN_HASH = hashPassword(FALLBACK_ADMIN_PASSWORD);
+const FALLBACK_STAFF_HASH = hashPassword(FALLBACK_STAFF_PASSWORD);
 
 const DEFAULT_SETTINGS = {
   companyName: "My Company",
@@ -33,14 +37,14 @@ const DEFAULT_USERS = [
     username: "admin",
     name: "Administrator",
     role: "admin",
-    passwordHash: hashPassword(process.env.DEFAULT_ADMIN_PASSWORD || "admin123")
+    passwordHash: hashPassword(process.env.DEFAULT_ADMIN_PASSWORD || FALLBACK_ADMIN_PASSWORD)
   },
   {
     id: 2,
     username: "staff",
     name: "Billing Staff",
     role: "staff",
-    passwordHash: hashPassword(process.env.DEFAULT_STAFF_PASSWORD || "staff123")
+    passwordHash: hashPassword(process.env.DEFAULT_STAFF_PASSWORD || FALLBACK_STAFF_PASSWORD)
   }
 ];
 
@@ -379,6 +383,18 @@ function migrateStore(parsed) {
   store.settings.financialYearStartMonth = month >= 1 && month <= 12 ? month : 4;
   store.settings.invoicePrefix =
     toText(store.settings.invoicePrefix).replace(/\s+/g, "-").toUpperCase() || "INV";
+
+  const envAdminPassword = toText(process.env.DEFAULT_ADMIN_PASSWORD);
+  const envStaffPassword = toText(process.env.DEFAULT_STAFF_PASSWORD);
+  for (const user of store.users) {
+    const username = toText(user.username).toLowerCase();
+    if (username === "admin" && envAdminPassword && user.passwordHash === FALLBACK_ADMIN_HASH) {
+      user.passwordHash = hashPassword(envAdminPassword);
+    }
+    if (username === "staff" && envStaffPassword && user.passwordHash === FALLBACK_STAFF_HASH) {
+      user.passwordHash = hashPassword(envStaffPassword);
+    }
+  }
 
   return store;
 }

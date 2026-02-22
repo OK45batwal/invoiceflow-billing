@@ -66,6 +66,7 @@ Notes:
 - Free plan works without adding a paid persistent disk.
 - Data is not permanently guaranteed on free plan (it can reset on redeploy/restart).
 - Seed passwords are used when the store file is created for the first time.
+- If users are still on default `admin123` / `staff123`, setting `DEFAULT_ADMIN_PASSWORD` / `DEFAULT_STAFF_PASSWORD` now will auto-migrate those default accounts on next deploy.
 
 If you need fully permanent storage later, move to a paid plan and attach a disk.
 
