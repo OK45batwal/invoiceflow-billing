@@ -301,6 +301,10 @@ app.get("/api/invoices/:id/pdf", requireAuth, async (req, res) => {
     const settings = getSettings();
     const pdfBuffer = await createInvoicePdfBuffer(invoice, settings);
     res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+    res.setHeader("Pragma", "no-cache");
+    res.setHeader("Expires", "0");
+    res.setHeader("Surrogate-Control", "no-store");
     res.setHeader("Content-Disposition", `attachment; filename=invoice-${invoice.invoiceNumber}.pdf`);
     return res.send(pdfBuffer);
   } catch (_error) {

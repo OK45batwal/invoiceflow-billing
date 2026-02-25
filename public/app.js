@@ -1,13 +1,13 @@
-
 const loginView = document.querySelector("#login-view");
 const workspaceView = document.querySelector("#workspace-view");
 const loginForm = document.querySelector("#login-form");
 const logoutButton = document.querySelector("#logout-btn");
 const currentUserNode = document.querySelector("#current-user");
-const statusNode = document.querySelector("#status");
+const statusToastEl = document.querySelector(".toast");
+const statusToast = new bootstrap.Toast(statusToastEl);
 
 const tabNav = document.querySelector("#tab-nav");
-const tabButtons = [...document.querySelectorAll(".tab")];
+const tabButtons = [...document.querySelectorAll('[data-bs-toggle="pill"]')];
 const tabPanels = [...document.querySelectorAll(".tab-panel")];
 const adminOnlyNodes = [...document.querySelectorAll(".admin-only")];
 
@@ -27,6 +27,7 @@ const invoiceRoundoffInput = document.querySelector("#invoice-roundoff");
 const invoiceNotesInput = document.querySelector("#invoice-notes");
 const invoiceSubmitButton = document.querySelector("#invoice-submit");
 const invoicePreview = document.querySelector("#invoice-preview");
+const invoiceCompanyBanner = document.querySelector("#invoice-company-banner");
 const lineItemsContainer = document.querySelector("#line-items");
 const addLineItemButton = document.querySelector("#add-line-item");
 
@@ -81,10 +82,10 @@ const metricOverdue = document.querySelector("#metric-overdue");
 const metricBase = document.querySelector("#metric-base");
 const overviewRecentBody = document.querySelector("#overview-recent-body");
 
-const drawer = document.querySelector("#drawer");
+const drawerEl = document.querySelector("#drawer");
+const drawer = new bootstrap.Modal(drawerEl);
 const drawerTitle = document.querySelector("#drawer-title");
 const drawerBody = document.querySelector("#drawer-body");
-const drawerCloseButton = document.querySelector("#drawer-close");
 
 const CURRENCY = new Intl.NumberFormat("en-IN", {
   style: "currency",
@@ -111,8 +112,7 @@ const state = {
   reportFilters: {
     dateFrom: "",
     dateTo: ""
-  },
-  statusTimer: null
+  }
 };
 
 function isAdmin() {
@@ -121,6 +121,23 @@ function isAdmin() {
 
 function formatCurrency(value) {
   return CURRENCY.format(Number(value || 0));
+}
+
+function getCompanyProfileForInvoiceType(gstType) {
+  const settings = state.settings || {};
+  const profiles = settings.companyProfiles || {};
+  const fallback = {
+    name: settings.companyName || "",
+    address: settings.companyAddress || "",
+    email: settings.companyEmail || "",
+    phone: settings.companyPhone || "",
+    gstin: settings.companyGstin || ""
+  };
+  const selected = String(gstType || "intra") === "none" ? profiles.nonGst : profiles.gst;
+  return {
+    ...fallback,
+    ...(selected || {})
+  };
 }
 
 function escapeHtml(value) {
@@ -133,13 +150,13 @@ function escapeHtml(value) {
 }
 
 function setStatus(message, isError = false) {
-  statusNode.textContent = message;
-  statusNode.classList.toggle("error", Boolean(isError));
-  statusNode.classList.add("show");
-  clearTimeout(state.statusTimer);
-  state.statusTimer = setTimeout(() => {
-    statusNode.classList.remove("show");
-  }, 2600);
+  const toastBody = statusToastEl.querySelector(".toast-body");
+  toastBody.textContent = message;
+  statusToastEl.classList.toggle("bg-danger", isError);
+  statusToastEl.classList.toggle("text-white", isError);
+  statusToastEl.classList.toggle("bg-success", !isError);
+  statusToastEl.classList.toggle("text-white", !isError);
+  statusToast.show();
 }
 
 function resetAuthState() {
@@ -188,21 +205,19 @@ async function requestJson(url, options = {}) {
 function openDrawer(title, html) {
   drawerTitle.textContent = title;
   drawerBody.innerHTML = html;
-  drawer.classList.remove("hidden");
+  drawer.show();
 }
 
 function closeDrawer() {
-  drawer.classList.add("hidden");
-  drawerBody.innerHTML = "";
+  drawer.hide();
 }
 
 function setActiveTab(tabId) {
-  tabButtons.forEach((button) => {
-    button.classList.toggle("active", button.dataset.tab === tabId);
-  });
-  tabPanels.forEach((panel) => {
-    panel.classList.toggle("active", panel.dataset.panel === tabId);
-  });
+  const tab = document.querySelector(`[data-tab="${tabId}"]`);
+  if (tab) {
+    const tabInstance = new bootstrap.Tab(tab);
+    tabInstance.show();
+  }
 }
 
 function applyRoleVisibility() {
@@ -212,7 +227,7 @@ function applyRoleVisibility() {
   });
 
   if (!admin) {
-    const activeTab = tabButtons.find((button) => button.classList.contains("active"));
+    const activeTab = document.querySelector('.nav-link.active[data-tab]');
     if (activeTab && activeTab.classList.contains("admin-only")) {
       setActiveTab("overview");
     }
@@ -268,28 +283,36 @@ function buildProductOptions(selectedValue = "") {
 
 function createLineItemRow(container, initial = {}) {
   const row = document.createElement("div");
-  row.className = "line-item";
+  row.className = "line-item row";
   row.innerHTML = `
-    <label>
-      Product
-      <select class="row-product" required>
+    <div class="col-md-4">
+      <label class="form-label">Product</label>
+      <select class="form-select row-product" required>
         ${buildProductOptions(initial.productId)}
       </select>
-    </label>
-    <label>
-      Qty
-      <input class="row-qty" type="number" min="0.01" step="0.01" value="${initial.quantity || 1}" required />
-    </label>
-    <label>
-      Line Discount
-      <input class="row-discount" type="number" min="0" step="0.01" value="${initial.lineDiscount || 0}" />
-    </label>
-    <p class="meta">
-      Taxable: <strong class="row-taxable">${formatCurrency(0)}</strong><br />
-      Tax: <strong class="row-tax">${formatCurrency(0)}</strong><br />
-      Total: <strong class="row-total">${formatCurrency(0)}</strong>
-    </p>
-    <button type="button" class="table-btn remove-btn row-remove">Remove</button>
+    </div>
+    <div class="col-md-2">
+      <label class="form-label">Qty</label>
+      <input class="form-control row-qty" type="number" min="0.01" step="0.01" value="${
+        initial.quantity || 1
+      }" required />
+    </div>
+    <div class="col-md-2">
+      <label class="form-label">Line Discount</label>
+      <input class="form-control row-discount" type="number" min="0" step="0.01" value="${
+        initial.lineDiscount || 0
+      }" />
+    </div>
+    <div class="col-md-3">
+      <p class="meta small">
+        Taxable: <strong class="row-taxable">${formatCurrency(0)}</strong><br />
+        Tax: <strong class="row-tax">${formatCurrency(0)}</strong><br />
+        Total: <strong class="row-total">${formatCurrency(0)}</strong>
+      </p>
+    </div>
+    <div class="col-md-1 d-flex align-items-end">
+      <button type="button" class="btn btn-sm btn-outline-danger row-remove">Remove</button>
+    </div>
   `;
 
   row.querySelector(".row-remove").addEventListener("click", () => {
@@ -305,24 +328,29 @@ function createLineItemRow(container, initial = {}) {
 
 function createRecurringItemRow(container, initial = {}) {
   const row = document.createElement("div");
-  row.className = "line-item";
+  row.className = "line-item row";
   row.innerHTML = `
-    <label>
-      Product
-      <select class="row-product" required>
+    <div class="col-md-4">
+      <label class="form-label">Product</label>
+      <select class="form-select row-product" required>
         ${buildProductOptions(initial.productId)}
       </select>
-    </label>
-    <label>
-      Qty
-      <input class="row-qty" type="number" min="0.01" step="0.01" value="${initial.quantity || 1}" required />
-    </label>
-    <label>
-      Line Discount
-      <input class="row-discount" type="number" min="0" step="0.01" value="${initial.lineDiscount || 0}" />
-    </label>
-    <p class="meta">Repeats on schedule with current product tax settings.</p>
-    <button type="button" class="table-btn remove-btn row-remove">Remove</button>
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">Qty</label>
+      <input class="form-control row-qty" type="number" min="0.01" step="0.01" value="${
+        initial.quantity || 1
+      }" required />
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">Line Discount</label>
+      <input class="form-control row-discount" type="number" min="0" step="0.01" value="${
+        initial.lineDiscount || 0
+      }" />
+    </div>
+    <div class="col-md-2 d-flex align-items-end">
+      <button type="button" class="btn btn-sm btn-outline-danger row-remove">Remove</button>
+    </div>
   `;
 
   row.querySelector(".row-remove").addEventListener("click", () => row.remove());
@@ -455,19 +483,39 @@ function updateInvoicePreview() {
   const grossTotal = subtotalTaxable + taxTotal;
   const finalTotal = Math.max(grossTotal - invoiceDiscount + shipping + roundOff, 0);
   const invoiceTypeText = gstType === "none" ? "Without GST" : "With GST";
+  const companyProfile = getCompanyProfileForInvoiceType(gstType);
+  const companyName = companyProfile.name || "Company not configured";
+  const companyGstinText = companyProfile.gstin ? ` | GSTIN ${escapeHtml(companyProfile.gstin)}` : "";
+
+  if (invoiceCompanyBanner) {
+    const modeText = gstType === "none" ? "Without GST Company" : "GST Company";
+    invoiceCompanyBanner.innerHTML = `<div class="alert alert-info"><strong>${modeText}:</strong> ${escapeHtml(companyName)}${companyGstinText}</div>`;
+  }
 
   invoicePreview.innerHTML = `
-    <div><strong>Invoice Type:</strong> ${invoiceTypeText}</div>
-    <div><strong>Taxable:</strong> ${formatCurrency(subtotalTaxable)}</div>
-    <div><strong>Line Discount:</strong> ${formatCurrency(lineDiscountTotal)}</div>
-    <div><strong>CGST:</strong> ${formatCurrency(cgstTotal)}</div>
-    <div><strong>SGST:</strong> ${formatCurrency(sgstTotal)}</div>
-    <div><strong>IGST:</strong> ${formatCurrency(igstTotal)}</div>
-    <div><strong>Tax Total:</strong> ${formatCurrency(taxTotal)}</div>
-    <div><strong>Invoice Discount:</strong> ${formatCurrency(invoiceDiscount)}</div>
-    <div><strong>Shipping:</strong> ${formatCurrency(shipping)}</div>
-    <div><strong>Round Off:</strong> ${formatCurrency(roundOff)}</div>
-    <div><strong>Final Total:</strong> ${formatCurrency(finalTotal)}</div>
+    <div class="card mt-3">
+      <div class="card-body">
+        <h5 class="card-title">Invoice Preview</h5>
+        <div class="row">
+          <div class="col"><strong>Billing Company:</strong> ${escapeHtml(companyName)}</div>
+          <div class="col"><strong>Invoice Type:</strong> ${invoiceTypeText}</div>
+        </div>
+        <table class="table mt-2">
+          <tbody>
+            <tr><td>Taxable</td><td class="text-end">${formatCurrency(subtotalTaxable)}</td></tr>
+            <tr><td>Line Discount</td><td class="text-end">${formatCurrency(lineDiscountTotal)}</td></tr>
+            <tr><td>CGST</td><td class="text-end">${formatCurrency(cgstTotal)}</td></tr>
+            <tr><td>SGST</td><td class="text-end">${formatCurrency(sgstTotal)}</td></tr>
+            <tr><td>IGST</td><td class="text-end">${formatCurrency(igstTotal)}</td></tr>
+            <tr><td>Tax Total</td><td class="text-end">${formatCurrency(taxTotal)}</td></tr>
+            <tr><td>Invoice Discount</td><td class="text-end">${formatCurrency(invoiceDiscount)}</td></tr>
+            <tr><td>Shipping</td><td class="text-end">${formatCurrency(shipping)}</td></tr>
+            <tr><td>Round Off</td><td class="text-end">${formatCurrency(roundOff)}</td></tr>
+            <tr><td><strong>Final Total</strong></td><td class="text-end"><strong>${formatCurrency(finalTotal)}</strong></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
   `;
 
   const validItems = getInvoiceRowsPayload().length;
@@ -505,6 +553,7 @@ function syncSelects() {
 
   updateInvoicePreview();
 }
+
 function renderOverview() {
   const report = state.report;
   metricRevenue.textContent = formatCurrency(report?.totals?.revenue || 0);
@@ -546,7 +595,7 @@ function renderCustomers() {
         <td>${escapeHtml(customer.name)}</td>
         <td>${escapeHtml(customer.email || "-")}</td>
         <td>${escapeHtml(customer.gstin || "-")}</td>
-        <td><button class="table-btn secondary-btn" data-action="statement" data-customer-id="${customer.id}">Statement</button></td>
+        <td><button class="btn btn-sm btn-secondary" data-action="statement" data-customer-id="${customer.id}">Statement</button></td>
       </tr>
     `
     )
@@ -555,24 +604,26 @@ function renderCustomers() {
 
 function renderProducts() {
   if (state.products.length === 0) {
-    productListNode.innerHTML = `<p class="helper-text">No products yet.</p>`;
+    productListNode.innerHTML = `<p class="text-muted">No products yet.</p>`;
     return;
   }
 
   productListNode.innerHTML = state.products
     .map(
       (product) => `
-      <article class="product-item">
-        <div>
-          <p class="name">${escapeHtml(product.name)}</p>
-          <p class="meta">${escapeHtml(product.hsnSac || "-")} | ${escapeHtml(product.pricingModel)} | ${formatCurrency(product.price)} | GST ${Number(product.taxRate)}%</p>
+      <div class="card mb-2">
+        <div class="card-body d-flex justify-content-between align-items-center">
+          <div>
+            <h6 class="card-title mb-0">${escapeHtml(product.name)}</h6>
+            <p class="card-text small text-muted">${escapeHtml(product.hsnSac || "-")} | ${escapeHtml(product.pricingModel)} | ${formatCurrency(product.price)} | GST ${Number(product.taxRate)}%</p>
+          </div>
+          ${
+            isAdmin()
+              ? `<button class="btn btn-sm btn-outline-danger" data-action="remove-product" data-product-id="${product.id}">Remove</button>`
+              : ""
+          }
         </div>
-        ${
-          isAdmin()
-            ? `<button class="table-btn remove-btn" data-action="remove-product" data-product-id="${product.id}">Remove</button>`
-            : ""
-        }
-      </article>
+      </div>
     `
     )
     .join("");
@@ -596,13 +647,13 @@ function renderInvoices() {
         <td>${formatCurrency(invoice.paidAmount)}</td>
         <td>${formatCurrency(invoice.dueAmount)}</td>
         <td>
-          <div class="table-actions">
-            <button class="table-btn share-btn" data-action="share-invoice" data-invoice-id="${invoice.id}">Share</button>
-            <button class="table-btn download-btn" data-action="download-invoice" data-invoice-id="${invoice.id}">PDF</button>
-            <button class="table-btn secondary-btn" data-action="pay-invoice" data-invoice-id="${invoice.id}">Pay</button>
+          <div class="btn-group">
+            <button class="btn btn-sm btn-success" data-action="share-invoice" data-invoice-id="${invoice.id}">Share</button>
+            <button class="btn btn-sm btn-info" data-action="download-invoice" data-invoice-id="${invoice.id}">PDF</button>
+            <button class="btn btn-sm btn-secondary" data-action="pay-invoice" data-invoice-id="${invoice.id}">Pay</button>
             ${
               isAdmin()
-                ? `<button class="table-btn remove-btn" data-action="remove-invoice" data-invoice-id="${invoice.id}">Delete</button>`
+                ? `<button class="btn btn-sm btn-danger" data-action="remove-invoice" data-invoice-id="${invoice.id}">Delete</button>`
                 : ""
             }
           </div>
@@ -630,7 +681,7 @@ function renderPayments() {
         <td>${formatCurrency(invoice.paidAmount)}</td>
         <td>${formatCurrency(invoice.dueAmount)}</td>
         <td>${statusPill(invoice.status)}</td>
-        <td><button class="table-btn secondary-btn" data-action="pay-invoice" data-invoice-id="${invoice.id}">Add Payment</button></td>
+        <td><button class="btn btn-sm btn-secondary" data-action="pay-invoice" data-invoice-id="${invoice.id}">Add Payment</button></td>
       </tr>
     `
     )
@@ -656,13 +707,13 @@ function renderRecurringTemplates() {
         <td>${escapeHtml(template.customer?.name || "Unknown")}</td>
         <td>${escapeHtml(template.frequency)}</td>
         <td>${new Date(template.nextRunAt).toLocaleString("en-IN")}</td>
-        <td>${template.active ? '<span class="pill paid">active</span>' : '<span class="pill unpaid">paused</span>'}</td>
+        <td>${template.active ? '<span class="badge bg-success">active</span>' : '<span class="badge bg-warning">paused</span>'}</td>
         <td>
-          <div class="table-actions">
-            <button class="table-btn secondary-btn" data-action="toggle-recurring" data-recurring-id="${template.id}" data-active="${template.active}">
+          <div class="btn-group">
+            <button class="btn btn-sm btn-secondary" data-action="toggle-recurring" data-recurring-id="${template.id}" data-active="${template.active}">
               ${template.active ? "Pause" : "Activate"}
             </button>
-            <button class="table-btn remove-btn" data-action="remove-recurring" data-recurring-id="${template.id}">Delete</button>
+            <button class="btn btn-sm btn-danger" data-action="remove-recurring" data-recurring-id="${template.id}">Delete</button>
           </div>
         </td>
       </tr>
@@ -778,22 +829,23 @@ async function openCustomerStatement(customerId) {
     openDrawer(
       `Statement: ${statement.customer?.name || "Customer"}`,
       `
-      <div class="cards-grid" style="margin-bottom:0.8rem;">
-        <article class="metric-card"><p>Total Billed</p><h3>${formatCurrency(statement.summary?.totalBilled || 0)}</h3></article>
-        <article class="metric-card"><p>Total Paid</p><h3>${formatCurrency(statement.summary?.totalPaid || 0)}</h3></article>
-        <article class="metric-card"><p>Total Due</p><h3>${formatCurrency(statement.summary?.totalDue || 0)}</h3></article>
-        <article class="metric-card"><p>Overdue</p><h3>${statement.summary?.overdueInvoices || 0}</h3></article>
+      <div class="row">
+        <div class="col-md-3"><div class="card card-body"><h6>Total Billed</h6><p>${formatCurrency(statement.summary?.totalBilled || 0)}</p></div></div>
+        <div class="col-md-3"><div class="card card-body"><h6>Total Paid</h6><p>${formatCurrency(statement.summary?.totalPaid || 0)}</p></div></div>
+        <div class="col-md-3"><div class="card card-body"><h6>Total Due</h6><p>${formatCurrency(statement.summary?.totalDue || 0)}</p></div></div>
+        <div class="col-md-3"><div class="card card-body"><h6>Overdue</h6><p>${statement.summary?.overdueInvoices || 0}</p></div></div>
       </div>
-      <h3 style="margin-bottom:0.35rem;">Invoices</h3>
-      <div class="table-wrap">
-        <table>
+
+      <h5 class="mt-4">Invoices</h5>
+      <div class="table-responsive">
+        <table class="table table-sm">
           <thead><tr><th>No.</th><th>Date</th><th>Status</th><th>Total</th><th>Paid</th><th>Due</th></tr></thead>
           <tbody>${invoiceRows || `<tr><td colspan="6">No invoices.</td></tr>`}</tbody>
         </table>
       </div>
-      <h3 style="margin:0.8rem 0 0.35rem;">Payments</h3>
-      <div class="table-wrap">
-        <table>
+      <h5 class="mt-4">Payments</h5>
+      <div class="table-responsive">
+        <table class="table table-sm">
           <thead><tr><th>Invoice</th><th>Date</th><th>Method</th><th>Amount</th><th>Note</th></tr></thead>
           <tbody>${paymentRows || `<tr><td colspan="5">No payments.</td></tr>`}</tbody>
         </table>
@@ -804,6 +856,7 @@ async function openCustomerStatement(customerId) {
     setStatus(error.message, true);
   }
 }
+
 async function loadInvoices() {
   const query = buildQuery(state.invoiceFilters);
   state.invoices = await requestJson(`/api/invoices${query}`);
@@ -971,12 +1024,14 @@ async function shareInvoice(invoiceId) {
   }
 
   const pdfPath = `/api/invoices/${invoice.id}/pdf`;
-  const pdfUrl = `${window.location.origin}${pdfPath}?token=${encodeURIComponent(state.token)}`;
+  const cacheBuster = Date.now();
+  const pdfUrl = `${window.location.origin}${pdfPath}?token=${encodeURIComponent(state.token)}&v=${cacheBuster}`;
 
   if (navigator.share && typeof File !== "undefined") {
     try {
       const response = await fetch(pdfPath, {
-        headers: { Authorization: `Bearer ${state.token}` }
+        headers: { Authorization: `Bearer ${state.token}` },
+        cache: "no-store"
       });
       if (!response.ok) {
         throw new Error("Unable to fetch invoice PDF.");
@@ -1018,7 +1073,8 @@ async function shareInvoice(invoiceId) {
 function downloadInvoice(invoiceId) {
   requestJson(`/api/invoices/${invoiceId}`).then(async (invoice) => {
     const response = await fetch(`/api/invoices/${invoiceId}/pdf`, {
-      headers: { Authorization: `Bearer ${state.token}` }
+      headers: { Authorization: `Bearer ${state.token}` },
+      cache: "no-store"
     });
     if (!response.ok) {
       throw new Error("Unable to download PDF.");
@@ -1026,8 +1082,9 @@ function downloadInvoice(invoiceId) {
     const blob = await response.blob();
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
+    const stamp = new Date().toISOString().replace(/[:.]/g, "-");
     link.href = url;
-    link.download = `${invoice.invoiceNumber || `invoice-${invoiceId}`}.pdf`;
+    link.download = `${invoice.invoiceNumber || `invoice-${invoiceId}`}-${stamp}.pdf`;
     document.body.append(link);
     link.click();
     link.remove();
@@ -1140,6 +1197,7 @@ async function saveSettings() {
     body: JSON.stringify(payload)
   });
   renderSettings();
+  updateInvoicePreview();
   setStatus("Settings saved.");
 }
 
@@ -1290,12 +1348,13 @@ logoutButton.addEventListener("click", async () => {
   setStatus("Logged out.");
 });
 
-tabNav.addEventListener("click", (event) => {
-  const button = event.target.closest("button[data-tab]");
-  if (!button || button.classList.contains("hidden")) {
+tabNav.addEventListener('click', (event) => {
+  const button = event.target.closest('button[data-tab]');
+  if (!button) {
     return;
   }
-  setActiveTab(button.dataset.tab);
+  const tabId = button.dataset.tab;
+  setActiveTab(tabId);
 });
 
 invoiceGstTypeSelect.addEventListener("change", updateInvoicePreview);
@@ -1570,11 +1629,8 @@ restoreBackupForm?.addEventListener("submit", async (event) => {
   }
 });
 
-drawerCloseButton.addEventListener("click", closeDrawer);
-drawer.addEventListener("click", (event) => {
-  if (event.target === drawer) {
-    closeDrawer();
-  }
+drawerEl.addEventListener('hidden.bs.modal', () => {
+  drawerBody.innerHTML = '';
 });
 
 async function init() {
@@ -1582,7 +1638,9 @@ async function init() {
   createRecurringItemRow(recurringItemsContainer);
 
   const today = new Date().toISOString().slice(0, 10);
-  recurringStartDateInput.value = today;
+  if(recurringStartDateInput) {
+    recurringStartDateInput.value = today;
+  }
 
   await restoreSession();
 }

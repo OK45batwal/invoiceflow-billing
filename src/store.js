@@ -26,6 +26,13 @@ const FALLBACK_ADMIN_PASSWORD = "admin123";
 const FALLBACK_STAFF_PASSWORD = "staff123";
 const FALLBACK_ADMIN_HASH = hashPassword(FALLBACK_ADMIN_PASSWORD);
 const FALLBACK_STAFF_HASH = hashPassword(FALLBACK_STAFF_PASSWORD);
+const DEFAULT_COMPANY_PROFILE = {
+  name: "My Company",
+  address: "",
+  email: "",
+  phone: "",
+  gstin: ""
+};
 
 const DEFAULT_SETTINGS = {
   companyName: "My Company",
@@ -33,6 +40,22 @@ const DEFAULT_SETTINGS = {
   companyEmail: "",
   companyPhone: "",
   companyGstin: "",
+  companyProfiles: {
+    gst: {
+      name: "My Company",
+      address: "",
+      email: "",
+      phone: "",
+      gstin: ""
+    },
+    nonGst: {
+      name: "My Company",
+      address: "",
+      email: "",
+      phone: "",
+      gstin: ""
+    }
+  },
   invoicePrefix: "INV",
   financialYearStartMonth: 4,
   upiId: "",
@@ -82,6 +105,92 @@ function roundMoney(value) {
 
 function toText(value) {
   return String(value || "").trim();
+}
+
+function normalizeCompanyProfile(input = {}, fallback = {}) {
+  return {
+    name: toText(input?.name ?? fallback?.name),
+    address: toText(input?.address ?? fallback?.address),
+    email: toText(input?.email ?? fallback?.email),
+    phone: toText(input?.phone ?? fallback?.phone),
+    gstin: toText(input?.gstin ?? fallback?.gstin)
+  };
+}
+
+function normalizeCompanyProfiles(input = {}) {
+  const gst = normalizeCompanyProfile(
+    {
+      name: input?.gstCompanyName ?? input?.companyName ?? input?.companyProfiles?.gst?.name,
+      address: input?.gstCompanyAddress ?? input?.companyAddress ?? input?.companyProfiles?.gst?.address,
+      email: input?.gstCompanyEmail ?? input?.companyEmail ?? input?.companyProfiles?.gst?.email,
+      phone: input?.gstCompanyPhone ?? input?.companyPhone ?? input?.companyProfiles?.gst?.phone,
+      gstin: input?.gstCompanyGstin ?? input?.companyGstin ?? input?.companyProfiles?.gst?.gstin
+    },
+    DEFAULT_COMPANY_PROFILE
+  );
+
+  const nonGstFallback = {
+    ...DEFAULT_COMPANY_PROFILE,
+    name: gst.name || DEFAULT_COMPANY_PROFILE.name,
+    address: gst.address,
+    email: gst.email,
+    phone: gst.phone,
+    gstin: ""
+  };
+  const nonGst = normalizeCompanyProfile(
+    {
+      name: input?.nonGstCompanyName ?? input?.companyName ?? input?.companyProfiles?.nonGst?.name,
+      address: input?.nonGstCompanyAddress ?? input?.companyAddress ?? input?.companyProfiles?.nonGst?.address,
+      email: input?.nonGstCompanyEmail ?? input?.companyEmail ?? input?.companyProfiles?.nonGst?.email,
+      phone: input?.nonGstCompanyPhone ?? input?.companyPhone ?? input?.companyProfiles?.nonGst?.phone,
+      gstin: input?.nonGstCompanyGstin ?? input?.companyProfiles?.nonGst?.gstin ?? ""
+    },
+    nonGstFallback
+  );
+
+  return { gst, nonGst };
+}
+
+function applyCompanyProfilesToSettings(settings) {
+  settings.companyProfiles = normalizeCompanyProfiles(settings);
+
+  settings.companyName = settings.companyProfiles.gst.name;
+  settings.companyAddress = settings.companyProfiles.gst.address;
+  settings.companyEmail = settings.companyProfiles.gst.email;
+  settings.companyPhone = settings.companyProfiles.gst.phone;
+  settings.companyGstin = settings.companyProfiles.gst.gstin;
+
+  settings.gstCompanyName = settings.companyProfiles.gst.name;
+  settings.gstCompanyAddress = settings.companyProfiles.gst.address;
+  settings.gstCompanyEmail = settings.companyProfiles.gst.email;
+  settings.gstCompanyPhone = settings.companyProfiles.gst.phone;
+  settings.gstCompanyGstin = settings.companyProfiles.gst.gstin;
+
+  settings.nonGstCompanyName = settings.companyProfiles.nonGst.name;
+  settings.nonGstCompanyAddress = settings.companyProfiles.nonGst.address;
+  settings.nonGstCompanyEmail = settings.companyProfiles.nonGst.email;
+  settings.nonGstCompanyPhone = settings.companyProfiles.nonGst.phone;
+  settings.nonGstCompanyGstin = settings.companyProfiles.nonGst.gstin;
+}
+
+function normalizeCompanyProfileType(value, gstType = "intra") {
+  const normalized = String(value || "").toLowerCase();
+  if (normalized === "nongst" || normalized === "non_gst" || normalized === "non-gst") {
+    return "nonGst";
+  }
+  if (normalized === "gst") {
+    return "gst";
+  }
+  return normalizeGstType(gstType) === "none" ? "nonGst" : "gst";
+}
+
+function getCompanyProfileForInvoice(settings, gstType) {
+  const profileType = normalizeGstType(gstType) === "none" ? "nonGst" : "gst";
+  const profiles = normalizeCompanyProfiles(settings || {});
+  return {
+    profileType,
+    profile: profileType === "nonGst" ? profiles.nonGst : profiles.gst
+  };
 }
 
 function toDate(value) {
@@ -309,6 +418,9 @@ function normalizeInvoice(invoice) {
     method: toText(payment.method) || "cash",
     note: toText(payment.note)
   }));
+  const companyProfileType = normalizeCompanyProfileType(invoice.companyProfileType, gstType);
+  const normalizedCompanyProfile = normalizeCompanyProfile(invoice.companyProfile || {}, {});
+  const hasCompanyProfile = Object.values(normalizedCompanyProfile).some((value) => Boolean(value));
 
   return {
     id: Number(invoice.id) || 0,
@@ -331,6 +443,8 @@ function normalizeInvoice(invoice) {
     subtotal: subtotalTaxable,
     tax: taxTotal,
     total,
+    companyProfileType,
+    companyProfile: hasCompanyProfile ? normalizedCompanyProfile : null,
     payments
   };
 }
@@ -439,6 +553,7 @@ function migrateStore(parsed) {
   store.settings.financialYearStartMonth = month >= 1 && month <= 12 ? month : 4;
   store.settings.invoicePrefix =
     toText(store.settings.invoicePrefix).replace(/\s+/g, "-").toUpperCase() || "INV";
+  applyCompanyProfilesToSettings(store.settings);
 
   const envAdminPassword = toText(process.env.DEFAULT_ADMIN_PASSWORD);
   const envStaffPassword = toText(process.env.DEFAULT_STAFF_PASSWORD);
@@ -682,6 +797,7 @@ function createInvoiceInternal(store, input, createdAtValue = new Date()) {
   const dueDays = Number.isFinite(Number(input.dueDays)) ? Number(input.dueDays) : 15;
   const dueDate =
     toDate(input.dueDate)?.toISOString() || addDays(createdAt, Math.max(0, dueDays)).toISOString();
+  const companySelection = getCompanyProfileForInvoice(store.settings, gstType);
 
   const invoice = {
     id: store.nextInvoiceId,
@@ -704,6 +820,8 @@ function createInvoiceInternal(store, input, createdAtValue = new Date()) {
     subtotal: subtotalTaxable,
     tax: taxTotal,
     total,
+    companyProfileType: companySelection.profileType,
+    companyProfile: { ...companySelection.profile },
     payments: []
   };
 
@@ -1276,12 +1394,14 @@ export function getReportsSummary(filters = {}) {
 
 export function getSettings() {
   const store = ensurePersistedStore();
-  return { ...store.settings };
+  applyCompanyProfilesToSettings(store.settings);
+  return cloneJson(store.settings);
 }
 
 export function updateSettings(input) {
   const store = ensurePersistedStore();
   const settings = store.settings;
+  applyCompanyProfilesToSettings(settings);
 
   if (input.invoicePrefix !== undefined) {
     const prefix = toText(input.invoicePrefix)
@@ -1302,12 +1422,44 @@ export function updateSettings(input) {
     settings.financialYearStartMonth = month;
   }
 
+  const companyKeyMap = {
+    companyName: ["gst", "name"],
+    companyAddress: ["gst", "address"],
+    companyEmail: ["gst", "email"],
+    companyPhone: ["gst", "phone"],
+    companyGstin: ["gst", "gstin"],
+    gstCompanyName: ["gst", "name"],
+    gstCompanyAddress: ["gst", "address"],
+    gstCompanyEmail: ["gst", "email"],
+    gstCompanyPhone: ["gst", "phone"],
+    gstCompanyGstin: ["gst", "gstin"],
+    nonGstCompanyName: ["nonGst", "name"],
+    nonGstCompanyAddress: ["nonGst", "address"],
+    nonGstCompanyEmail: ["nonGst", "email"],
+    nonGstCompanyPhone: ["nonGst", "phone"],
+    nonGstCompanyGstin: ["nonGst", "gstin"]
+  };
+  for (const [inputKey, [profileKey, fieldKey]] of Object.entries(companyKeyMap)) {
+    if (input[inputKey] !== undefined) {
+      settings.companyProfiles[profileKey][fieldKey] = toText(input[inputKey]);
+    }
+  }
+
+  if (input.companyProfiles !== undefined && typeof input.companyProfiles === "object" && input.companyProfiles !== null) {
+    for (const profileKey of ["gst", "nonGst"]) {
+      const payloadProfile = input.companyProfiles?.[profileKey];
+      if (!payloadProfile || typeof payloadProfile !== "object") {
+        continue;
+      }
+      for (const fieldKey of ["name", "address", "email", "phone", "gstin"]) {
+        if (payloadProfile[fieldKey] !== undefined) {
+          settings.companyProfiles[profileKey][fieldKey] = toText(payloadProfile[fieldKey]);
+        }
+      }
+    }
+  }
+
   const textKeys = [
-    "companyName",
-    "companyAddress",
-    "companyEmail",
-    "companyPhone",
-    "companyGstin",
     "upiId",
     "upiPayeeName",
     "bankName",
@@ -1321,8 +1473,10 @@ export function updateSettings(input) {
     }
   }
 
+  applyCompanyProfilesToSettings(settings);
+
   writeStore(store);
-  return { ...settings };
+  return cloneJson(settings);
 }
 
 export function exportBackupData() {
