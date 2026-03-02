@@ -14,7 +14,7 @@
       rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
     />
-    <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="./styles.css?v=20260302c" />
   </head>
   <body>
     <section id="login-view">
@@ -899,7 +899,7 @@
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title" id="drawer-title">Details</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <button id="drawer-close" type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <div class="modal-body" id="drawer-body"></div>
         </div>
@@ -914,7 +914,7 @@
       <div class="toast align-items-center" role="alert" aria-live="assertive" aria-atomic="true">
         <div class="d-flex">
           <div class="toast-body"></div>
-          <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+          <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" data-status-close="true" aria-label="Close"></button>
         </div>
       </div>
     </div>
@@ -924,6 +924,6 @@
       integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
       crossorigin="anonymous"
     ></script>
-    <script type="module" src="./app.js"></script>
+    <script type="module" src="./app.js?v=20260302c"></script>
   </body>
 </html>

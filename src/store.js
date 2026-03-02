@@ -193,6 +193,21 @@ function getCompanyProfileForInvoice(settings, gstType) {
   };
 }
 
+function ensureInvoiceCompanySnapshots(store) {
+  for (const invoice of store.invoices || []) {
+    const currentType = normalizeCompanyProfileType(invoice.companyProfileType, invoice.gstType);
+    const currentProfile = normalizeCompanyProfile(invoice.companyProfile || {}, {});
+    const hasCurrentProfile = Object.values(currentProfile).some((value) => Boolean(value));
+    if (invoice.companyProfileType && hasCurrentProfile) {
+      continue;
+    }
+
+    const selection = getCompanyProfileForInvoice(store.settings, invoice.gstType);
+    invoice.companyProfileType = currentType || selection.profileType;
+    invoice.companyProfile = hasCurrentProfile ? currentProfile : { ...selection.profile };
+  }
+}
+
 function toDate(value) {
   const parsed = new Date(value);
   return Number.isNaN(parsed.getTime()) ? null : parsed;
@@ -554,6 +569,7 @@ function migrateStore(parsed) {
   store.settings.invoicePrefix =
     toText(store.settings.invoicePrefix).replace(/\s+/g, "-").toUpperCase() || "INV";
   applyCompanyProfilesToSettings(store.settings);
+  ensureInvoiceCompanySnapshots(store);
 
   const envAdminPassword = toText(process.env.DEFAULT_ADMIN_PASSWORD);
   const envStaffPassword = toText(process.env.DEFAULT_STAFF_PASSWORD);

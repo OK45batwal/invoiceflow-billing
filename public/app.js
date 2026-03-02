@@ -4,7 +4,9 @@ const loginForm = document.querySelector("#login-form");
 const logoutButton = document.querySelector("#logout-btn");
 const currentUserNode = document.querySelector("#current-user");
 const statusToastEl = document.querySelector(".toast");
-const statusToast = new bootstrap.Toast(statusToastEl);
+const bootstrapApi = globalThis.bootstrap || null;
+const statusToast = bootstrapApi && statusToastEl ? new bootstrapApi.Toast(statusToastEl) : null;
+const statusCloseButton = statusToastEl?.querySelector("[data-status-close='true']");
 
 const tabNav = document.querySelector("#tab-nav");
 const tabButtons = [...document.querySelectorAll('[data-bs-toggle="pill"]')];
@@ -83,9 +85,10 @@ const metricBase = document.querySelector("#metric-base");
 const overviewRecentBody = document.querySelector("#overview-recent-body");
 
 const drawerEl = document.querySelector("#drawer");
-const drawer = new bootstrap.Modal(drawerEl);
+const drawer = bootstrapApi && drawerEl ? new bootstrapApi.Modal(drawerEl) : null;
 const drawerTitle = document.querySelector("#drawer-title");
 const drawerBody = document.querySelector("#drawer-body");
+const drawerCloseButton = document.querySelector("#drawer-close");
 
 const CURRENCY = new Intl.NumberFormat("en-IN", {
   style: "currency",
@@ -112,7 +115,8 @@ const state = {
   reportFilters: {
     dateFrom: "",
     dateTo: ""
-  }
+  },
+  statusTimer: null
 };
 
 function isAdmin() {
@@ -150,13 +154,28 @@ function escapeHtml(value) {
 }
 
 function setStatus(message, isError = false) {
+  if (!statusToastEl) {
+    return;
+  }
   const toastBody = statusToastEl.querySelector(".toast-body");
-  toastBody.textContent = message;
+  if (toastBody) {
+    toastBody.textContent = message;
+  } else {
+    statusToastEl.textContent = message;
+  }
   statusToastEl.classList.toggle("bg-danger", isError);
   statusToastEl.classList.toggle("text-white", isError);
   statusToastEl.classList.toggle("bg-success", !isError);
   statusToastEl.classList.toggle("text-white", !isError);
-  statusToast.show();
+  if (statusToast) {
+    statusToast.show();
+    return;
+  }
+  statusToastEl.classList.add("show");
+  clearTimeout(state.statusTimer);
+  state.statusTimer = setTimeout(() => {
+    statusToastEl.classList.remove("show");
+  }, 2400);
 }
 
 function resetAuthState() {
@@ -205,19 +224,37 @@ async function requestJson(url, options = {}) {
 function openDrawer(title, html) {
   drawerTitle.textContent = title;
   drawerBody.innerHTML = html;
-  drawer.show();
+  if (drawer) {
+    drawer.show();
+    return;
+  }
+  drawerEl?.classList.add("show");
+  drawerEl?.classList.remove("hidden");
 }
 
 function closeDrawer() {
-  drawer.hide();
+  if (drawer) {
+    drawer.hide();
+    return;
+  }
+  drawerEl?.classList.remove("show");
+  drawerEl?.classList.add("hidden");
 }
 
 function setActiveTab(tabId) {
   const tab = document.querySelector(`[data-tab="${tabId}"]`);
-  if (tab) {
-    const tabInstance = new bootstrap.Tab(tab);
-    tabInstance.show();
+  if (!tab) {
+    return;
   }
+
+  tabButtons.forEach((button) => {
+    button.classList.toggle("active", button.dataset.tab === tabId);
+  });
+  tabPanels.forEach((panel) => {
+    const active = panel.dataset.panel === tabId;
+    panel.classList.toggle("active", active);
+    panel.classList.toggle("show", active);
+  });
 }
 
 function applyRoleVisibility() {
@@ -1353,6 +1390,7 @@ tabNav.addEventListener('click', (event) => {
   if (!button) {
     return;
   }
+  event.preventDefault();
   const tabId = button.dataset.tab;
   setActiveTab(tabId);
 });
@@ -1629,7 +1667,25 @@ restoreBackupForm?.addEventListener("submit", async (event) => {
   }
 });
 
-drawerEl.addEventListener('hidden.bs.modal', () => {
+statusCloseButton?.addEventListener("click", () => {
+  if (statusToast) {
+    statusToast.hide();
+    return;
+  }
+  statusToastEl?.classList.remove("show");
+});
+
+drawerCloseButton?.addEventListener("click", () => {
+  closeDrawer();
+});
+
+drawerEl?.addEventListener("click", (event) => {
+  if (!drawer && event.target === drawerEl) {
+    closeDrawer();
+  }
+});
+
+drawerEl?.addEventListener('hidden.bs.modal', () => {
   drawerBody.innerHTML = '';
 });
 
