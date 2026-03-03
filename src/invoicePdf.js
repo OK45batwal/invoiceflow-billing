@@ -87,6 +87,7 @@ function formatDateTime(value) {
 }
 
 function ratiosToWidths(totalWidth, ratios) {
+  // Convert ratio-based columns into integer widths while preserving full total width.
   const widths = [];
   let used = 0;
   for (let index = 0; index < ratios.length - 1; index += 1) {
@@ -157,6 +158,7 @@ function inferItemTaxRate(item) {
 }
 
 function buildTaxRows(invoice) {
+  // Group line items by effective GST rate so the tax table remains compact and readable.
   const gstType = String(invoice?.gstType || "intra");
   const groupedRows = new Map();
   for (const item of invoice?.items || []) {
@@ -199,6 +201,7 @@ function buildTaxRows(invoice) {
   }
 
   if (rows.length > 3) {
+    // Keep only two explicit slabs and merge the rest into one summary row.
     const head = rows.slice(0, 2);
     const tail = rows.slice(2);
     const merged = tail.reduce(
@@ -241,6 +244,7 @@ function threeDigitWords(number) {
 }
 
 function numberToWordsIndian(number) {
+  // Convert number using Indian units (Crore/Lakh/Thousand) for amount-in-words.
   let value = Math.floor(Math.max(0, normalizeAmount(number)));
   if (!value) {
     return "Zero";
@@ -279,6 +283,7 @@ function amountToWords(value) {
 }
 
 function normalizePaymentMode(invoice, settings) {
+  // Strip symbols and map aliases so labels like "G/Pay", "gpay", "google pay" render consistently.
   const raw = toText(invoice?.paymentMode);
   const cleaned = raw.toUpperCase().replace(/[^A-Z0-9]/g, "");
   const mapped = {
@@ -314,7 +319,10 @@ function normalizeCompanyProfile(profile = {}, fallback = {}) {
     address: toText(profile?.address ?? fallback?.address),
     email: toText(profile?.email ?? fallback?.email),
     phone: toText(profile?.phone ?? fallback?.phone),
-    gstin: toText(profile?.gstin ?? fallback?.gstin)
+    gstin: toText(profile?.gstin ?? fallback?.gstin),
+    pan: toText(profile?.pan ?? fallback?.pan),
+    state: toText(profile?.state ?? fallback?.state),
+    stateCode: toText(profile?.stateCode ?? fallback?.stateCode)
   };
 }
 
@@ -324,7 +332,10 @@ function getInvoiceCompanyProfile(invoice, settings) {
     address: toText(settings?.companyAddress),
     email: toText(settings?.companyEmail),
     phone: toText(settings?.companyPhone),
-    gstin: toText(settings?.companyGstin)
+    gstin: toText(settings?.companyGstin),
+    pan: toText(settings?.companyPan),
+    state: toText(settings?.companyState),
+    stateCode: toText(settings?.companyStateCode)
   };
   const gstType = String(invoice?.gstType || "intra").toLowerCase();
   const profileKey = gstType === "none" ? "nonGst" : "gst";
@@ -368,391 +379,281 @@ export async function createInvoicePdfBuffer(invoice, settings = {}) {
   const doc = new PDFDocument({ margin: 20, size: "A4" });
   const output = collectPdf(doc);
 
-  let qrBuffer = null;
-  const upiLink = buildUpiLink(invoice, settings);
-  if (upiLink) {
-    try {
-      const qrDataUrl = await QRCode.toDataURL(upiLink, { margin: 1, width: 180 });
-      qrBuffer = dataUrlToBuffer(qrDataUrl);
-    } catch (_error) {
-      qrBuffer = null;
-    }
-  }
-
   const companyProfile = getInvoiceCompanyProfile(invoice, settings);
   const companyName = toUpperText(companyProfile.name || "My Company");
   const invoiceNumber = toText(invoice.invoiceNumber) || `#${invoice.id || 0}`;
   const gstType = String(invoice.gstType || "intra");
-  const status = toUpperText(invoice.status || "unpaid");
   const items = invoice.items || [];
   const qtyTotal = roundMoney(items.reduce((sum, item) => sum + normalizeAmount(item.quantity), 0));
   const amountTotal = roundMoney(items.reduce((sum, item) => sum + normalizeAmount(item.lineTotal), 0));
-  const companyContact = [toText(companyProfile.phone), toText(companyProfile.email)].filter(Boolean).join("   ");
-  const companyLines = [
-    ...splitLines(companyProfile.address).map((line) => toUpperText(line)),
-    companyContact ? `PH: ${toUpperText(companyContact)}` : "",
-    toText(companyProfile.gstin) ? `GSTIN: ${toUpperText(companyProfile.gstin)}` : ""
-  ].filter(Boolean);
-  const taxRows = buildTaxRows(invoice);
-  const taxDisplayRows = [
-    ...taxRows,
-    {
-      taxable: normalizeAmount(invoice.subtotalTaxable),
-      sgstRate: 0,
-      sgstAmount: normalizeAmount(invoice.sgstTotal),
-      cgstRate: 0,
-      cgstAmount: normalizeAmount(invoice.cgstTotal),
-      igstRate: 0,
-      igstAmount: normalizeAmount(invoice.igstTotal),
-      totalRow: true
-    }
-  ];
+  const subtotalTaxable = normalizeAmount(invoice.subtotalTaxable);
+  const cgstTotal = normalizeAmount(invoice.cgstTotal);
+  const sgstTotal = normalizeAmount(invoice.sgstTotal);
+  const igstTotal = normalizeAmount(invoice.igstTotal);
+  const grandTotal = normalizeAmount(invoice.total);
+  const cgstRate = subtotalTaxable > 0 ? roundMoney((cgstTotal / subtotalTaxable) * 100) : 0;
+  const sgstRate = subtotalTaxable > 0 ? roundMoney((sgstTotal / subtotalTaxable) * 100) : 0;
+  const igstRate = subtotalTaxable > 0 ? roundMoney((igstTotal / subtotalTaxable) * 100) : 0;
 
+  const companyPhone = toText(companyProfile.phone) || toText(settings.companyPhone);
+  const companyAddressText = splitLines(companyProfile.address).join(", ");
+  const companyGstin = toUpperText(companyProfile.gstin) || toUpperText(settings.companyGstin) || "-";
+  const companyState = toUpperText(companyProfile.state || settings.companyState || "Gujarat");
+  const companyStateCode = toUpperText(companyProfile.stateCode || settings.companyStateCode || "-");
+  const companyPan = toUpperText(companyProfile.pan || settings.companyPan || settings.pan || "-");
+
+  const customerName = toUpperText(invoice.customer?.name) || "WALK-IN CUSTOMER";
+  const customerAddressLines = splitLines(toText(invoice.customer?.address) || "-");
+  const customerGstin = toUpperText(invoice.customer?.gstin) || "-";
+  const invoiceDate = formatDate(invoice.createdAt);
+
+  const amountWords = amountToWords(grandTotal);
   const margin = 20;
   const x = margin;
   const y = margin;
   const w = doc.page.width - margin * 2;
   const h = doc.page.height - margin * 2;
-  const headerH = 126;
+  const companyH = 60;
+  const legalH = 24;
+  const titleH = 28;
   const partyH = 116;
-  const itemsH = 226;
-  const remarksH = 22;
-  const taxH = 118;
-  const wordsH = 25;
-  const footerH = h - headerH - partyH - itemsH - remarksH - taxH - wordsH;
+  const itemHeaderH = 32;
+  const itemBodyH = 282;
+  const itemFooterH = 24;
+  const wordsSummaryH = 74;
+  const bankSignH = h - (companyH + legalH + titleH + partyH + itemHeaderH + itemBodyH + itemFooterH + wordsSummaryH);
 
-  const y1 = y + headerH;
-  const y2 = y1 + partyH;
-  const y3 = y2 + itemsH;
-  const y4 = y3 + remarksH;
-  const y5 = y4 + taxH;
-  const y6 = y5 + wordsH;
+  const yCompanyBottom = y + companyH;
+  const yLegalBottom = yCompanyBottom + legalH;
+  const yTitleBottom = yLegalBottom + titleH;
+  const yPartyBottom = yTitleBottom + partyH;
+  const yItemHeaderBottom = yPartyBottom + itemHeaderH;
+  const yItemBodyBottom = yItemHeaderBottom + itemBodyH;
+  const yItemFooterBottom = yItemBodyBottom + itemFooterH;
+  const yWordsBottom = yItemFooterBottom + wordsSummaryH;
+  const yPageBottom = y + h;
 
-  doc.lineWidth(1.2).strokeColor("#111111").fillColor("#111111");
+  doc.fillColor("#24395b").rect(x, yPartyBottom, w, itemHeaderH).fill();
+
+  doc.lineWidth(1.1).strokeColor("#1a1f2b").fillColor("#1a1f2b");
   doc.rect(x, y, w, h).stroke();
   doc.lineWidth(0.8);
-  drawHorizontalLine(doc, x, x + w, y1);
-  drawHorizontalLine(doc, x, x + w, y2);
-  drawHorizontalLine(doc, x, x + w, y3);
-  drawHorizontalLine(doc, x, x + w, y4);
-  drawHorizontalLine(doc, x, x + w, y5);
-  drawHorizontalLine(doc, x, x + w, y6);
+  drawHorizontalLine(doc, x, x + w, yCompanyBottom);
+  drawHorizontalLine(doc, x, x + w, yLegalBottom);
+  drawHorizontalLine(doc, x, x + w, yTitleBottom);
+  drawHorizontalLine(doc, x, x + w, yPartyBottom);
+  drawHorizontalLine(doc, x, x + w, yItemHeaderBottom);
+  drawHorizontalLine(doc, x, x + w, yItemBodyBottom);
+  drawHorizontalLine(doc, x, x + w, yItemFooterBottom);
+  drawHorizontalLine(doc, x, x + w, yWordsBottom);
 
-  doc.font("Helvetica-Bold").fontSize(13).text("TAX INVOICE", x + 8, y + 6, { width: 220 });
-  doc.font("Helvetica-Bold").fontSize(13).text("ORIGINAL FOR RECIPIENT", x + 8, y + 6, { width: w - 16, align: "right" });
+  const legalWidths = ratiosToWidths(w, [0.39, 0.18, 0.19, 0.24]);
+  const legalX = widthsToPositions(x, legalWidths);
+  drawVerticalLines(doc, x, yCompanyBottom, legalH, legalWidths);
 
-  const headerNameSize = fitTextSize(doc, companyName, w - 20, 34, 21);
-  doc.font("Helvetica-Bold").fontSize(headerNameSize).text(companyName, x + 10, y + 28, { width: w - 20, align: "center" });
-  let lineY = doc.y + 4;
-  for (const line of companyLines) {
-    if (lineY > y1 - 20) {
-      break;
-    }
-    doc.font("Helvetica-Bold").fontSize(10.5).text(line, x + 10, lineY, { width: w - 20, align: "center" });
-    lineY = doc.y + 1;
+  const partySplitX = x + Math.floor(w * 0.66);
+  doc.moveTo(partySplitX, yTitleBottom).lineTo(partySplitX, yPartyBottom).stroke();
+
+  const itemWidths = ratiosToWidths(w, [0.08, 0.38, 0.10, 0.11, 0.11, 0.08, 0.14]);
+  const itemX = widthsToPositions(x, itemWidths);
+  drawVerticalLines(doc, x, yPartyBottom, itemHeaderH + itemBodyH + itemFooterH, itemWidths);
+
+  const bottomSplitX = x + Math.floor(w * 0.63);
+  doc.moveTo(bottomSplitX, yItemFooterBottom).lineTo(bottomSplitX, yPageBottom).stroke();
+
+  const summaryRowH = wordsSummaryH / 4;
+  for (let index = 1; index < 4; index += 1) {
+    drawHorizontalLine(doc, bottomSplitX, x + w, yItemFooterBottom + summaryRowH * index);
   }
+
+  const bankLeftSignSplitY = yWordsBottom + Math.floor(bankSignH * 0.67);
+  drawHorizontalLine(doc, x, bottomSplitX, bankLeftSignSplitY);
+
+  doc.fillColor("#1a1f2b");
+  const headerNameSize = fitTextSize(doc, companyName, w - 190, 26, 16);
+  doc.font("Times-Bold").fontSize(headerNameSize).text(companyName, x + 10, y + 8, { width: w - 190 });
   doc
     .font("Helvetica-Bold")
-    .fontSize(10.5)
-    .text(`INVOICE TYPE: ${gstType === "none" ? "WITHOUT GST" : "WITH GST"}`, x + 10, lineY + 1, {
-      width: w - 20,
+    .fontSize(12)
+    .text(companyPhone ? `Mo. ${companyPhone}` : "Mo. -", x + w - 190, y + 9, { width: 180, align: "right" });
+
+  doc.font("Helvetica-Bold").fontSize(10.5);
+  const addressLine = fitSingleLineText(doc, toUpperText(companyAddressText || "-"), w - 20);
+  doc.text(addressLine, x + 10, y + 38, { width: w - 20, align: "center" });
+
+  doc.font("Helvetica-Bold").fontSize(9.9);
+  doc.text(fitSingleLineText(doc, `GSTIN No. : ${companyGstin}`, legalWidths[0] - 16), legalX[0] + 8, yCompanyBottom + 7, {
+    width: legalWidths[0] - 16
+  });
+  doc.text(fitSingleLineText(doc, `State : ${companyState}`, legalWidths[1] - 16), legalX[1] + 8, yCompanyBottom + 7, {
+    width: legalWidths[1] - 16
+  });
+  doc.text(fitSingleLineText(doc, `State Code : ${companyStateCode}`, legalWidths[2] - 16), legalX[2] + 8, yCompanyBottom + 7, {
+    width: legalWidths[2] - 16
+  });
+  doc.text(fitSingleLineText(doc, `PAN No. ${companyPan}`, legalWidths[3] - 16), legalX[3] + 8, yCompanyBottom + 7, {
+    width: legalWidths[3] - 16
+  });
+
+  doc.font("Helvetica-Bold").fontSize(16).text("TAX INVOICE", x, yLegalBottom + 5, {
+    width: w,
+    align: "center"
+  });
+
+  const partyLeftW = partySplitX - x;
+  const partyRightW = x + w - partySplitX;
+  doc.font("Helvetica-Bold").fontSize(12).text("M/s.", x + 10, yTitleBottom + 12, { width: 40 });
+  doc.font("Helvetica-Bold").fontSize(12).text(customerName, x + 54, yTitleBottom + 12, { width: partyLeftW - 64 });
+  doc.font("Helvetica-Bold").fontSize(12).text("Address :", x + 10, yTitleBottom + 44, { width: 70 });
+  doc.font("Helvetica").fontSize(11).text(customerAddressLines[0] || "-", x + 78, yTitleBottom + 45, { width: partyLeftW - 86 });
+  if (customerAddressLines[1]) {
+    doc.font("Helvetica").fontSize(11).text(customerAddressLines[1], x + 78, yTitleBottom + 64, { width: partyLeftW - 86 });
+  }
+  doc.font("Helvetica-Bold").fontSize(12).text(`GST No. : ${customerGstin}`, x + 10, yTitleBottom + 90, {
+    width: partyLeftW - 16
+  });
+
+  const detailLabelX = partySplitX + 10;
+  const detailLabelW = 88;
+  const detailValueX = detailLabelX + detailLabelW;
+  const detailValueW = partyRightW - detailLabelW - 18;
+  doc.font("Helvetica-Bold").fontSize(13).text("Invoice No. :", detailLabelX, yTitleBottom + 18, { width: detailLabelW });
+  doc
+    .font("Helvetica-Bold")
+    .fontSize(13)
+    .text(fitSingleLineText(doc, invoiceNumber, detailValueW), detailValueX, yTitleBottom + 18, { width: detailValueW });
+  doc.font("Helvetica-Bold").fontSize(13).text("Date :", detailLabelX, yTitleBottom + 68, { width: detailLabelW });
+  doc
+    .font("Helvetica-Bold")
+    .fontSize(13)
+    .text(fitSingleLineText(doc, invoiceDate, detailValueW), detailValueX, yTitleBottom + 68, { width: detailValueW });
+
+  doc.fillColor("#ffffff");
+  const itemHeaders = ["Sr. No.", "Particulars", "HSN", "Qty.", "Rate", "Pcs", "Amount"];
+  for (let index = 0; index < itemHeaders.length; index += 1) {
+    doc.font("Helvetica-Bold").fontSize(11).text(itemHeaders[index], itemX[index], yPartyBottom + 9, {
+      width: itemWidths[index],
       align: "center"
     });
-
-  const partySplitX = x + Math.floor(w * 0.64);
-  const partyHeaderBottom = y1 + 22;
-  doc.moveTo(partySplitX, y1).lineTo(partySplitX, y2).stroke();
-  drawHorizontalLine(doc, x, x + w, partyHeaderBottom);
-
-  doc.font("Helvetica-Bold").fontSize(12).text("Buyer's Detail", x + 8, y1 + 5);
-  doc.font("Helvetica-Bold").fontSize(12).text("Invoice Detail", partySplitX + 8, y1 + 5);
-
-  const leftW = partySplitX - x;
-  let buyerY = partyHeaderBottom + 6;
-  doc
-    .font("Helvetica-Bold")
-    .fontSize(14)
-    .text(toUpperText(invoice.customer?.name) || "WALK-IN CUSTOMER", x + 8, buyerY, { width: leftW - 16 });
-  buyerY = doc.y + 2;
-  if (toText(invoice.customer?.address)) {
-    doc.font("Helvetica").fontSize(10.5).text(toText(invoice.customer.address), x + 8, buyerY, { width: leftW - 16 });
-    buyerY = doc.y + 2;
   }
-  if (toText(invoice.customer?.phone)) {
-    doc.font("Helvetica").fontSize(10.5).text(`Contact No : ${toText(invoice.customer.phone)}`, x + 8, buyerY, { width: leftW - 16 });
-    buyerY = doc.y + 1;
-  }
-  doc.font("Helvetica-Bold").fontSize(10.5).text(`GST NO : ${toText(invoice.customer?.gstin) || "-"}`, x + 8, buyerY, { width: leftW - 16 });
-  buyerY = doc.y + 1;
-  doc
-    .font("Helvetica-Bold")
-    .fontSize(10.5)
-    .text(`STATE CODE : ${toText(invoice.customer?.stateCode) || "-"}`, x + 8, buyerY, { width: leftW - 16 });
+  doc.fillColor("#1a1f2b");
 
-  const rightW = x + w - partySplitX;
-  const labelW = Math.floor(rightW * 0.46);
-  const paymentMode = normalizePaymentMode(invoice, settings).replace(/[^A-Z ]/g, "") || "-";
-  const deliveryAddress =
-    toUpperText(invoice.deliveryAddress) || toUpperText(invoice.customer?.name) || toUpperText(invoice.customer?.address) || "-";
-  const challanNo = toUpperText(invoice.challanNo) || "-";
-  const detailRows = [
-    ["Invoice No", invoiceNumber],
-    ["Invoice Date", formatDateTime(invoice.createdAt)],
-    ["Challan No", challanNo],
-    ["Delv Add", deliveryAddress],
-    ["Pay Mode", paymentMode],
-    ["Status", status]
-  ];
-  let detailY = partyHeaderBottom + 7;
-  const detailValueWidth = rightW - labelW - 8;
-  for (const [label, value] of detailRows) {
-    doc.font("Helvetica-Bold").fontSize(10.5).text(`${label} :`, partySplitX + 8, detailY, { width: labelW - 8 });
-    doc.font("Helvetica-Bold").fontSize(10.5).text(fitSingleLineText(doc, toUpperText(value) || "-", detailValueWidth), partySplitX + labelW, detailY, {
-      width: detailValueWidth
-    });
-    detailY += 14.5;
+  const itemRowH = 22;
+  const maxItemRows = Math.max(1, Math.floor(itemBodyH / itemRowH));
+  for (let row = 1; row <= Math.min(items.length, maxItemRows); row += 1) {
+    drawHorizontalLine(doc, x, x + w, yItemHeaderBottom + row * itemRowH);
   }
 
-  const itemHeaderBottom = y2 + 24;
-  const itemBandTop = y3 - 18;
-  drawHorizontalLine(doc, x, x + w, itemHeaderBottom);
-  drawHorizontalLine(doc, x, x + w, itemBandTop);
-
-  const itemWidths = ratiosToWidths(w, [0.05, 0.39, 0.11, 0.08, 0.1, 0.09, 0.08, 0.1]);
-  const itemX = widthsToPositions(x, itemWidths);
-  drawVerticalLines(doc, x, y2, itemsH, itemWidths);
-
-  const headers = ["", "PARTICULAR", "HSN CODE", "GST %", "QTY", "UNIT", "RATE", "AMOUNT"];
-  for (let index = 0; index < headers.length; index += 1) {
-    doc.font("Helvetica-Bold").fontSize(11).text(headers[index], index === 1 ? itemX[index] + 4 : itemX[index], y2 + 6, {
-      width: index === 1 ? itemWidths[index] - 8 : itemWidths[index],
-      align: index === 1 ? "left" : "center"
-    });
-  }
-
-  let itemY = itemHeaderBottom;
-  let shown = 0;
-  for (let index = 0; index < items.length; index += 1) {
+  const drawCount = Math.min(items.length, maxItemRows);
+  for (let index = 0; index < drawCount; index += 1) {
+    const rowTop = yItemHeaderBottom + index * itemRowH;
     const item = items[index];
-    const name = toText(item.productName) || "Item";
-    doc.font("Helvetica").fontSize(9.5);
-    const rowHeight = Math.max(22, Math.ceil(doc.heightOfString(name, { width: itemWidths[1] - 8 }) + 5));
-    if (itemY + rowHeight > itemBandTop - 18) {
-      break;
-    }
-
-    const values = [
+    const unitLabel = toUpperText(item.unit) || "PCS";
+    const itemValues = [
       String(index + 1),
-      name,
+      toText(item.productName) || "Item",
       toText(item.hsnSac) || "-",
-      gstType === "none" ? "0" : formatPercent(inferItemTaxRate(item)),
       formatAmount(item.quantity),
-      toUpperText(item.unit) || "PCS",
       formatAmount(item.unitPrice),
+      unitLabel,
       formatAmount(item.lineTotal)
     ];
-
-    doc.font("Helvetica").fontSize(9.5).text(values[0], itemX[0], itemY + 6, { width: itemWidths[0], align: "center" });
-    doc.font("Helvetica").fontSize(9.5).text(values[1], itemX[1] + 4, itemY + 4, { width: itemWidths[1] - 8 });
-    doc.font("Helvetica").fontSize(9.5).text(values[2], itemX[2], itemY + 6, { width: itemWidths[2], align: "center" });
-    doc.font("Helvetica").fontSize(9.5).text(values[3], itemX[3], itemY + 6, { width: itemWidths[3], align: "center" });
-    doc.font("Helvetica").fontSize(9.5).text(values[4], itemX[4], itemY + 6, { width: itemWidths[4], align: "center" });
-    doc.font("Helvetica").fontSize(9.5).text(values[5], itemX[5], itemY + 6, { width: itemWidths[5], align: "center" });
-    doc.font("Helvetica").fontSize(9.5).text(values[6], itemX[6] + 2, itemY + 6, { width: itemWidths[6] - 4, align: "right" });
-    doc.font("Helvetica").fontSize(9.5).text(values[7], itemX[7] + 2, itemY + 6, { width: itemWidths[7] - 4, align: "right" });
-
-    itemY += rowHeight;
-    drawHorizontalLine(doc, x, x + w, itemY);
-    shown += 1;
-  }
-  if (shown < items.length && itemY + 18 <= itemBandTop) {
-    const hidden = items.length - shown;
-    doc.font("Helvetica-Oblique").fontSize(9).text(`... ${hidden} more item(s) not shown`, itemX[1] + 4, itemY + 5, {
+    doc.font("Helvetica").fontSize(10.5).text(itemValues[0], itemX[0], rowTop + 6, { width: itemWidths[0], align: "center" });
+    doc.font("Helvetica").fontSize(10.5).text(fitSingleLineText(doc, itemValues[1], itemWidths[1] - 8), itemX[1] + 4, rowTop + 6, {
       width: itemWidths[1] - 8
     });
-    itemY += 18;
-    drawHorizontalLine(doc, x, x + w, itemY);
+    doc.font("Helvetica").fontSize(10.5).text(itemValues[2], itemX[2], rowTop + 6, { width: itemWidths[2], align: "center" });
+    doc.font("Helvetica").fontSize(10.5).text(itemValues[3], itemX[3], rowTop + 6, { width: itemWidths[3], align: "center" });
+    doc.font("Helvetica").fontSize(10.5).text(itemValues[4], itemX[4] + 2, rowTop + 6, { width: itemWidths[4] - 4, align: "right" });
+    doc.font("Helvetica").fontSize(10.5).text(itemValues[5], itemX[5], rowTop + 6, { width: itemWidths[5], align: "center" });
+    doc.font("Helvetica").fontSize(10.5).text(itemValues[6], itemX[6] + 2, rowTop + 6, { width: itemWidths[6] - 4, align: "right" });
   }
 
-  if (status === "PAID") {
-    const stampX = x + w * 0.45;
-    const stampY = itemHeaderBottom + (itemBandTop - itemHeaderBottom) / 2;
-    doc.save();
-    doc.fillColor("#bf0d3e").fillOpacity(0.14);
-    doc.font("Helvetica-Bold").fontSize(86);
-    doc.rotate(-15, { origin: [stampX, stampY] });
-    doc.text("PAID", stampX - 110, stampY - 36, { width: 220, align: "center" });
-    doc.restore();
-    doc.fillColor("#111111");
+  if (items.length > maxItemRows) {
+    doc.font("Helvetica-Oblique").fontSize(9.5).text(`... ${items.length - maxItemRows} more item(s)`, itemX[1] + 4, yItemBodyBottom - 16, {
+      width: itemWidths[1] - 8
+    });
   }
 
-  doc.font("Helvetica-Bold").fontSize(11).text(formatAmount(qtyTotal), itemX[4], itemBandTop + 3, { width: itemWidths[4], align: "center" });
-  doc.font("Helvetica-Bold").fontSize(11).text(formatAmount(amountTotal), itemX[7] + 2, itemBandTop + 3, {
-    width: itemWidths[7] - 4,
+  doc.font("Helvetica-Bold").fontSize(11).text(formatAmount(qtyTotal), itemX[3], yItemBodyBottom + 6, {
+    width: itemWidths[3],
+    align: "center"
+  });
+  doc.font("Helvetica-Bold").fontSize(11).text(formatAmount(amountTotal), itemX[6] + 2, yItemBodyBottom + 6, {
+    width: itemWidths[6] - 4,
     align: "right"
   });
 
-  doc.font("Helvetica-Bold").fontSize(11).text("Remarks:", x + 8, y3 + 5);
-  doc.font("Helvetica").fontSize(10).text(toText(invoice.notes) || "-", x + 70, y3 + 5, { width: w - 78 });
+  doc.font("Helvetica-Bold").fontSize(11).text("Total Invoice Amount in Words", x + 8, yItemFooterBottom + 8, {
+    width: bottomSplitX - x - 16,
+    align: "center"
+  });
+  doc.font("Helvetica").fontSize(10).text(amountWords, x + 8, yItemFooterBottom + 28, {
+    width: bottomSplitX - x - 16,
+    align: "center"
+  });
 
-  const taxSplitX = x + Math.floor(w * 0.62);
-  const taxHeaderBottom = y4 + 22;
-  doc.moveTo(taxSplitX, y4).lineTo(taxSplitX, y5).stroke();
-  drawHorizontalLine(doc, x, taxSplitX, taxHeaderBottom);
-
-  const taxWidths = ratiosToWidths(taxSplitX - x, [0.24, 0.1, 0.14, 0.1, 0.14, 0.1, 0.18]);
-  const taxX = widthsToPositions(x, taxWidths);
-  drawVerticalLines(doc, x, y4, taxH, taxWidths);
-
-  const taxHeaders = ["Taxable\nAmount", "SGST\n%", "Amount", "CGST\n%", "Amount", "IGST\n%", "Amount"];
-  for (let index = 0; index < taxHeaders.length; index += 1) {
-    doc.font("Helvetica-Bold").fontSize(9).text(taxHeaders[index], taxX[index] + 1, y4 + 4, {
-      width: taxWidths[index] - 2,
-      align: "center"
-    });
-  }
-
-  const rowArea = y5 - taxHeaderBottom;
-  const rowH = taxDisplayRows.length > 0 ? rowArea / taxDisplayRows.length : rowArea;
-  for (let index = 0; index < taxDisplayRows.length; index += 1) {
-    const row = taxDisplayRows[index];
-    const rowTop = taxHeaderBottom + index * rowH;
-    if (index > 0) {
-      drawHorizontalLine(doc, x, taxSplitX, rowTop);
-    }
-    doc.font(row.totalRow ? "Helvetica-Bold" : "Helvetica").fontSize(10);
-    doc.text(formatAmount(row.taxable), taxX[0] + 1, rowTop + 5, { width: taxWidths[0] - 2, align: "right" });
-    doc.text(formatPercent(row.sgstRate), taxX[1], rowTop + 5, { width: taxWidths[1], align: "center" });
-    doc.text(formatAmount(row.sgstAmount), taxX[2] + 1, rowTop + 5, { width: taxWidths[2] - 2, align: "right" });
-    doc.text(formatPercent(row.cgstRate), taxX[3], rowTop + 5, { width: taxWidths[3], align: "center" });
-    doc.text(formatAmount(row.cgstAmount), taxX[4] + 1, rowTop + 5, { width: taxWidths[4] - 2, align: "right" });
-    doc.text(formatPercent(row.igstRate), taxX[5], rowTop + 5, { width: taxWidths[5], align: "center" });
-    doc.text(formatAmount(row.igstAmount), taxX[6] + 1, rowTop + 5, { width: taxWidths[6] - 2, align: "right" });
-  }
-
-  const discounts = roundMoney(normalizeAmount(invoice.lineDiscountTotal) + normalizeAmount(invoice.invoiceDiscount));
+  const taxLabel1 = gstType === "inter" ? `IGST ${formatPercent(igstRate)}%` : `CGST ${formatPercent(cgstRate)}%`;
+  const taxValue1 = gstType === "inter" ? igstTotal : cgstTotal;
+  const taxLabel2 = gstType === "inter" ? "SGST 0%" : `SGST ${formatPercent(sgstRate)}%`;
+  const taxValue2 = gstType === "inter" ? 0 : sgstTotal;
   const summaryRows = [
-    { label: "TAXABLE VALUE", value: normalizeAmount(invoice.subtotalTaxable) },
-    ...(discounts > 0 ? [{ label: "(-) DISCOUNT", value: discounts }] : []),
-    { label: "(+) FREIGHT", value: normalizeAmount(invoice.shipping) },
-    { label: "(+) SGST", value: normalizeAmount(invoice.sgstTotal) },
-    { label: "(+) CGST", value: normalizeAmount(invoice.cgstTotal) },
-    { label: "(+) IGST", value: normalizeAmount(invoice.igstTotal) },
-    { label: "(+) TCS", value: normalizeAmount(invoice.tcsAmount) },
-    { label: "(+) ROUND OFF", value: normalizeAmount(invoice.roundOff) }
+    ["Sub Total", subtotalTaxable],
+    [taxLabel1, taxValue1],
+    [taxLabel2, taxValue2],
+    ["Grand Total", grandTotal]
   ];
-  const summaryValueW = 90;
-  const summaryTopY = y4 + 8;
-  const summaryBottomLimit = y5 - 34;
-  const summaryLineH = Math.max(
-    10,
-    Math.min(13, Math.floor((summaryBottomLimit - summaryTopY) / Math.max(summaryRows.length, 1)))
-  );
-  let summaryY = summaryTopY;
-  for (const row of summaryRows) {
-    doc.font("Helvetica").fontSize(11).text(row.label, taxSplitX + 8, summaryY, { width: w - (taxSplitX - x) - summaryValueW - 16 });
-    doc.font("Helvetica").fontSize(11).text(formatAmount(row.value), x + w - summaryValueW - 8, summaryY, {
+  const summaryValueW = 92;
+  for (let index = 0; index < summaryRows.length; index += 1) {
+    const [label, value] = summaryRows[index];
+    const rowY = yItemFooterBottom + index * summaryRowH + 5;
+    doc.font(index === summaryRows.length - 1 ? "Helvetica-Bold" : "Helvetica-Bold").fontSize(10.8).text(label, bottomSplitX + 8, rowY, {
+      width: w - (bottomSplitX - x) - summaryValueW - 18
+    });
+    doc.font(index === summaryRows.length - 1 ? "Helvetica-Bold" : "Helvetica").fontSize(10.8).text(formatAmount(value), x + w - summaryValueW - 8, rowY, {
       width: summaryValueW,
       align: "right"
     });
-    summaryY += summaryLineH;
   }
-  const netLineY = Math.min(y5 - 30, summaryY + 1);
-  const netTextY = Math.min(y5 - 24, netLineY + 4);
-  drawHorizontalLine(doc, taxSplitX, x + w, netLineY);
-  doc.font("Helvetica-Bold").fontSize(14).text("NET AMOUNT", taxSplitX + 8, netTextY, {
-    width: w - (taxSplitX - x) - summaryValueW - 16
+
+  doc.font("Helvetica-Bold").fontSize(14).text("Bank Details", x + 8, yWordsBottom + 8, {
+    width: bottomSplitX - x - 16,
+    align: "center"
   });
-  doc.font("Helvetica-Bold").fontSize(14).text(formatAmount(invoice.total), x + w - summaryValueW - 8, netTextY, {
-    width: summaryValueW,
-    align: "right"
-  });
-
-  doc.font("Helvetica").fontSize(12).text(amountToWords(invoice.total), x + 8, y5 + 5, { width: w - 16 });
-
-  const footerSplitX = x + Math.floor(w * 0.60);
-  const signTop = y6 + footerH - 44;
-  doc.moveTo(footerSplitX, y6).lineTo(footerSplitX, y + h).stroke();
-  drawHorizontalLine(doc, x, x + w, signTop);
-
-  doc.font("Helvetica-Bold").fontSize(13).text("Terms & Conditions:", x + 8, y6 + 6);
-  const terms = [
-    "Our risks and responsibilities cease once the goods have left our premises.",
-    "No Exchange and No Return Without Invoice.",
-  ];
-  let termsY = y6 + 24;
-  for (let index = 0; index < terms.length; index += 1) {
-    doc.font("Helvetica").fontSize(10).text(`${index + 1}. ${terms[index]}`, x + 10, termsY, { width: footerSplitX - x - 20 });
-    termsY = doc.y + 3;
-  }
-  doc.font("Helvetica").fontSize(11).text("Receiver Sign", x + 8, signTop + 14);
-
-  const rightWFooter = x + w - footerSplitX;
-  const qrAreaSplitX = footerSplitX + Math.floor(rightWFooter * 0.34);
-  doc.moveTo(qrAreaSplitX, y6).lineTo(qrAreaSplitX, signTop).stroke();
-  const qrCellWidth = qrAreaSplitX - footerSplitX;
-  const qrCellHeight = signTop - y6;
-  const qrSize = Math.max(62, Math.min(86, qrCellWidth - 10, qrCellHeight - 10));
-  const qrX = footerSplitX + Math.floor((qrCellWidth - qrSize) / 2);
-  const qrY = y6 + Math.floor((qrCellHeight - qrSize) / 2);
-  if (qrBuffer) {
-    doc.image(qrBuffer, qrX, qrY, { width: qrSize, height: qrSize });
-  } else {
-    doc.rect(qrX, qrY, qrSize, qrSize).stroke();
-    doc.font("Helvetica").fontSize(9).text("UPI QR", qrX, qrY + 36, { width: qrSize, align: "center" });
-  }
-
-  const bankX = qrAreaSplitX + 8;
-  const bankDetails = [
-    ["Our Bank Detail", ""],
-    ["Bank Name", toText(settings.bankName)],
-    ["A/C Name", toText(settings.bankAccountName)],
-    ["A/C No", toText(settings.bankAccountNumber)],
-    ["IFSC Code", toText(settings.bankIfsc)],
-    ["UPI ID", toText(settings.upiId)]
-  ];
-  let bankY = y6 + 8;
-  const bankLabelWidth = 50;
-  const bankValueWidth = x + w - bankX - bankLabelWidth - 8;
-  for (const [label, value] of bankDetails) {
-    if (label === "Our Bank Detail") {
-      doc.font("Helvetica-Bold").fontSize(12).text(label, bankX, bankY, {
-        width: x + w - bankX - 8
-      });
-      bankY += 16;
-      continue;
-    }
-    if (!value) {
-      continue;
-    }
-    doc.font("Helvetica-Bold").fontSize(9.4).text(`${label} :`, bankX, bankY, { width: bankLabelWidth });
-    doc.font("Helvetica").fontSize(9.4);
-    const valueText = toText(value);
-    const valueHeight = doc.heightOfString(valueText, { width: bankValueWidth, lineBreak: true });
-    const rowHeight = Math.max(11, Math.min(20, Math.ceil(valueHeight)));
-    doc.text(valueText, bankX + bankLabelWidth, bankY, {
-      width: bankValueWidth,
-      height: rowHeight
-    });
-    bankY += rowHeight + 1;
-    if (bankY > signTop - 4) {
+  const bankLines = [
+    `A/C No. : ${toText(settings.bankAccountNumber) || "-"}`,
+    `IFSC : ${toText(settings.bankIfsc) || "-"}`,
+    `BANK : ${toText(settings.bankName) || "-"}`,
+    toText(settings.bankBranch) ? `Branch : ${toText(settings.bankBranch)}` : ""
+  ].filter(Boolean);
+  let bankY = yWordsBottom + 28;
+  for (const line of bankLines) {
+    doc.font("Helvetica-Bold").fontSize(12).text(line, x + 10, bankY, { width: bottomSplitX - x - 20 });
+    bankY += 20;
+    if (bankY > bankLeftSignSplitY - 8) {
       break;
     }
   }
 
-  doc.font("Helvetica-Bold").fontSize(12).text(
-    fitSingleLineText(doc, `For, ${companyName}`, rightWFooter - 16),
-    footerSplitX + 8,
-    signTop + 5,
-    {
-    width: rightWFooter - 16,
-    align: "right"
-    }
-  );
-  const signatureY = signTop + 24;
-  doc.moveTo(x + w - 130, signatureY).lineTo(x + w - 12, signatureY).stroke();
-  doc.font("Helvetica-Bold").fontSize(10.5).text("Authorised Signatory", footerSplitX + 8, signTop + 27, {
-    width: rightWFooter - 16,
+  doc.font("Helvetica-Bold").fontSize(15).text("Customer Sign", x + 8, bankLeftSignSplitY + 10, {
+    width: bottomSplitX - x - 16,
+    align: "center"
+  });
+
+  const rightBottomW = x + w - bottomSplitX;
+  doc.font("Helvetica").fontSize(11).text("GST Payable on Reverse Charge", bottomSplitX + 8, yWordsBottom + 8, {
+    width: rightBottomW - 16
+  });
+  doc.font("Helvetica").fontSize(8.8).text("Certified that the particulars given above are true and correct.", bottomSplitX + 8, yWordsBottom + 26, {
+    width: rightBottomW - 16
+  });
+  doc.font("Times-Bold").fontSize(15).text(`For, ${companyName}`, bottomSplitX + 8, yWordsBottom + 44, {
+    width: rightBottomW - 16,
+    align: "center"
+  });
+  drawHorizontalLine(doc, x + w - 130, x + w - 12, yPageBottom - 34);
+  doc.font("Helvetica-Bold").fontSize(11).text("Authorised Signatory", bottomSplitX + 8, yPageBottom - 24, {
+    width: rightBottomW - 16,
     align: "right"
   });
 
