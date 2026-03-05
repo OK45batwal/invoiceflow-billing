@@ -9,6 +9,7 @@ import {
   createInvoice,
   createProduct,
   createRecurringTemplate,
+  deleteCustomerById,
   deleteInvoiceById,
   deleteProductById,
   deleteRecurringTemplate,
@@ -24,6 +25,7 @@ import {
   listUsers,
   runRecurringNow,
   restoreBackupData,
+  updateCustomerById,
   updateRecurringTemplate,
   updateSettings
 } from "./store.js";
@@ -163,6 +165,47 @@ app.post("/api/customers", requireAuth, (req, res) => {
       stateCode: req.body?.stateCode
     });
     return res.status(201).json(customer);
+  } catch (error) {
+    return res.status(400).json({ error: error.message });
+  }
+});
+
+app.put("/api/customers/:id", requireAuth, (req, res) => {
+  const customerId = Number(req.params.id);
+  if (!Number.isInteger(customerId) || customerId <= 0) {
+    return res.status(400).json({ error: "Customer ID must be a positive integer." });
+  }
+
+  try {
+    const customer = updateCustomerById(customerId, {
+      name: req.body?.name,
+      email: req.body?.email,
+      phone: req.body?.phone,
+      address: req.body?.address,
+      gstin: req.body?.gstin,
+      stateCode: req.body?.stateCode
+    });
+    if (!customer) {
+      return res.status(404).json({ error: "Customer not found." });
+    }
+    return res.json(customer);
+  } catch (error) {
+    return res.status(400).json({ error: error.message });
+  }
+});
+
+app.delete("/api/customers/:id", requireAuth, requireRole("admin"), (req, res) => {
+  const customerId = Number(req.params.id);
+  if (!Number.isInteger(customerId) || customerId <= 0) {
+    return res.status(400).json({ error: "Customer ID must be a positive integer." });
+  }
+
+  try {
+    const customer = deleteCustomerById(customerId);
+    if (!customer) {
+      return res.status(404).json({ error: "Customer not found." });
+    }
+    return res.json({ message: `Customer "${customer.name}" removed.`, customer });
   } catch (error) {
     return res.status(400).json({ error: error.message });
   }

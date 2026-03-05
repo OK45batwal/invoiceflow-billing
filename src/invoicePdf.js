@@ -86,6 +86,17 @@ function formatDateTime(value) {
   })}`;
 }
 
+function normalizeGstType(value) {
+  const normalized = String(value || "intra").toLowerCase();
+  if (normalized === "none" || normalized === "without_gst" || normalized === "without-gst") {
+    return "none";
+  }
+  if (normalized === "inter") {
+    return "inter";
+  }
+  return "intra";
+}
+
 function ratiosToWidths(totalWidth, ratios) {
   // Convert ratio-based columns into integer widths while preserving full total width.
   const widths = [];
@@ -382,7 +393,23 @@ export async function createInvoicePdfBuffer(invoice, settings = {}) {
   const companyProfile = getInvoiceCompanyProfile(invoice, settings);
   const companyName = toUpperText(companyProfile.name || "My Company");
   const invoiceNumber = toText(invoice.invoiceNumber) || `#${invoice.id || 0}`;
-  const gstType = String(invoice.gstType || "intra");
+  const gstType = normalizeGstType(invoice.gstType);
+  const isNonGstInvoice = gstType === "none";
+  let upiQrBuffer = null;
+  if (isNonGstInvoice) {
+    const upiLink = buildUpiLink({ ...invoice, gstType }, settings);
+    if (upiLink) {
+      try {
+        upiQrBuffer = await QRCode.toBuffer(upiLink, {
+          margin: 1,
+          width: 220,
+          errorCorrectionLevel: "M"
+        });
+      } catch (_error) {
+        upiQrBuffer = null;
+      }
+    }
+  }
   const items = invoice.items || [];
   const qtyTotal = roundMoney(items.reduce((sum, item) => sum + normalizeAmount(item.quantity), 0));
   const amountTotal = roundMoney(items.reduce((sum, item) => sum + normalizeAmount(item.lineTotal), 0));
@@ -481,19 +508,21 @@ export async function createInvoicePdfBuffer(invoice, settings = {}) {
   const addressLine = fitSingleLineText(doc, toUpperText(companyAddressText || "-"), w - 20);
   doc.text(addressLine, x + 10, y + 38, { width: w - 20, align: "center" });
 
-  doc.font("Helvetica-Bold").fontSize(9.9);
-  doc.text(fitSingleLineText(doc, `GSTIN No. : ${companyGstin}`, legalWidths[0] - 16), legalX[0] + 8, yCompanyBottom + 7, {
-    width: legalWidths[0] - 16
-  });
-  doc.text(fitSingleLineText(doc, `State : ${companyState}`, legalWidths[1] - 16), legalX[1] + 8, yCompanyBottom + 7, {
-    width: legalWidths[1] - 16
-  });
-  doc.text(fitSingleLineText(doc, `State Code : ${companyStateCode}`, legalWidths[2] - 16), legalX[2] + 8, yCompanyBottom + 7, {
-    width: legalWidths[2] - 16
-  });
-  doc.text(fitSingleLineText(doc, `PAN No. ${companyPan}`, legalWidths[3] - 16), legalX[3] + 8, yCompanyBottom + 7, {
-    width: legalWidths[3] - 16
-  });
+  if (!isNonGstInvoice) {
+    doc.font("Helvetica-Bold").fontSize(9.9);
+    doc.text(fitSingleLineText(doc, `GSTIN No. : ${companyGstin}`, legalWidths[0] - 16), legalX[0] + 8, yCompanyBottom + 7, {
+      width: legalWidths[0] - 16
+    });
+    doc.text(fitSingleLineText(doc, `State : ${companyState}`, legalWidths[1] - 16), legalX[1] + 8, yCompanyBottom + 7, {
+      width: legalWidths[1] - 16
+    });
+    doc.text(fitSingleLineText(doc, `State Code : ${companyStateCode}`, legalWidths[2] - 16), legalX[2] + 8, yCompanyBottom + 7, {
+      width: legalWidths[2] - 16
+    });
+    doc.text(fitSingleLineText(doc, `PAN No. ${companyPan}`, legalWidths[3] - 16), legalX[3] + 8, yCompanyBottom + 7, {
+      width: legalWidths[3] - 16
+    });
+  }
 
   doc.font("Helvetica-Bold").fontSize(16).text("TAX INVOICE", x, yLegalBottom + 5, {
     width: w,
@@ -509,9 +538,11 @@ export async function createInvoicePdfBuffer(invoice, settings = {}) {
   if (customerAddressLines[1]) {
     doc.font("Helvetica").fontSize(11).text(customerAddressLines[1], x + 78, yTitleBottom + 64, { width: partyLeftW - 86 });
   }
-  doc.font("Helvetica-Bold").fontSize(12).text(`GST No. : ${customerGstin}`, x + 10, yTitleBottom + 90, {
-    width: partyLeftW - 16
-  });
+  if (!isNonGstInvoice) {
+    doc.font("Helvetica-Bold").fontSize(12).text(`GST No. : ${customerGstin}`, x + 10, yTitleBottom + 90, {
+      width: partyLeftW - 16
+    });
+  }
 
   const detailLabelX = partySplitX + 10;
   const detailLabelW = 88;
@@ -620,6 +651,15 @@ export async function createInvoicePdfBuffer(invoice, settings = {}) {
     width: bottomSplitX - x - 16,
     align: "center"
   });
+  const bankAreaTop = yWordsBottom;
+  const bankAreaBottom = bankLeftSignSplitY;
+  const bankAreaHeight = Math.max(0, bankAreaBottom - bankAreaTop);
+  const qrSize = upiQrBuffer ? Math.max(52, Math.min(74, Math.floor(bankAreaHeight - 34))) : 0;
+  const qrX = upiQrBuffer ? bottomSplitX - qrSize - 14 : 0;
+  const qrY = bankAreaTop + 22;
+  const bankTextX = x + 10;
+  const bankTextRight = upiQrBuffer ? qrX - 8 : bottomSplitX - 10;
+  const bankTextWidth = Math.max(120, bankTextRight - bankTextX);
   const bankLines = [
     `A/C No. : ${toText(settings.bankAccountNumber) || "-"}`,
     `IFSC : ${toText(settings.bankIfsc) || "-"}`,
@@ -628,11 +668,19 @@ export async function createInvoicePdfBuffer(invoice, settings = {}) {
   ].filter(Boolean);
   let bankY = yWordsBottom + 28;
   for (const line of bankLines) {
-    doc.font("Helvetica-Bold").fontSize(12).text(line, x + 10, bankY, { width: bottomSplitX - x - 20 });
+    doc.font("Helvetica-Bold").fontSize(12).text(line, bankTextX, bankY, { width: bankTextWidth });
     bankY += 20;
-    if (bankY > bankLeftSignSplitY - 8) {
+    if (bankY > bankLeftSignSplitY - 10) {
       break;
     }
+  }
+
+  if (upiQrBuffer) {
+    doc.image(upiQrBuffer, qrX, qrY, { fit: [qrSize, qrSize] });
+    doc.font("Helvetica-Bold").fontSize(9).text("UPI QR", qrX, qrY + qrSize + 2, {
+      width: qrSize,
+      align: "center"
+    });
   }
 
   doc.font("Helvetica-Bold").fontSize(15).text("Customer Sign", x + 8, bankLeftSignSplitY + 10, {

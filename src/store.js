@@ -119,6 +119,17 @@ function toText(value) {
   return String(value || "").trim();
 }
 
+function normalizeCustomerProfile(input = {}, fallback = {}) {
+  return {
+    name: toText(input?.name ?? fallback?.name),
+    email: toText(input?.email ?? fallback?.email),
+    phone: toText(input?.phone ?? fallback?.phone),
+    address: toText(input?.address ?? fallback?.address),
+    gstin: toText(input?.gstin ?? fallback?.gstin),
+    stateCode: toText(input?.stateCode ?? fallback?.stateCode)
+  };
+}
+
 function normalizeCompanyProfile(input = {}, fallback = {}) {
   return {
     name: toText(input?.name ?? fallback?.name),
@@ -472,6 +483,8 @@ function normalizeInvoice(invoice) {
   const companyProfileType = normalizeCompanyProfileType(invoice.companyProfileType, gstType);
   const normalizedCompanyProfile = normalizeCompanyProfile(invoice.companyProfile || {}, {});
   const hasCompanyProfile = Object.values(normalizedCompanyProfile).some((value) => Boolean(value));
+  const normalizedCustomerProfile = normalizeCustomerProfile(invoice.customerProfile || {}, {});
+  const hasCustomerProfile = Object.values(normalizedCustomerProfile).some((value) => Boolean(value));
 
   return {
     id: Number(invoice.id) || 0,
@@ -496,6 +509,7 @@ function normalizeInvoice(invoice) {
     total,
     companyProfileType,
     companyProfile: hasCompanyProfile ? normalizedCompanyProfile : null,
+    customerProfile: hasCustomerProfile ? normalizedCustomerProfile : null,
     payments
   };
 }
@@ -726,10 +740,27 @@ function publicCustomer(customer) {
 }
 
 function hydrateInvoice(invoice, store) {
-  const customer = store.customers.find((entry) => entry.id === invoice.customerId) || null;
+  const liveCustomer = store.customers.find((entry) => entry.id === invoice.customerId) || null;
+  const baseCustomer = publicCustomer(liveCustomer);
+  const snapshot = invoice.customerProfile
+    ? normalizeCustomerProfile(invoice.customerProfile, {})
+    : null;
+  const hasSnapshot = snapshot && Object.values(snapshot).some((value) => Boolean(value));
+  const customer = hasSnapshot
+    ? {
+      id: baseCustomer?.id || Number(invoice.customerId) || 0,
+      name: snapshot.name || baseCustomer?.name || "Unknown",
+      email: snapshot.email || baseCustomer?.email || "",
+      phone: snapshot.phone || baseCustomer?.phone || "",
+      address: snapshot.address || baseCustomer?.address || "",
+      gstin: snapshot.gstin || baseCustomer?.gstin || "",
+      stateCode: snapshot.stateCode || baseCustomer?.stateCode || "",
+      createdAt: baseCustomer?.createdAt || invoice.createdAt
+    }
+    : baseCustomer;
   return {
     ...invoice,
-    customer: publicCustomer(customer),
+    customer,
     ...paymentSummary(invoice)
   };
 }
@@ -818,6 +849,7 @@ function createInvoiceInternal(store, input, createdAtValue = new Date()) {
   if (!customer) {
     throw new Error("Customer not found.");
   }
+  const customerProfile = normalizeCustomerProfile(customer, {});
 
   const gstType = normalizeGstType(input.gstType);
   const rawItems = Array.isArray(input.items) ? input.items : [];
@@ -869,6 +901,7 @@ function createInvoiceInternal(store, input, createdAtValue = new Date()) {
     total,
     companyProfileType: companySelection.profileType,
     companyProfile: { ...companySelection.profile },
+    customerProfile,
     payments: []
   };
 
@@ -1008,6 +1041,64 @@ export function createCustomer(input) {
   };
   store.nextCustomerId += 1;
   store.customers.push(customer);
+  writeStore(store);
+  return publicCustomer(customer);
+}
+
+export function updateCustomerById(id, input) {
+  const store = ensurePersistedStore();
+  const customer = store.customers.find((entry) => entry.id === Number(id));
+  if (!customer) {
+    return null;
+  }
+
+  const nextName = input.name !== undefined ? toText(input.name) : customer.name;
+  if (!nextName) {
+    throw new Error("Customer name is required.");
+  }
+
+  customer.name = nextName;
+  if (input.email !== undefined) {
+    customer.email = toText(input.email);
+  }
+  if (input.phone !== undefined) {
+    customer.phone = toText(input.phone);
+  }
+  if (input.address !== undefined) {
+    customer.address = toText(input.address);
+  }
+  if (input.gstin !== undefined) {
+    customer.gstin = toText(input.gstin);
+  }
+  if (input.stateCode !== undefined) {
+    customer.stateCode = toText(input.stateCode);
+  }
+
+  writeStore(store);
+  return publicCustomer(customer);
+}
+
+export function deleteCustomerById(id) {
+  const store = ensurePersistedStore();
+  const customerId = Number(id);
+  const index = store.customers.findIndex((entry) => entry.id === customerId);
+  if (index < 0) {
+    return null;
+  }
+
+  const linkedInvoice = store.invoices.find((invoice) => invoice.customerId === customerId);
+  if (linkedInvoice) {
+    throw new Error(
+      `Customer is used in invoice ${linkedInvoice.invoiceNumber || `#${linkedInvoice.id}`}.`
+    );
+  }
+
+  const linkedTemplate = store.recurringTemplates.find((template) => template.customerId === customerId);
+  if (linkedTemplate) {
+    throw new Error(`Customer is used in recurring template "${linkedTemplate.name}".`);
+  }
+
+  const [customer] = store.customers.splice(index, 1);
   writeStore(store);
   return publicCustomer(customer);
 }

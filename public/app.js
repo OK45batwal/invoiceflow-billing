@@ -12,9 +12,16 @@ const tabNav = document.querySelector("#tab-nav");
 const tabButtons = [...document.querySelectorAll('[data-bs-toggle="pill"]')];
 const tabPanels = [...document.querySelectorAll(".tab-panel")];
 const adminOnlyNodes = [...document.querySelectorAll(".admin-only")];
+const sidebarToggleButton = document.querySelector("#sidebar-toggle");
+const sidebarOverlay = document.querySelector("#sidebar-overlay");
+const globalSearchInput = document.querySelector("#global-search");
+const topMenuButtons = [...document.querySelectorAll("[data-tab-open]")];
 
 const customerForm = document.querySelector("#customer-form");
 const customerTableBody = document.querySelector("#customer-table-body");
+const customerIdInput = document.querySelector("#customer-id");
+const customerSubmitButton = document.querySelector("#customer-submit-btn");
+const customerCancelButton = document.querySelector("#customer-cancel-btn");
 
 const productForm = document.querySelector("#product-form");
 const productListNode = document.querySelector("#product-list");
@@ -83,6 +90,19 @@ const metricOutstanding = document.querySelector("#metric-outstanding");
 const metricOverdue = document.querySelector("#metric-overdue");
 const metricBase = document.querySelector("#metric-base");
 const overviewRecentBody = document.querySelector("#overview-recent-body");
+const walletBalanceValue = document.querySelector("#wallet-balance-value");
+const walletProgressFill = document.querySelector("#wallet-progress-fill");
+const walletProgressText = document.querySelector("#wallet-progress-text");
+const walletCardBrand = document.querySelector("#wallet-card-brand");
+const walletCardNumber = document.querySelector("#wallet-card-number");
+const cardListBody = document.querySelector("#card-list-body");
+const doughnutChart = document.querySelector("#chart-doughnut");
+const doughnutCenter = document.querySelector("#chart-doughnut-center");
+const legendPaidCount = document.querySelector("#legend-paid-count");
+const legendPartialCount = document.querySelector("#legend-partial-count");
+const legendUnpaidCount = document.querySelector("#legend-unpaid-count");
+const incomeBars = document.querySelector("#income-bars");
+const outcomeBars = document.querySelector("#outcome-bars");
 
 const drawerEl = document.querySelector("#drawer");
 const drawer = bootstrapApi && drawerEl ? new bootstrapApi.Modal(drawerEl) : null;
@@ -125,6 +145,49 @@ function isAdmin() {
 
 function formatCurrency(value) {
   return CURRENCY.format(Number(value || 0));
+}
+
+function formatShortCurrency(value) {
+  const amount = Number(value || 0);
+  if (amount >= 10000000) {
+    return `Rs ${(amount / 10000000).toFixed(1).replace(/\.0$/, "")}Cr`;
+  }
+  if (amount >= 100000) {
+    return `Rs ${(amount / 100000).toFixed(1).replace(/\.0$/, "")}L`;
+  }
+  if (amount >= 1000) {
+    return `Rs ${(amount / 1000).toFixed(1).replace(/\.0$/, "")}K`;
+  }
+  return `Rs ${Math.round(amount)}`;
+}
+
+function clamp(value, min, max) {
+  return Math.min(Math.max(value, min), max);
+}
+
+function maskAccountNumber(rawValue) {
+  const value = String(rawValue || "").trim();
+  if (!value) {
+    return ".... 0000";
+  }
+  const digits = value.replace(/\D/g, "");
+  if (digits.length >= 4) {
+    return `.... ${digits.slice(-4)}`;
+  }
+  if (value.includes("@")) {
+    const [prefix, suffix] = value.split("@");
+    if (!suffix) {
+      return value;
+    }
+    const safePrefix = prefix.length > 3 ? `${prefix.slice(0, 3)}...` : prefix;
+    return `${safePrefix}@${suffix}`;
+  }
+  return value.length > 6 ? `${value.slice(0, 3)}...${value.slice(-2)}` : value;
+}
+
+function closeMobileSidebar() {
+  workspaceView?.classList.remove("sidebar-open");
+  sidebarOverlay?.classList.add("hidden");
 }
 
 function getCompanyProfileForInvoiceType(gstType) {
@@ -255,6 +318,10 @@ function setActiveTab(tabId) {
     panel.classList.toggle("active", active);
     panel.classList.toggle("show", active);
   });
+
+  if (window.matchMedia("(max-width: 1080px)").matches) {
+    closeMobileSidebar();
+  }
 }
 
 function applyRoleVisibility() {
@@ -523,6 +590,14 @@ function updateInvoicePreview() {
   const companyProfile = getCompanyProfileForInvoiceType(gstType);
   const companyName = companyProfile.name || "Company not configured";
   const companyGstinText = companyProfile.gstin ? ` | GSTIN ${escapeHtml(companyProfile.gstin)}` : "";
+  const selectedCustomer = state.customers.find(
+    (customer) => customer.id === Number(invoiceCustomerSelect.value)
+  );
+  const selectedCustomerGstin = selectedCustomer?.gstin ? escapeHtml(selectedCustomer.gstin) : "-";
+  const customerGstRow =
+    gstType === "none"
+      ? ""
+      : `<div class="row mt-2"><div class="col"><strong>Customer GSTIN:</strong> ${selectedCustomerGstin}</div></div>`;
 
   if (invoiceCompanyBanner) {
     const modeText = gstType === "none" ? "Without GST Company" : "GST Company";
@@ -537,6 +612,7 @@ function updateInvoicePreview() {
           <div class="col"><strong>Billing Company:</strong> ${escapeHtml(companyName)}</div>
           <div class="col"><strong>Invoice Type:</strong> ${invoiceTypeText}</div>
         </div>
+        ${customerGstRow}
         <table class="table mt-2">
           <tbody>
             <tr><td>Taxable</td><td class="text-end">${formatCurrency(subtotalTaxable)}</td></tr>
@@ -591,12 +667,206 @@ function syncSelects() {
   updateInvoicePreview();
 }
 
+function countInvoiceStatuses(invoices = []) {
+  return invoices.reduce(
+    (summary, invoice) => {
+      const status = String(invoice?.status || "unpaid").toLowerCase();
+      if (status === "paid") {
+        summary.paid += 1;
+      } else if (status === "partial") {
+        summary.partial += 1;
+      } else {
+        summary.unpaid += 1;
+      }
+      return summary;
+    },
+    { paid: 0, partial: 0, unpaid: 0 }
+  );
+}
+
+function buildMonthlyOverviewSeries(invoices = [], monthCount = 6) {
+  const currentMonth = new Date();
+  const monthSeeds = [];
+  for (let offset = monthCount - 1; offset >= 0; offset -= 1) {
+    monthSeeds.push(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - offset, 1));
+  }
+
+  const series = monthSeeds.map((date) => ({
+    key: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`,
+    label: date.toLocaleString("en-IN", { month: "short" }),
+    income: 0,
+    outcome: 0
+  }));
+  const indexByKey = new Map(series.map((entry, index) => [entry.key, index]));
+
+  for (const invoice of invoices) {
+    const invoiceDate = new Date(invoice?.createdAt || "");
+    if (Number.isNaN(invoiceDate.getTime())) {
+      continue;
+    }
+    const key = `${invoiceDate.getFullYear()}-${String(invoiceDate.getMonth() + 1).padStart(2, "0")}`;
+    const targetIndex = indexByKey.get(key);
+    if (targetIndex === undefined) {
+      continue;
+    }
+    series[targetIndex].income += Number(invoice?.paidAmount ?? invoice?.total ?? 0);
+    series[targetIndex].outcome += Number(invoice?.dueAmount ?? 0);
+  }
+
+  return series;
+}
+
+function renderMiniBarChart(node, series, field, variant) {
+  if (!node) {
+    return;
+  }
+  const values = series.map((entry) => Number(entry?.[field] || 0));
+  const maxValue = Math.max(...values, 1);
+
+  node.innerHTML = series
+    .map((entry, index) => {
+      const value = Number(entry?.[field] || 0);
+      const barHeight = clamp(Math.round((value / maxValue) * 100), 8, 100);
+      return `
+        <div class="mini-bar-col">
+          <span class="mini-bar-value">${formatShortCurrency(value)}</span>
+          <div class="mini-bar-track">
+            <span class="mini-bar-fill ${variant}" style="--bar-height:${barHeight}%;--bar-index:${index};"></span>
+          </div>
+          <span class="mini-bar-label">${escapeHtml(entry.label)}</span>
+        </div>
+      `;
+    })
+    .join("");
+}
+
+function renderDoughnutOverview(counts) {
+  const paid = Number(counts?.paid || 0);
+  const partial = Number(counts?.partial || 0);
+  const unpaid = Number(counts?.unpaid || 0);
+  const total = paid + partial + unpaid;
+
+  if (legendPaidCount) {
+    legendPaidCount.textContent = String(paid);
+  }
+  if (legendPartialCount) {
+    legendPartialCount.textContent = String(partial);
+  }
+  if (legendUnpaidCount) {
+    legendUnpaidCount.textContent = String(unpaid);
+  }
+
+  if (!doughnutChart) {
+    return;
+  }
+
+  if (total <= 0) {
+    doughnutChart.style.background = "conic-gradient(#d6e1ef 0deg 360deg)";
+    if (doughnutCenter) {
+      doughnutCenter.textContent = "0";
+    }
+    return;
+  }
+
+  const paidAngle = (paid / total) * 360;
+  const partialAngle = paidAngle + (partial / total) * 360;
+  doughnutChart.style.background = [
+    `conic-gradient(`,
+    `#1f8b58 0deg ${paidAngle.toFixed(2)}deg, `,
+    `#2278bc ${paidAngle.toFixed(2)}deg ${partialAngle.toFixed(2)}deg, `,
+    `#d78a23 ${partialAngle.toFixed(2)}deg 360deg) `
+  ].join("");
+  if (doughnutCenter) {
+    doughnutCenter.textContent = String(total);
+  }
+}
+
+function renderOverviewCardList() {
+  if (!cardListBody) {
+    return;
+  }
+  const settings = state.settings || {};
+  const rows = [];
+
+  if (settings.bankName || settings.bankAccountNumber || settings.bankIfsc) {
+    rows.push({
+      bank: settings.bankName || "Bank Account",
+      channel: `${maskAccountNumber(settings.bankAccountNumber)} | ${settings.bankIfsc || "-"}`,
+      status: "Primary",
+      statusClass: "bg-success",
+      action: "Enabled"
+    });
+  }
+
+  if (settings.upiId) {
+    rows.push({
+      bank: "UPI",
+      channel: settings.upiId,
+      status: "Active",
+      statusClass: "bg-warning",
+      action: "Ready"
+    });
+  }
+
+  if (rows.length === 0) {
+    cardListBody.innerHTML = `<tr><td colspan="4">Add bank or UPI details in Settings.</td></tr>`;
+    return;
+  }
+
+  cardListBody.innerHTML = rows
+    .map(
+      (entry) => `
+      <tr>
+        <td>${escapeHtml(entry.bank)}</td>
+        <td>${escapeHtml(entry.channel)}</td>
+        <td><span class="badge ${entry.statusClass}">${escapeHtml(entry.status)}</span></td>
+        <td><button type="button" class="btn btn-sm btn-light" disabled>${escapeHtml(entry.action)}</button></td>
+      </tr>
+    `
+    )
+    .join("");
+}
+
 function renderOverview() {
-  const report = state.report;
-  metricRevenue.textContent = formatCurrency(report?.totals?.revenue || 0);
-  metricOutstanding.textContent = formatCurrency(report?.totals?.outstanding || 0);
-  metricOverdue.textContent = String(report?.totals?.overdueInvoices || 0);
+  const totals = state.report?.totals || {};
+  const revenue = Number(totals.revenue || 0);
+  const outstanding = Number(totals.outstanding || 0);
+  const overdueInvoices = Number(totals.overdueInvoices || 0);
+
+  metricRevenue.textContent = formatCurrency(revenue);
+  metricOutstanding.textContent = formatCurrency(outstanding);
+  metricOverdue.textContent = String(overdueInvoices);
   metricBase.textContent = `${state.customers.length} / ${state.products.length}`;
+
+  const availableBalance = Math.max(revenue - outstanding, 0);
+  const availablePercentage = revenue > 0 ? clamp(Math.round((availableBalance / revenue) * 100), 0, 100) : 0;
+  if (walletBalanceValue) {
+    walletBalanceValue.textContent = formatCurrency(availableBalance);
+  }
+  if (walletProgressFill) {
+    walletProgressFill.style.width = `${availablePercentage}%`;
+  }
+  if (walletProgressText) {
+    walletProgressText.textContent = `${availablePercentage}% available`;
+  }
+  if (walletCardBrand) {
+    const label = String(state.settings?.bankName || "Business Card").toUpperCase();
+    walletCardBrand.textContent = label;
+  }
+  if (walletCardNumber) {
+    walletCardNumber.textContent = maskAccountNumber(
+      state.settings?.bankAccountNumber || state.settings?.upiId || ""
+    );
+  }
+
+  renderOverviewCardList();
+
+  const statusSummary = countInvoiceStatuses(state.invoices);
+  renderDoughnutOverview(statusSummary);
+
+  const monthlySeries = buildMonthlyOverviewSeries(state.invoices, 6);
+  renderMiniBarChart(incomeBars, monthlySeries, "income", "income");
+  renderMiniBarChart(outcomeBars, monthlySeries, "outcome", "outcome");
 
   const recent = [...state.invoices].slice(0, 8);
   if (recent.length === 0) {
@@ -632,11 +902,58 @@ function renderCustomers() {
         <td>${escapeHtml(customer.name)}</td>
         <td>${escapeHtml(customer.email || "-")}</td>
         <td>${escapeHtml(customer.gstin || "-")}</td>
-        <td><button class="btn btn-sm btn-secondary" data-action="statement" data-customer-id="${customer.id}">Statement</button></td>
+        <td>
+          <div class="btn-group">
+            <button class="btn btn-sm btn-secondary" data-action="statement" data-customer-id="${customer.id}">Statement</button>
+            ${
+              isAdmin()
+                ? `<button class="btn btn-sm btn-light" data-action="edit-customer" data-customer-id="${customer.id}">Edit</button>`
+                : ""
+            }
+            ${
+              isAdmin()
+                ? `<button class="btn btn-sm btn-danger" data-action="remove-customer" data-customer-id="${customer.id}">Delete</button>`
+                : ""
+            }
+          </div>
+        </td>
       </tr>
     `
     )
     .join("");
+}
+
+function resetCustomerForm() {
+  customerForm.reset();
+  if (customerIdInput) {
+    customerIdInput.value = "";
+  }
+  if (customerSubmitButton) {
+    customerSubmitButton.textContent = "Save Customer";
+  }
+  customerCancelButton?.classList.add("hidden");
+}
+
+function startCustomerEdit(customerId) {
+  const customer = state.customers.find((entry) => entry.id === Number(customerId));
+  if (!customer) {
+    setStatus("Customer not found.", true);
+    return;
+  }
+
+  if (customerIdInput) {
+    customerIdInput.value = String(customer.id);
+  }
+  customerForm.elements.namedItem("name").value = customer.name || "";
+  customerForm.elements.namedItem("email").value = customer.email || "";
+  customerForm.elements.namedItem("phone").value = customer.phone || "";
+  customerForm.elements.namedItem("gstin").value = customer.gstin || "";
+  customerForm.elements.namedItem("stateCode").value = customer.stateCode || "";
+  customerForm.elements.namedItem("address").value = customer.address || "";
+  if (customerSubmitButton) {
+    customerSubmitButton.textContent = "Update Customer";
+  }
+  customerCancelButton?.classList.remove("hidden");
 }
 
 function renderProducts() {
@@ -1152,6 +1469,25 @@ async function deleteInvoice(invoiceId) {
   setStatus("Invoice removed.");
 }
 
+async function deleteCustomer(customerId) {
+  const customer = state.customers.find((entry) => entry.id === Number(customerId));
+  if (!customer) {
+    setStatus("Customer not found.", true);
+    return;
+  }
+
+  if (!window.confirm(`Delete customer "${customer.name}"?`)) {
+    return;
+  }
+
+  await requestJson(`/api/customers/${customer.id}`, { method: "DELETE" });
+  if (Number(customerIdInput?.value || 0) === customer.id) {
+    resetCustomerForm();
+  }
+  await refreshBaseData();
+  setStatus("Customer removed.");
+}
+
 async function deleteProduct(productId) {
   const product = state.products.find((entry) => entry.id === Number(productId));
   if (!product) {
@@ -1395,6 +1731,54 @@ tabNav.addEventListener('click', (event) => {
   setActiveTab(tabId);
 });
 
+sidebarToggleButton?.addEventListener("click", () => {
+  const opening = !workspaceView.classList.contains("sidebar-open");
+  workspaceView.classList.toggle("sidebar-open", opening);
+  sidebarOverlay?.classList.toggle("hidden", !opening);
+});
+
+sidebarOverlay?.addEventListener("click", () => {
+  closeMobileSidebar();
+});
+
+topMenuButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    const tabId = button.dataset.tabOpen;
+    if (!tabId) {
+      return;
+    }
+    setActiveTab(tabId);
+    button.closest("details")?.removeAttribute("open");
+  });
+});
+
+globalSearchInput?.addEventListener("keydown", async (event) => {
+  if (event.key !== "Enter") {
+    return;
+  }
+  event.preventDefault();
+  const query = globalSearchInput.value.trim();
+  state.invoiceFilters = { ...state.invoiceFilters, query };
+  filterQueryInput.value = query;
+  setActiveTab("invoices");
+  try {
+    await Promise.all([loadInvoices(), loadReport()]);
+    renderInvoices();
+    renderPayments();
+    renderOverview();
+    renderReports();
+    setStatus(query ? `Showing results for "${query}".` : "Search cleared.");
+  } catch (error) {
+    setStatus(error.message, true);
+  }
+});
+
+window.addEventListener("resize", () => {
+  if (window.innerWidth > 1080) {
+    closeMobileSidebar();
+  }
+});
+
 invoiceGstTypeSelect.addEventListener("change", updateInvoicePreview);
 invoiceDiscountInput.addEventListener("input", updateInvoicePreview);
 invoiceShippingInput.addEventListener("input", updateInvoicePreview);
@@ -1512,26 +1896,57 @@ paymentTableBody.addEventListener("click", async (event) => {
 customerForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   const formData = new FormData(customerForm);
+  const payload = Object.fromEntries(formData.entries());
+  const customerId = Number(payload.customerId || 0);
+  delete payload.customerId;
 
   try {
-    await requestJson("/api/customers", {
-      method: "POST",
-      body: JSON.stringify(Object.fromEntries(formData.entries()))
-    });
-    customerForm.reset();
+    if (customerId > 0) {
+      await requestJson(`/api/customers/${customerId}`, {
+        method: "PUT",
+        body: JSON.stringify(payload)
+      });
+      setStatus("Customer updated.");
+    } else {
+      await requestJson("/api/customers", {
+        method: "POST",
+        body: JSON.stringify(payload)
+      });
+      setStatus("Customer saved.");
+    }
+    resetCustomerForm();
     await refreshBaseData();
-    setStatus("Customer saved.");
   } catch (error) {
     setStatus(error.message, true);
   }
 });
 
 customerTableBody.addEventListener("click", async (event) => {
-  const button = event.target.closest("button[data-action='statement'][data-customer-id]");
+  const button = event.target.closest("button[data-action][data-customer-id]");
   if (!button) {
     return;
   }
-  await openCustomerStatement(Number(button.dataset.customerId));
+  const customerId = Number(button.dataset.customerId);
+  const action = button.dataset.action;
+  try {
+    if (action === "statement") {
+      await openCustomerStatement(customerId);
+      return;
+    }
+    if (action === "edit-customer") {
+      startCustomerEdit(customerId);
+      return;
+    }
+    if (action === "remove-customer") {
+      await deleteCustomer(customerId);
+    }
+  } catch (error) {
+    setStatus(error.message, true);
+  }
+});
+
+customerCancelButton?.addEventListener("click", () => {
+  resetCustomerForm();
 });
 
 productForm.addEventListener("submit", async (event) => {
