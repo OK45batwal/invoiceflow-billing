@@ -386,6 +386,254 @@ function collectPdf(doc) {
   });
 }
 
+function renderNonGstInvoiceLayout(doc, context) {
+  const {
+    invoice,
+    settings,
+    companyProfile,
+    companyName,
+    companyPhone,
+    companyAddressText,
+    invoiceNumber,
+    invoiceDate,
+    amountWords,
+    items,
+    qtyTotal,
+    amountTotal,
+    grandTotal,
+    upiQrBuffer
+  } = context;
+
+  const margin = 24;
+  const x = margin;
+  const y = margin;
+  const w = doc.page.width - margin * 2;
+  const h = doc.page.height - margin * 2;
+  const bottom = y + h;
+  const border = "#1a1f2b";
+  const accent = "#24395b";
+
+  const customerName = toUpperText(invoice.customer?.name) || "WALK-IN CUSTOMER";
+  const customerAddressLines = splitLines(toText(invoice.customer?.address) || "-");
+  const customerPhone = toText(invoice.customer?.phone);
+  const paymentMode = normalizePaymentMode(invoice, settings);
+  const dueDate = formatDate(invoice.dueDate);
+  const createdDateTime = formatDateTime(invoice.createdAt);
+  const invoiceStatus = toUpperText(invoice.status) || "UNPAID";
+
+  doc.lineWidth(1).strokeColor(border).fillColor(border);
+  doc.rect(x, y, w, h).stroke();
+
+  const headerH = 94;
+  doc.fillColor(accent).rect(x, y, w, headerH).fill();
+  doc.fillColor("#ffffff");
+
+  const headerNameSize = fitTextSize(doc, companyName, w - 210, 29, 17);
+  doc.font("Times-Bold").fontSize(headerNameSize).text(companyName, x + 12, y + 11, { width: w - 210 });
+  doc.font("Helvetica-Bold").fontSize(10.2);
+  doc.text(fitSingleLineText(doc, toUpperText(companyAddressText || "-"), w - 24), x + 12, y + 52, {
+    width: w - 24
+  });
+  const contactLine = [
+    companyPhone ? `Phone: ${companyPhone}` : "",
+    companyProfile?.email ? `Email: ${toText(companyProfile.email)}` : ""
+  ]
+    .filter(Boolean)
+    .join("   ");
+  doc.font("Helvetica").fontSize(9.8).text(fitSingleLineText(doc, contactLine || "-", w - 24), x + 12, y + 72, {
+    width: w - 24
+  });
+
+  const infoY = y + headerH + 8;
+  const infoH = 112;
+  const infoSplitX = x + Math.floor(w * 0.62);
+  doc.fillColor(border);
+  doc.rect(x, infoY, w, infoH).stroke();
+  doc.moveTo(infoSplitX, infoY).lineTo(infoSplitX, infoY + infoH).stroke();
+
+  doc.font("Helvetica-Bold").fontSize(12).text("Bill To", x + 10, infoY + 8);
+  doc.font("Helvetica-Bold").fontSize(12).text("Invoice Details", infoSplitX + 10, infoY + 8);
+
+  let customerY = infoY + 30;
+  doc.font("Helvetica-Bold").fontSize(12).text(customerName, x + 10, customerY, { width: infoSplitX - x - 20 });
+  customerY += 20;
+  for (const line of customerAddressLines.slice(0, 3)) {
+    doc.font("Helvetica").fontSize(10.5).text(line, x + 10, customerY, { width: infoSplitX - x - 20 });
+    customerY += 16;
+  }
+  if (customerPhone) {
+    doc.font("Helvetica").fontSize(10.2).text(`Phone: ${customerPhone}`, x + 10, customerY, {
+      width: infoSplitX - x - 20
+    });
+  }
+
+  const detailX = infoSplitX + 10;
+  const detailLabelW = 88;
+  const detailValueW = x + w - detailX - detailLabelW - 12;
+  const detailRows = [
+    ["Invoice No.", invoiceNumber],
+    ["Date", createdDateTime],
+    ["Due Date", dueDate],
+    ["Pay Mode", paymentMode],
+    ["Status", invoiceStatus]
+  ];
+  let detailY = infoY + 30;
+  for (const [label, value] of detailRows) {
+    doc.font("Helvetica-Bold").fontSize(10.5).text(`${label} :`, detailX, detailY, { width: detailLabelW });
+    doc.font("Helvetica").fontSize(10.5).text(fitSingleLineText(doc, value || "-", detailValueW), detailX + detailLabelW, detailY, {
+      width: detailValueW
+    });
+    detailY += 17;
+  }
+
+  const tableY = infoY + infoH + 10;
+  const tableHeaderH = 24;
+  const tableBodyH = 220;
+  const tableH = tableHeaderH + tableBodyH;
+  const colWidths = ratiosToWidths(w, [0.08, 0.42, 0.14, 0.12, 0.12, 0.12]);
+  const colX = widthsToPositions(x, colWidths);
+
+  doc.lineWidth(0.9).strokeColor(border).fillColor(border);
+  doc.rect(x, tableY, w, tableH).stroke();
+  drawVerticalLines(doc, x, tableY, tableH, colWidths);
+  doc.fillColor(accent).rect(x, tableY, w, tableHeaderH).fill();
+
+  doc.fillColor("#ffffff");
+  const tableHeaders = ["Sr", "Particulars", "HSN/SAC", "Qty", "Rate", "Amount"];
+  for (let index = 0; index < tableHeaders.length; index += 1) {
+    doc.font("Helvetica-Bold").fontSize(10.5).text(tableHeaders[index], colX[index], tableY + 7, {
+      width: colWidths[index],
+      align: "center"
+    });
+  }
+
+  doc.fillColor(border);
+  const rowH = 22;
+  const maxRows = Math.max(1, Math.floor(tableBodyH / rowH));
+  for (let row = 1; row <= maxRows; row += 1) {
+    drawHorizontalLine(doc, x, x + w, tableY + tableHeaderH + row * rowH);
+  }
+
+  const drawCount = Math.min(items.length, maxRows);
+  for (let index = 0; index < drawCount; index += 1) {
+    const item = items[index];
+    const rowTop = tableY + tableHeaderH + index * rowH;
+    const rowValues = [
+      String(index + 1),
+      toText(item.productName) || "Item",
+      toText(item.hsnSac) || "-",
+      `${formatAmount(item.quantity)} ${toUpperText(item.unit) || "PCS"}`.trim(),
+      formatAmount(item.unitPrice),
+      formatAmount(item.lineTotal)
+    ];
+    doc.font("Helvetica").fontSize(10).text(rowValues[0], colX[0], rowTop + 6, { width: colWidths[0], align: "center" });
+    doc.font("Helvetica").fontSize(10).text(fitSingleLineText(doc, rowValues[1], colWidths[1] - 8), colX[1] + 4, rowTop + 6, {
+      width: colWidths[1] - 8
+    });
+    doc.font("Helvetica").fontSize(10).text(rowValues[2], colX[2], rowTop + 6, { width: colWidths[2], align: "center" });
+    doc.font("Helvetica").fontSize(10).text(rowValues[3], colX[3], rowTop + 6, { width: colWidths[3], align: "center" });
+    doc.font("Helvetica").fontSize(10).text(rowValues[4], colX[4] + 3, rowTop + 6, { width: colWidths[4] - 6, align: "right" });
+    doc.font("Helvetica").fontSize(10).text(rowValues[5], colX[5] + 3, rowTop + 6, { width: colWidths[5] - 6, align: "right" });
+  }
+  if (items.length > maxRows) {
+    doc.font("Helvetica-Oblique").fontSize(9.4).text(`... ${items.length - maxRows} more item(s)`, colX[1] + 4, tableY + tableH - 15, {
+      width: colWidths[1] - 8
+    });
+  }
+
+  const summaryY = tableY + tableH + 8;
+  const summaryH = 100;
+  const totalsW = 220;
+  const wordsW = w - totalsW - 8;
+  const totalsX = x + wordsW + 8;
+  doc.rect(x, summaryY, wordsW, summaryH).stroke();
+  doc.rect(totalsX, summaryY, totalsW, summaryH).stroke();
+
+  doc.font("Helvetica-Bold").fontSize(11).text("Amount In Words", x + 10, summaryY + 8, { width: wordsW - 20 });
+  doc.font("Helvetica").fontSize(10.4).text(amountWords, x + 10, summaryY + 28, { width: wordsW - 20 });
+  doc.font("Helvetica").fontSize(9.8).text(
+    `Total Qty: ${formatAmount(qtyTotal)}   Item Amount: ${formatAmount(amountTotal)}`,
+    x + 10,
+    summaryY + summaryH - 18,
+    { width: wordsW - 20 }
+  );
+
+  const subtotal = normalizeAmount(invoice.subtotalTaxable || amountTotal);
+  const invoiceDiscount = normalizeAmount(invoice.invoiceDiscount);
+  const shipping = normalizeAmount(invoice.shipping);
+  const roundOff = normalizeAmount(invoice.roundOff);
+  const totalsRows = [
+    ["Sub Total", subtotal],
+    ["Discount", invoiceDiscount],
+    ["Shipping", shipping],
+    ["Round Off", roundOff],
+    ["Grand Total", grandTotal]
+  ];
+  let totalsY = summaryY + 8;
+  for (let index = 0; index < totalsRows.length; index += 1) {
+    const [label, value] = totalsRows[index];
+    if (index === totalsRows.length - 1) {
+      drawHorizontalLine(doc, totalsX, totalsX + totalsW, totalsY - 3);
+    }
+    doc.font(index === totalsRows.length - 1 ? "Helvetica-Bold" : "Helvetica-Bold").fontSize(10.2).text(label, totalsX + 8, totalsY, {
+      width: totalsW - 100
+    });
+    doc.font(index === totalsRows.length - 1 ? "Helvetica-Bold" : "Helvetica").fontSize(10.2).text(formatAmount(value), totalsX + 8, totalsY, {
+      width: totalsW - 16,
+      align: "right"
+    });
+    totalsY += 18;
+  }
+
+  const footerY = summaryY + summaryH + 10;
+  const footerH = bottom - footerY;
+  const footerSplitX = x + Math.floor(w * 0.66);
+  doc.rect(x, footerY, w, footerH).stroke();
+  doc.moveTo(footerSplitX, footerY).lineTo(footerSplitX, footerY + footerH).stroke();
+
+  const leftBlockX = x + 10;
+  const leftBlockRight = footerSplitX - 10;
+  const qrSize = upiQrBuffer ? 74 : 0;
+  const qrX = upiQrBuffer ? leftBlockRight - qrSize : 0;
+  const qrY = footerY + 36;
+  const upiTextWidth = upiQrBuffer ? qrX - leftBlockX - 8 : leftBlockRight - leftBlockX;
+  const upiId = toText(settings.upiId) || "-";
+
+  doc.font("Helvetica-Bold").fontSize(11.5).text("UPI Payment", leftBlockX, footerY + 8, {
+    width: leftBlockRight - leftBlockX
+  });
+  doc.font("Helvetica-Bold").fontSize(10.4).text(`UPI ID : ${upiId}`, leftBlockX, footerY + 30, {
+    width: upiTextWidth
+  });
+  doc.font("Helvetica").fontSize(9.6).text("Scan QR to pay this invoice.", leftBlockX, footerY + 48, {
+    width: upiTextWidth
+  });
+
+  if (upiQrBuffer) {
+    doc.image(upiQrBuffer, qrX, qrY, { fit: [qrSize, qrSize] });
+    doc.font("Helvetica-Bold").fontSize(8.5).text("UPI QR", qrX, qrY + qrSize + 2, { width: qrSize, align: "center" });
+  }
+
+  drawHorizontalLine(doc, x + 10, footerSplitX - 20, bottom - 32);
+  doc.font("Helvetica").fontSize(9.8).text("Customer Signature", x + 10, bottom - 25, {
+    width: footerSplitX - x - 30
+  });
+
+  const rightW = x + w - footerSplitX;
+  doc.font("Helvetica").fontSize(10).text("Certified that the particulars are true and correct.", footerSplitX + 8, footerY + 10, {
+    width: rightW - 16
+  });
+  doc.font("Times-Bold").fontSize(14).text(`For, ${companyName}`, footerSplitX + 8, footerY + footerH - 76, {
+    width: rightW - 16,
+    align: "center"
+  });
+  drawHorizontalLine(doc, x + w - 130, x + w - 12, bottom - 32);
+  doc.font("Helvetica-Bold").fontSize(10.2).text("Authorised Signatory", footerSplitX + 8, bottom - 25, {
+    width: rightW - 16,
+    align: "right"
+  });
+}
+
 export async function createInvoicePdfBuffer(invoice, settings = {}) {
   const doc = new PDFDocument({ margin: 20, size: "A4" });
   const output = collectPdf(doc);
@@ -435,6 +683,32 @@ export async function createInvoicePdfBuffer(invoice, settings = {}) {
   const invoiceDate = formatDate(invoice.createdAt);
 
   const amountWords = amountToWords(grandTotal);
+  if (isNonGstInvoice) {
+    renderNonGstInvoiceLayout(doc, {
+      invoice,
+      settings,
+      companyProfile,
+      companyName,
+      companyPhone,
+      companyAddressText,
+      invoiceNumber,
+      invoiceDate,
+      amountWords,
+      items,
+      qtyTotal,
+      amountTotal,
+      grandTotal,
+      upiQrBuffer
+    });
+
+    doc.info.Title = `Invoice ${invoiceNumber}`;
+    doc.info.Subject = `Invoice generated for ${toText(invoice.customer?.name) || "customer"}`;
+    doc.info.Author = toText(companyProfile.name) || toText(settings.companyName) || "InvoiceFlow Pro";
+
+    doc.end();
+    return output;
+  }
+
   const margin = 20;
   const x = margin;
   const y = margin;
