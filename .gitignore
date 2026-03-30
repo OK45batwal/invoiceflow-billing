@@ -3,3 +3,6 @@ data/store.json
 data/store.sqlite
 data/store.sqlite-wal
 data/store.sqlite-shm
+.vscode/
+sample_preview.pdf
+public/sample_preview.pdf

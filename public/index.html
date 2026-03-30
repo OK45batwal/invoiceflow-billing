@@ -1,574 +1,1026 @@
 <!doctype html>
 <html lang="en" data-bs-theme="light">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>InvoiceFlow Pro</title>
-    <link
-      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
-      rel="stylesheet"
-      integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
-      crossorigin="anonymous"
-    />
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
-    />
-    <link rel="stylesheet" href="./styles.css?v=20260305a" />
-  </head>
-  <body>
-    <section id="login-view">
-      <div class="container">
-        <div class="row justify-content-center">
-          <div class="col-md-6 col-lg-5">
-            <div class="card shadow-lg border-0 rounded-lg mt-5">
-              <div class="card-header">
-                <div class="d-flex align-items-center">
-                  <img src="./logo.png" alt="InvoiceFlow Pro logo" style="height: 40px" />
-                  <h3 class="fw-light ms-3 my-2">InvoiceFlow Pro</h3>
-                </div>
-              </div>
-              <div class="card-body">
-                <p class="text-muted">
-                  Login to manage GST invoices, payments, recurring billing, and reports.
-                </p>
-                <form id="login-form">
-                  <div class="form-floating mb-3">
-                    <input
-                      class="form-control"
-                      id="username"
-                      name="username"
-                      placeholder="admin or staff"
-                      required
-                    />
-                    <label for="username">Username</label>
-                  </div>
-                  <div class="form-floating mb-3">
-                    <input
-                      class="form-control"
-                      id="password"
-                      type="password"
-                      name="password"
-                      placeholder="admin123 or staff123"
-                      required
-                    />
-                    <label for="password">Password</label>
-                  </div>
-                  <div class="d-grid">
-                    <button type="submit" class="btn btn-primary btn-lg">Login</button>
-                  </div>
-                </form>
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>InvoiceFlow Pro</title>
+
+  <!-- Display: Cabinet Grotesk + Body: Satoshi -->
+  <link rel="stylesheet"
+    href="https://api.fontshare.com/v2/css?f[]=cabinet-grotesk@500,600,700&f[]=satoshi@400,500,700&display=swap" />
+  <!-- Outfit + Inter fallback -->
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@500;600;700&display=swap"
+    rel="stylesheet">
+  <!-- Boxicons -->
+  <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+  <link rel="stylesheet" href="./styles.css?v=v5_preview" />
+  <link rel="stylesheet" href="./mobile.css" />
+  <link rel="stylesheet" href="./login.css" />
+  
+  <script>
+    function toggleMobileSidebar() {
+      const sidebar = document.querySelector('.workspace-body > .col-lg-2');
+      const backdrop = document.getElementById('sidebar-backdrop');
+      if (sidebar) sidebar.classList.toggle('active');
+      if (backdrop) backdrop.classList.toggle('active');
+    }
+  </script>
+</head>
+
+<body data-theme="light">
+  <div class="sidebar-backdrop" id="sidebar-backdrop" onclick="toggleMobileSidebar()"></div>
+  <section id="login-view">
+    <div class="auth-wrapper">
+      <!-- Ambient Animated Glow Orbs -->
+      <div class="bg-orb orb-1"></div>
+      <div class="bg-orb orb-2"></div>
+      <div class="bg-orb orb-3"></div>
+
+      <div class="auth-container">
+        <div class="auth-glass-card">
+          <div class="auth-header">
+            <div class="logo">
+              <i class='bx bxs-polygon'></i>
+              <span>InvoiceFlow Pro</span>
+            </div>
+            <h1>Welcome back</h1>
+            <p>Enter your credentials to access your workspace.</p>
+          </div>
+
+          <form id="login-form" class="auth-form">
+            <div class="input-group">
+              <label for="username">Username</label>
+              <div class="input-wrapper">
+                <i class='bx bx-user'></i>
+                <input type="text" id="username" name="username" placeholder="Enter admin or staff username" required
+                  autocomplete="username">
               </div>
             </div>
-          </div>
+
+            <div class="input-group">
+              <label for="password">Password</label>
+              <div class="input-wrapper">
+                <i class='bx bx-lock-alt'></i>
+                <input type="password" id="password" name="password" placeholder="Enter your password" required
+                  autocomplete="current-password">
+                <button type="button" class="btn-icon" id="togglePassword" aria-label="Toggle Password Visibility">
+                  <i class='bx bx-hide'></i>
+                </button>
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <label class="checkbox-container">
+                <input type="checkbox">
+                <span class="checkmark"></span>
+                Remember me
+              </label>
+            </div>
+
+            <button type="submit" class="auth-btn-primary" style="margin-top: 24px;">
+              Login
+              <i class='bx bx-right-arrow-alt'></i>
+            </button>
+          </form>
         </div>
       </div>
-    </section>
+    </div>
 
-    <section id="workspace-view" class="hidden">
-      <header class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
-        <div class="container-fluid topbar-shell">
-          <div class="topbar-left d-flex align-items-center">
-            <button id="sidebar-toggle" type="button" class="sidebar-toggle btn btn-light" aria-label="Toggle navigation">
-              <i class="bi-list"></i>
+    <!-- Password Visibility Toggle Script specific to the new login UI -->
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const toggleBtn = document.getElementById('togglePassword');
+        if (!toggleBtn) return;
+        const passwordInput = document.getElementById('password');
+        const icon = toggleBtn.querySelector('i');
+
+        toggleBtn.addEventListener('click', () => {
+          if (passwordInput.type === 'password') {
+            passwordInput.type = 'text';
+            icon.classList.replace('bx-hide', 'bx-show');
+          } else {
+            passwordInput.type = 'password';
+            icon.classList.replace('bx-show', 'bx-hide');
+          }
+        });
+      });
+    </script>
+  </section>
+
+  <section id="workspace-view" class="hidden">
+    <header class="navbar navbar-expand-lg navbar-light bg-white shadow-sm app-topbar">
+      <div class="container-fluid topbar-shell">
+        <div class="topbar-left d-flex align-items-center">
+          <button class="nav-btn me-3 d-lg-none" onclick="toggleMobileSidebar()" aria-label="Toggle Sidebar" style="background: none; border: none; font-size: 1.5rem; color: var(--text-primary); cursor: pointer;">
+            <i class="bx bx-menu"></i>
+          </button>
+          <a class="app-brand d-flex align-items-center" href="#" aria-label="InvoiceFlow Pro Home">
+            <span class="app-brand-mark app-brand-logo-wrap" aria-hidden="true">
+              <img src="./logo.png" alt="" class="app-brand-logo" />
+            </span>
+            <span class="app-brand-copy">
+              <span class="app-brand-title">Invoices</span>
+              <span class="app-brand-status">Download, share, and track</span>
+            </span>
+          </a>
+          <nav class="header-tab-links" aria-label="Primary workspace sections">
+            <button type="button" class="header-tab-link is-active" data-top-nav="true" data-tab-open="overview">
+              Dashboard
             </button>
-            <a class="navbar-brand d-flex align-items-center" href="#">
-              <img src="./logo.png" alt="InvoiceFlow Pro logo" style="height: 32px" />
-              <span class="ms-2">InvoiceFlow Pro</span>
-            </a>
-          </div>
-
-          <div class="topbar-center">
-            <label class="top-search-wrap" for="global-search">
-              <i class="bi-search"></i>
-              <input id="global-search" type="search" class="top-search-input" placeholder="Search invoices and customers..." />
-            </label>
-          </div>
-
-          <div class="topbar-right d-flex align-items-center">
-            <span id="current-user" class="badge bg-light text-dark me-2"></span>
-            <details class="top-menu">
-              <summary class="btn btn-light btn-sm"><i class="bi-three-dots-vertical"></i></summary>
-              <div class="top-menu-panel">
-                <button type="button" class="top-menu-item" data-tab-open="overview">Dashboard</button>
-                <button type="button" class="top-menu-item" data-tab-open="invoices">Invoices</button>
-                <button type="button" class="top-menu-item" data-tab-open="reports">Reports</button>
-              </div>
-            </details>
-            <button id="logout-btn" type="button" class="btn btn-outline-danger">Logout</button>
-          </div>
+            <button type="button" class="header-tab-link" data-top-nav="true" data-tab-open="invoices">
+              Invoices
+            </button>
+            <button type="button" class="header-tab-link" data-top-nav="true" data-tab-open="customers">
+              Clients
+            </button>
+            <button type="button" class="header-tab-link" data-top-nav="true" data-tab-open="reports">
+              Reports
+            </button>
+            <button type="button" class="header-tab-link admin-only" data-top-nav="true" data-tab-open="settings">
+              Settings
+            </button>
+          </nav>
         </div>
-      </header>
-      <div id="sidebar-overlay" class="sidebar-overlay hidden"></div>
 
-      <div class="container-fluid">
-        <div class="row">
-          <div class="col-lg-2">
-            <nav
-              class="nav flex-column nav-pills bg-white p-3 rounded-3 shadow-sm"
-              id="tab-nav"
-              role="tablist"
-              aria-orientation="vertical"
-            >
-              <button
-                class="nav-link text-start active"
-                data-tab="overview"
-                data-bs-toggle="pill"
-                type="button"
-              >
-                <i class="bi-grid-fill me-2"></i>Overview
-              </button>
-              <button class="nav-link text-start" data-tab="invoices" data-bs-toggle="pill" type="button">
-                <i class="bi-receipt-cutoff me-2"></i>Invoices
-              </button>
-              <button class="nav-link text-start" data-tab="payments" data-bs-toggle="pill" type="button">
-                <i class="bi-credit-card-fill me-2"></i>Payments
-              </button>
-              <button class="nav-link text-start" data-tab="customers" data-bs-toggle="pill" type="button">
-                <i class="bi-people-fill me-2"></i>Customers
-              </button>
-              <button class="nav-link text-start" data-tab="products" data-bs-toggle="pill" type="button">
-                <i class="bi-box-seam-fill me-2"></i>Products
-              </button>
-              <button
-                class="nav-link text-start admin-only"
-                data-tab="recurring"
-                data-bs-toggle="pill"
-                type="button"
-              >
-                <i class="bi-arrow-repeat me-2"></i>Recurring
-              </button>
-              <button class="nav-link text-start" data-tab="reports" data-bs-toggle="pill" type="button">
-                <i class="bi-bar-chart-line-fill me-2"></i>Reports
-              </button>
-              <button
-                class="nav-link text-start admin-only"
-                data-tab="settings"
-                data-bs-toggle="pill"
-                type="button"
-              >
-                <i class="bi-gear-fill me-2"></i>Settings
-              </button>
-            </nav>
+        <div class="topbar-center">
+          <label class="top-search-wrap" for="global-search">
+            <i class="bx bx-search"></i>
+            <input id="global-search" type="search" class="top-search-input"
+              placeholder="Search invoices and customers..." />
+          </label>
+        </div>
+
+        <div class="topbar-right d-flex align-items-center">
+          <button type="button" class="btn btn-light header-customize-btn admin-only" data-tab-open="settings">
+            <i class="bx bx-slider-alt"></i>
+            <span>Customize</span>
+          </button>
+          <div class="header-action-group" aria-label="Invoice quick actions">
+            <button id="header-download-invoice" type="button" class="btn btn-light header-action-btn">
+              <i class="bx bx-download"></i>
+              <span>PDF</span>
+            </button>
+            <button id="header-email-invoice" type="button" class="btn btn-light header-action-btn">
+              <i class="bx bx-share-alt"></i>
+              <span>Share</span>
+            </button>
+            <button id="header-save-invoice" type="button" class="btn btn-light header-action-btn">
+              <i class="bx bx-save"></i>
+              <span>Save Draft</span>
+            </button>
+          </div>
+          <button id="header-create-invoice" type="button" class="btn btn-primary header-create-btn">
+            <i class="bx bx-plus"></i>
+            <span>Create Invoice</span>
+          </button>
+          <div class="header-account-card">
+            <span class="header-account-avatar" aria-hidden="true">
+              <i class="bx bx-user"></i>
+            </span>
+            <span class="header-account-copy">
+              <span id="current-user" class="header-account-name">Workspace User</span>
+              <span id="current-user-role" class="header-account-role">Finance</span>
+            </span>
           </div>
 
-          <main class="col-lg-10">
-            <div class="tab-content" id="tab-panels">
-              <section class="tab-panel tab-pane fade show active" data-panel="overview" role="tabpanel">
-                <div class="row account-metric-grid">
-                  <div class="col-xl-3 col-md-6 mb-4">
-                    <div class="card border-left-primary shadow-sm h-100 py-2 account-card account-card-revenue">
-                      <div class="card-body">
-                        <div class="row no-gutters align-items-center">
-                          <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Total Revenue</div>
-                            <div id="metric-revenue" class="h5 mb-0 font-weight-bold text-gray-800">Rs 0.00</div>
-                          </div>
-                          <div class="col-auto">
-                            <i class="bi-currency-rupee fs-2 text-gray-300"></i>
-                          </div>
-                        </div>
+          <button id="logout-btn" type="button" class="btn btn-outline-danger"><i class="bx bx-log-out"></i><span>Logout</span></button>
+        </div>
+      </div>
+    </header>
+    <div id="sidebar-overlay" class="sidebar-overlay hidden"></div>
+
+    <div class="workspace-body">
+      <div class="col-lg-2">
+        <nav class="nav flex-column" id="tab-nav" role="tablist" aria-orientation="vertical">
+          <button class="nav-link text-start active" data-tab="overview" data-bs-toggle="pill" type="button">
+            <i class="bx bxs-grid-alt"></i>Overview
+          </button>
+          <button class="nav-link text-start" data-tab="invoices" data-bs-toggle="pill" type="button">
+            <i class="bx bx-receipt"></i>Invoices
+          </button>
+          <button class="nav-link text-start" data-tab="payments" data-bs-toggle="pill" type="button">
+            <i class="bx bxs-credit-card"></i>Payments
+          </button>
+          <button class="nav-link text-start" data-tab="customers" data-bs-toggle="pill" type="button">
+            <i class="bx bxs-group"></i>Customers
+          </button>
+          <button class="nav-link text-start" data-tab="products" data-bs-toggle="pill" type="button">
+            <i class="bx bxs-box"></i>Products
+          </button>
+          <button class="nav-link text-start admin-only" data-tab="recurring" data-bs-toggle="pill" type="button">
+            <i class="bx bx-revision"></i>Recurring
+          </button>
+          <button class="nav-link text-start" data-tab="reports" data-bs-toggle="pill" type="button">
+            <i class="bx bxs-bar-chart-alt-2"></i>Reports
+          </button>
+          <button class="nav-link text-start admin-only" data-tab="settings" data-bs-toggle="pill" type="button">
+            <i class="bx bxs-cog"></i>Settings
+          </button>
+        </nav>
+      </div>
+
+      <main class="col-lg-10">
+        <div class="tab-content" id="tab-panels">
+          <section class="tab-panel tab-pane fade show active" data-panel="overview" role="tabpanel">
+            <div class="invoice-dashboard-shell">
+              <div class="invoice-dashboard-grid">
+                <div class="invoice-dashboard-main">
+                  <section class="dashboard-hero-card">
+                    <div class="dashboard-hero-head">
+                      <div>
+                        <p class="dashboard-eyebrow">Invoice workspace</p>
+                        <h1 class="dashboard-title">Invoice dashboard</h1>
+                        <p class="dashboard-subtitle">Find invoices fast, share links, and export clean PDFs.</p>
+                      </div>
+                      <div class="dashboard-hero-actions">
+                        <button id="overview-export-btn" type="button" class="btn btn-light dashboard-inline-btn">
+                          <i class="bx bx-download"></i>
+                          <span>Export</span>
+                        </button>
+                        <button id="overview-share-workspace-btn" type="button"
+                          class="btn btn-light dashboard-inline-btn">
+                          <i class="bx bx-share-alt"></i>
+                          <span>Share</span>
+                        </button>
                       </div>
                     </div>
-                  </div>
-                  <div class="col-xl-3 col-md-6 mb-4">
-                    <div class="card border-left-success shadow-sm h-100 py-2 account-card account-card-outstanding">
-                      <div class="card-body">
-                        <div class="row no-gutters align-items-center">
-                          <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Outstanding</div>
-                            <div id="metric-outstanding" class="h5 mb-0 font-weight-bold text-gray-800">Rs 0.00</div>
-                          </div>
-                          <div class="col-auto">
-                            <i class="bi-exclamation-triangle-fill fs-2 text-gray-300"></i>
-                          </div>
+
+                    <div class="dashboard-kpi-grid">
+                      <article class="dashboard-stat-card stat-card-outstanding">
+                        <div class="dashboard-stat-head">
+                          <div class="dashboard-stat-label">Outstanding</div>
+                          <span id="overview-outstanding-badge" class="dashboard-stat-badge badge-danger">0
+                            invoices</span>
                         </div>
+                        <div id="metric-outstanding" class="dashboard-stat-value">Rs 0.00</div>
+                        <p id="overview-outstanding-note" class="dashboard-stat-note">Due within the next 30 days</p>
+                      </article>
+
+                      <article class="dashboard-stat-card stat-card-revenue">
+                        <div class="dashboard-stat-head">
+                          <div class="dashboard-stat-label">Collected Revenue</div>
+                          <span id="overview-revenue-badge" class="dashboard-stat-badge badge-success">0
+                            invoices</span>
+                        </div>
+                        <div id="metric-revenue" class="dashboard-stat-value">Rs 0.00</div>
+                        <p id="overview-revenue-note" class="dashboard-stat-note">Total revenue processed in the
+                          current report view</p>
+                      </article>
+
+                      <article class="dashboard-stat-card stat-card-overdue">
+                        <div class="dashboard-stat-head">
+                          <div class="dashboard-stat-label">Overdue</div>
+                          <span id="overview-overdue-badge" class="dashboard-stat-badge badge-warning">0
+                            flagged</span>
+                        </div>
+                        <div id="metric-overdue" class="dashboard-stat-value">0</div>
+                        <p id="overview-overdue-note" class="dashboard-stat-note">Invoices that need attention right
+                          now</p>
+                      </article>
+
+                      <article class="dashboard-stat-card stat-card-base">
+                        <div class="dashboard-stat-head">
+                          <div class="dashboard-stat-label">Client Base</div>
+                          <span id="overview-base-badge" class="dashboard-stat-badge badge-neutral">0 records</span>
+                        </div>
+                        <div id="metric-base" class="dashboard-stat-value">0 / 0</div>
+                        <p id="overview-base-note" class="dashboard-stat-note">Customers and products ready to invoice
+                        </p>
+                      </article>
+                    </div>
+                  </section>
+
+                  <section class="dashboard-filter-card">
+                    <form id="overview-filter-form" class="dashboard-filter-form">
+                      <label class="dashboard-search-field" for="overview-filter-query">
+                        <i class="bx bx-search"></i>
+                        <input id="overview-filter-query" type="search" class="dashboard-search-input"
+                          placeholder="Search invoice #, customer, note..." />
+                      </label>
+                      <select id="overview-filter-status" class="form-select dashboard-filter-select">
+                        <option value="all">All Statuses</option>
+                        <option value="unpaid">Unpaid</option>
+                        <option value="partial">Partial</option>
+                        <option value="paid">Paid</option>
+                        <option value="overdue">Overdue</option>
+                      </select>
+                      <select id="overview-filter-customer" class="form-select dashboard-filter-select">
+                        <option value="">All Customers</option>
+                      </select>
+                      <input id="overview-filter-date-from" type="date" class="form-control dashboard-filter-select" />
+                      <input id="overview-filter-date-to" type="date" class="form-control dashboard-filter-select" />
+                      <button type="submit" class="btn btn-primary dashboard-filter-apply">Apply</button>
+                      <button id="overview-clear-filters" type="button"
+                        class="btn btn-light dashboard-filter-clear">Clear</button>
+                    </form>
+                    <div id="overview-active-filters" class="dashboard-active-filters"></div>
+                  </section>
+
+                  <section class="dashboard-list-card">
+                    <div class="dashboard-section-head">
+                      <div>
+                        <p class="dashboard-section-kicker">Invoice feed</p>
+                        <h2 class="dashboard-section-title">All invoices</h2>
+                        <p id="overview-list-caption" class="dashboard-section-copy">Sorted by updated time.</p>
+                      </div>
+                      <div class="dashboard-section-actions">
+                        <button id="overview-open-invoices" type="button" class="btn btn-light dashboard-inline-btn">
+                          <i class="bx bx-link-external"></i>
+                          <span>Open studio</span>
+                        </button>
                       </div>
                     </div>
-                  </div>
-                  <div class="col-xl-3 col-md-6 mb-4">
-                    <div class="card border-left-warning shadow-sm h-100 py-2 account-card account-card-overdue">
-                      <div class="card-body">
-                        <div class="row no-gutters align-items-center">
-                          <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Overdue Invoices</div>
-                            <div id="metric-overdue" class="h5 mb-0 font-weight-bold text-gray-800">0</div>
-                          </div>
-                          <div class="col-auto">
-                            <i class="bi-calendar-x-fill fs-2 text-gray-300"></i>
-                          </div>
-                        </div>
+
+                    <div id="overview-invoice-list" class="dashboard-invoice-list"></div>
+
+                    <div class="dashboard-list-footer">
+                      <span id="overview-list-count" class="dashboard-list-count">Showing 0 invoices</span>
+                      <button type="button" class="btn btn-light dashboard-inline-btn" data-tab-open="invoices">
+                        <i class="bx bx-grid-alt"></i>
+                        <span>Full list</span>
+                      </button>
+                    </div>
+                  </section>
+                </div>
+
+                <aside class="invoice-dashboard-side">
+                  <section class="dashboard-side-card dashboard-activity-card">
+                    <div class="dashboard-section-head">
+                      <div>
+                        <p class="dashboard-section-kicker">Recent activity</p>
+                        <h2 class="dashboard-section-title">Latest invoices</h2>
+                        <p class="dashboard-section-copy">Quick access to the invoices most likely to be shared.</p>
+                      </div>
+                      <button type="button" class="dashboard-link-btn" data-tab-open="invoices">View all</button>
+                    </div>
+                    <div id="overview-activity-list" class="dashboard-activity-list"></div>
+                  </section>
+
+                  <section class="dashboard-side-card dashboard-quick-card">
+                    <div class="dashboard-section-head">
+                      <div>
+                        <p class="dashboard-section-kicker">Quick actions</p>
+                        <h2 class="dashboard-section-title">One-click tasks</h2>
+                        <p class="dashboard-section-copy">Use the latest invoice or jump straight to the studio.</p>
                       </div>
                     </div>
+
+                    <div class="dashboard-quick-actions">
+                      <button id="overview-quick-share" type="button" class="dashboard-quick-action">
+                        <span class="dashboard-quick-icon"><i class="bx bx-link"></i></span>
+                        <span class="dashboard-quick-copy">
+                          <strong>Create share link</strong>
+                          <span>Share the most recent invoice</span>
+                        </span>
+                        <i class="bx bx-arrow-right"></i>
+                      </button>
+
+                      <button id="overview-quick-download" type="button" class="dashboard-quick-action">
+                        <span class="dashboard-quick-icon"><i class="bx bx-file-blank"></i></span>
+                        <span class="dashboard-quick-copy">
+                          <strong>Download latest PDF</strong>
+                          <span>Export the newest invoice instantly</span>
+                        </span>
+                        <i class="bx bx-arrow-right"></i>
+                      </button>
+
+                      <button id="overview-quick-create" type="button" class="dashboard-quick-action">
+                        <span class="dashboard-quick-icon"><i class="bx bx-edit"></i></span>
+                        <span class="dashboard-quick-copy">
+                          <strong>Open invoice studio</strong>
+                          <span>Create or update an invoice draft</span>
+                        </span>
+                        <i class="bx bx-arrow-right"></i>
+                      </button>
+
+                      <button id="overview-quick-settings" type="button" class="dashboard-quick-action admin-only">
+                        <span class="dashboard-quick-icon"><i class="bx bx-palette"></i></span>
+                        <span class="dashboard-quick-copy">
+                          <strong>Brand settings</strong>
+                          <span>Logo, bank details, UPI, and company profile</span>
+                        </span>
+                        <i class="bx bx-arrow-right"></i>
+                      </button>
+                    </div>
+                  </section>
+
+                  <section class="dashboard-side-card dashboard-sharing-card">
+                    <div class="dashboard-section-head">
+                      <div>
+                        <p class="dashboard-section-kicker">Sharing defaults</p>
+                        <h2 class="dashboard-section-title">Workspace defaults</h2>
+                        <p class="dashboard-section-copy">Current delivery and collection settings from your
+                          workspace.</p>
+                      </div>
+                    </div>
+                    <div id="overview-sharing-defaults" class="dashboard-sharing-list"></div>
+                  </section>
+                </aside>
+              </div>
+
+              <div class="card shadow-sm dashboard-security-card">
+                <div class="card-header py-3">
+                  <h6 class="m-0 font-weight-bold text-primary">Account Security</h6>
+                </div>
+                <div class="card-body">
+                  <div class="row">
+                    <div class="col-lg-6">
+                      <form id="change-password-form">
+                        <h5>Change My Password</h5>
+                        <div class="mb-3">
+                          <label class="form-label">Current Password</label>
+                          <input name="currentPassword" type="password" class="form-control" required />
+                        </div>
+                        <div class="mb-3">
+                          <label class="form-label">New Password</label>
+                          <input name="newPassword" type="password" minlength="6" class="form-control" required />
+                        </div>
+                        <div class="mb-3">
+                          <label class="form-label">Confirm New Password</label>
+                          <input name="confirmPassword" type="password" minlength="6" class="form-control" required />
+                        </div>
+                        <button type="submit" class="btn btn-primary">Update Password</button>
+                      </form>
+                    </div>
+                    <div class="col-lg-6 admin-only">
+                      <form id="admin-reset-password-form">
+                        <h5>Admin Reset User Password</h5>
+                        <div class="mb-3">
+                          <label class="form-label">User</label>
+                          <select id="password-user-id" name="userId" class="form-select"></select>
+                        </div>
+                        <div class="mb-3">
+                          <label class="form-label">New Password</label>
+                          <input name="newPassword" type="password" minlength="6" class="form-control" required />
+                        </div>
+                        <div class="mb-3">
+                          <label class="form-label">Confirm New Password</label>
+                          <input name="confirmPassword" type="password" minlength="6" class="form-control" required />
+                        </div>
+                        <button type="submit" class="btn btn-secondary">Reset Password</button>
+                      </form>
+                    </div>
                   </div>
-                  <div class="col-xl-3 col-md-6 mb-4">
-                    <div class="card border-left-info shadow-sm h-100 py-2 account-card account-card-base">
-                      <div class="card-body">
-                        <div class="row no-gutters align-items-center">
-                          <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Customers / Products</div>
-                            <div id="metric-base" class="h5 mb-0 font-weight-bold text-gray-800">0 / 0</div>
-                          </div>
-                          <div class="col-auto">
-                            <i class="bi-people-fill fs-2 text-gray-300"></i>
-                          </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="tab-panel tab-pane fade" data-panel="invoices" role="tabpanel">
+            <div class="invoice-studio-shell mb-4">
+              <form id="invoice-form" class="invoice-studio-grid">
+                <div class="invoice-editor-panel">
+                  <div class="studio-panel editor-surface">
+                    <div class="editor-shell-header fade-up-section">
+                      <div>
+                        <p class="section-kicker">Workspace</p>
+                        <h2 class="studio-title">Invoice editor</h2>
+                        <p class="studio-subtitle">Shape the invoice on the left and watch the production preview
+                          update live on the right.</p>
+                      </div>
+                      <div class="editor-header-chips">
+                        <span class="studio-chip studio-chip-success">
+                          <span class="studio-dot" aria-hidden="true"></span>
+                          Auto-calc
+                        </span>
+                        <span class="studio-chip">Currency: INR (₹)</span>
+                      </div>
+                    </div>
+
+                    <section class="editor-section fade-up-section">
+                      <div class="section-heading">
+                        <div>
+                          <p class="section-kicker">Customer</p>
+                          <h3>Billing profile</h3>
                         </div>
                       </div>
+                      <div class="customer-select-card">
+                        <div class="customer-card-icon" aria-hidden="true">
+                          <i class="bx bx-buildings"></i>
+                        </div>
+                        <label class="premium-field premium-field-span-2">
+                          <span class="field-label">Customer</span>
+                          <select id="invoice-customer" class="form-select" required></select>
+                        </label>
+                        <label class="premium-field">
+                          <span class="field-label">GST Type</span>
+                          <select id="invoice-gst-type" class="form-select">
+                            <option value="intra">Intra State (CGST + SGST)</option>
+                            <option value="inter">Inter State (IGST)</option>
+                            <option value="none">Without GST</option>
+                          </select>
+                        </label>
+                      </div>
+                      <div id="invoice-company-banner" class="editor-banner-slot"></div>
+                    </section>
+
+                    <section class="editor-section fade-up-section">
+                      <div class="section-heading">
+                        <div>
+                          <p class="section-kicker">Details</p>
+                          <h3>Schedule and adjustments</h3>
+                        </div>
+                      </div>
+                      <div class="invoice-detail-grid">
+                        <label class="premium-field">
+                          <span class="field-label">Due Days</span>
+                          <input id="invoice-due-days" type="number" min="0" value="15" class="form-control" />
+                        </label>
+                        <label class="premium-field premium-field-readonly">
+                          <span class="field-label">Issue Date</span>
+                          <input value="Auto today" class="form-control" readonly />
+                        </label>
+                        <label class="premium-field">
+                          <span class="field-label">Invoice Discount</span>
+                          <input id="invoice-discount" type="number" min="0" step="0.01" value="0"
+                            class="form-control" />
+                        </label>
+                        <label class="premium-field premium-field-readonly">
+                          <span class="field-label">Currency</span>
+                          <input value="Indian Rupee (₹)" class="form-control" readonly />
+                        </label>
+                        <label class="premium-field">
+                          <span class="field-label">Shipping</span>
+                          <input id="invoice-shipping" type="number" step="0.01" value="0" class="form-control" />
+                        </label>
+                        <label class="premium-field">
+                          <span class="field-label">Round Off</span>
+                          <input id="invoice-roundoff" type="number" step="0.01" value="0" class="form-control" />
+                        </label>
+                      </div>
+                    </section>
+
+                    <section class="editor-section fade-up-section">
+                      <div class="section-heading">
+                        <div>
+                          <p class="section-kicker">Notes</p>
+                          <h3>Terms and delivery notes</h3>
+                        </div>
+                      </div>
+                      <label class="premium-field premium-field-stack">
+                        <span class="field-label">Notes</span>
+                        <textarea id="invoice-notes" rows="3"
+                          placeholder="Optional notes for delivery, payment terms, or thank-you text"
+                          class="form-control"></textarea>
+                      </label>
+                    </section>
+
+                    <section class="editor-section fade-up-section">
+                      <div class="section-heading section-heading-spread">
+                        <div>
+                          <p class="section-kicker">Items</p>
+                          <h3>Line items</h3>
+                        </div>
+                        <button id="add-line-item" class="btn btn-secondary editor-add-btn" type="button">
+                          Add item
+                        </button>
+                      </div>
+                      <div id="line-items" class="line-item-stack"></div>
+                    </section>
+
+                    <section class="editor-section fade-up-section">
+                      <div class="section-heading">
+                        <div>
+                          <p class="section-kicker">Summary</p>
+                          <h3>Total block</h3>
+                        </div>
+                      </div>
+                      <div id="invoice-editor-summary" class="summary-total-block"></div>
+                    </section>
+
+                    <div class="editor-footer fade-up-section">
+                      <button id="invoice-submit" type="submit" class="btn btn-primary btn-lg">
+                        Generate Invoice
+                      </button>
+                      <p class="editor-footnote">Save the invoice to unlock PDF, sharing, and payment tracking.</p>
                     </div>
                   </div>
                 </div>
 
-                <div class="row mb-4">
-                  <div class="col-lg-7">
-                    <div class="card shadow-sm h-100 wallet-card">
-                      <div class="card-header py-3 d-flex justify-content-between align-items-center">
-                        <h6 class="m-0 font-weight-bold text-primary">Wallet Balance</h6>
-                        <span id="wallet-progress-text" class="badge bg-success">0% available</span>
+                <div class="invoice-preview-panel">
+                  <div class="studio-panel preview-surface">
+                    <div class="preview-toolbar fade-up-section">
+                      <div class="preview-brand">
+                        <div class="preview-brand-logo">
+                          <img src="./logo.png" alt="InvoiceFlow Pro logo" class="preview-brand-wordmark" />
+                        </div>
+                        <div class="preview-brand-copy">
+                          <p>InvoiceFlow Pro</p>
+                          <span>High-fidelity preview</span>
+                        </div>
                       </div>
-                      <div class="card-body">
-                        <div class="wallet-balance-row">
-                          <div>
-                            <p class="wallet-label">Available Balance</p>
-                            <h3 id="wallet-balance-value" class="wallet-value">Rs 0.00</h3>
-                          </div>
-                          <div class="wallet-chip">
-                            <span class="wallet-chip-dot"></span>
-                            <span id="wallet-card-brand">BUSINESS CARD</span>
-                          </div>
-                        </div>
-                        <div class="wallet-progress-track">
-                          <div id="wallet-progress-fill" class="wallet-progress-fill"></div>
-                        </div>
-                        <div class="wallet-meta">
-                          <span>Primary Card</span>
-                          <span id="wallet-card-number">.... 0000</span>
-                        </div>
+                      <div class="preview-toggle-group" aria-label="Preview modes">
+                        <button type="button" class="preview-toggle is-active" data-preview-mode="preview">
+                          Preview
+                        </button>
+                        <button type="button" class="preview-toggle" data-preview-action="print">
+                          Print
+                        </button>
+                        <button type="button" class="preview-toggle" data-preview-mode="notes">
+                          Notes
+                        </button>
                       </div>
                     </div>
-                  </div>
-                  <div class="col-lg-5">
-                    <div class="card shadow-sm h-100 card-manager-panel">
-                      <div class="card-header py-3 d-flex justify-content-between align-items-center">
-                        <h6 class="m-0 font-weight-bold text-primary">Card Management</h6>
-                        <span class="badge bg-light text-dark">Bank Accounts</span>
-                      </div>
-                      <div class="card-body">
-                        <div class="table-responsive compact-table">
-                          <table class="table table-bordered" width="100%" cellspacing="0">
-                            <thead>
-                              <tr>
-                                <th>Bank</th>
-                                <th>Card / UPI</th>
-                                <th>Status</th>
-                                <th>Action</th>
-                              </tr>
-                            </thead>
-                            <tbody id="card-list-body"></tbody>
-                          </table>
-                        </div>
-                      </div>
-                    </div>
+                    <div id="invoice-preview" class="invoice-preview-stage fade-up-section"></div>
                   </div>
                 </div>
+              </form>
+            </div>
 
-                <div class="row mb-4 analytics-grid">
-                  <div class="col-lg-4">
-                    <div class="card shadow-sm h-100">
-                      <div class="card-header py-3">
-                        <h6 class="m-0 font-weight-bold text-primary">Card Statistics</h6>
-                      </div>
-                      <div class="card-body">
-                        <div class="doughnut-wrap">
-                          <div id="chart-doughnut" class="doughnut-chart">
-                            <div id="chart-doughnut-center" class="doughnut-center">0</div>
-                          </div>
-                        </div>
-                        <div class="doughnut-legend">
-                          <div class="legend-item"><span class="legend-dot paid"></span>Paid <strong id="legend-paid-count">0</strong></div>
-                          <div class="legend-item"><span class="legend-dot partial"></span>Partial <strong id="legend-partial-count">0</strong></div>
-                          <div class="legend-item"><span class="legend-dot unpaid"></span>Unpaid <strong id="legend-unpaid-count">0</strong></div>
-                        </div>
-                      </div>
-                    </div>
+            <div class="card shadow-sm invoice-finder-panel">
+              <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Invoice Finder</h6>
+              </div>
+              <div class="card-body">
+                <form id="invoice-filter-form" class="row g-3">
+                  <div class="col-md-3">
+                    <label class="form-label">Search</label>
+                    <input id="filter-query" placeholder="Invoice no, customer, note" class="form-control" />
                   </div>
-                  <div class="col-lg-4">
-                    <div class="card shadow-sm h-100">
-                      <div class="card-header py-3">
-                        <h6 class="m-0 font-weight-bold text-primary">Income Analytics</h6>
-                      </div>
-                      <div class="card-body">
-                        <div id="income-bars" class="mini-bars"></div>
-                      </div>
-                    </div>
+                  <div class="col-md-2">
+                    <label class="form-label">Status</label>
+                    <select id="filter-status" class="form-select">
+                      <option value="all">All</option>
+                      <option value="unpaid">Unpaid</option>
+                      <option value="partial">Partial</option>
+                      <option value="paid">Paid</option>
+                      <option value="overdue">Overdue</option>
+                    </select>
                   </div>
-                  <div class="col-lg-4">
-                    <div class="card shadow-sm h-100">
-                      <div class="card-header py-3">
-                        <h6 class="m-0 font-weight-bold text-primary">Outcome Analytics</h6>
-                      </div>
-                      <div class="card-body">
-                        <div id="outcome-bars" class="mini-bars"></div>
-                      </div>
-                    </div>
+                  <div class="col-md-2">
+                    <label class="form-label">Customer</label>
+                    <select id="filter-customer" class="form-select">
+                      <option value="">All Customers</option>
+                    </select>
                   </div>
+                  <div class="col-md-2">
+                    <label class="form-label">Date From</label>
+                    <input id="filter-date-from" type="date" class="form-control" />
+                  </div>
+                  <div class="col-md-2">
+                    <label class="form-label">Date To</label>
+                    <input id="filter-date-to" type="date" class="form-control" />
+                  </div>
+                  <div class="col-md-1 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary">Apply</button>
+                  </div>
+                  <div class="col-md-1 d-flex align-items-end">
+                    <button id="clear-invoice-filters" type="button" class="btn btn-light">Clear</button>
+                  </div>
+                </form>
+                <div class="table-responsive mt-3">
+                  <table class="table table-bordered" width="100%" cellspacing="0">
+                    <thead>
+                      <tr>
+                        <th>No.</th>
+                        <th>Date</th>
+                        <th>Customer</th>
+                        <th>Status</th>
+                        <th>Total</th>
+                        <th>Paid</th>
+                        <th>Due</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody id="invoice-table-body"></tbody>
+                  </table>
                 </div>
+              </div>
+            </div>
+          </section>
 
+          <section class="tab-panel tab-pane fade" data-panel="payments" role="tabpanel">
+            <div class="card shadow-sm">
+              <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Payment Tracker</h6>
+              </div>
+              <div class="card-body">
+                <div class="table-responsive">
+                  <table class="table table-bordered" width="100%" cellspacing="0">
+                    <thead>
+                      <tr>
+                        <th>Invoice</th>
+                        <th>Customer</th>
+                        <th>Total</th>
+                        <th>Paid</th>
+                        <th>Due</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                      </tr>
+                    </thead>
+                    <tbody id="payment-table-body"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="tab-panel tab-pane fade" data-panel="customers" role="tabpanel">
+            <div class="row">
+              <div class="col-lg-6">
                 <div class="card shadow-sm mb-4">
                   <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">Recent Invoices</h6>
+                    <h6 class="m-0 font-weight-bold text-primary">Add Customer</h6>
+                  </div>
+                  <div class="card-body">
+                    <form id="customer-form" class="row g-3">
+                      <input type="hidden" name="customerId" id="customer-id" />
+                      <div class="col-md-6">
+                        <label class="form-label">Name</label>
+                        <input name="name" class="form-control" required />
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label">Email</label>
+                        <input name="email" type="email" class="form-control" />
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label">Phone</label>
+                        <input name="phone" class="form-control" />
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label">GSTIN</label>
+                        <input name="gstin" class="form-control" />
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label">State Code</label>
+                        <input name="stateCode" class="form-control" />
+                      </div>
+                      <div class="col-12">
+                        <label class="form-label">Address</label>
+                        <textarea name="address" rows="2" class="form-control"></textarea>
+                      </div>
+                      <div class="col-12">
+                        <button id="customer-submit-btn" type="submit" class="btn btn-primary">Save Customer</button>
+                        <button id="customer-cancel-btn" type="button" class="btn btn-secondary hidden">Cancel
+                          Edit</button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              </div>
+              <div class="col-lg-6">
+                <div class="card shadow-sm mb-4">
+                  <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Customer Statement</h6>
                   </div>
                   <div class="card-body">
                     <div class="table-responsive">
                       <table class="table table-bordered" width="100%" cellspacing="0">
                         <thead>
                           <tr>
-                            <th>No.</th>
-                            <th>Customer</th>
-                            <th>Status</th>
-                            <th>Total</th>
-                            <th>Due</th>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>GSTIN</th>
+                            <th>Action</th>
                           </tr>
                         </thead>
-                        <tbody id="overview-recent-body"></tbody>
+                        <tbody id="customer-table-body"></tbody>
                       </table>
                     </div>
                   </div>
                 </div>
+              </div>
+            </div>
+          </section>
 
-                <div class="card shadow-sm">
-                  <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">Account Security</h6>
-                  </div>
-                  <div class="card-body">
-                    <div class="row">
-                      <div class="col-lg-6">
-                        <form id="change-password-form">
-                          <h5>Change My Password</h5>
-                          <div class="mb-3">
-                            <label class="form-label">Current Password</label>
-                            <input name="currentPassword" type="password" class="form-control" required />
-                          </div>
-                          <div class="mb-3">
-                            <label class="form-label">New Password</label>
-                            <input name="newPassword" type="password" minlength="6" class="form-control" required />
-                          </div>
-                          <div class="mb-3">
-                            <label class="form-label">Confirm New Password</label>
-                            <input name="confirmPassword" type="password" minlength="6" class="form-control" required />
-                          </div>
-                          <button type="submit" class="btn btn-primary">Update Password</button>
-                        </form>
-                      </div>
-                      <div class="col-lg-6 admin-only">
-                        <form id="admin-reset-password-form">
-                          <h5>Admin Reset User Password</h5>
-                          <div class="mb-3">
-                            <label class="form-label">User</label>
-                            <select id="password-user-id" name="userId" class="form-select"></select>
-                          </div>
-                          <div class="mb-3">
-                            <label class="form-label">New Password</label>
-                            <input name="newPassword" type="password" minlength="6" class="form-control" required />
-                          </div>
-                          <div class="mb-3">
-                            <label class="form-label">Confirm New Password</label>
-                            <input name="confirmPassword" type="password" minlength="6" class="form-control" required />
-                          </div>
-                          <button type="submit" class="btn btn-secondary">Reset Password</button>
-                        </form>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </section>
-
-              <section class="tab-panel tab-pane fade" data-panel="invoices" role="tabpanel">
+          <section class="tab-panel tab-pane fade" data-panel="products" role="tabpanel">
+            <div class="row">
+              <div class="col-lg-6">
                 <div class="card shadow-sm mb-4">
                   <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">Create Invoice</h6>
+                    <h6 class="m-0 font-weight-bold text-primary">Add Product / Service</h6>
                   </div>
                   <div class="card-body">
-                    <form id="invoice-form" class="row g-3">
-                      <div class="col-md-4">
-                        <label class="form-label">Customer</label>
-                        <select id="invoice-customer" class="form-select" required></select>
+                    <form id="product-form" class="row g-3">
+                      <div class="col-md-6">
+                        <label class="form-label">Name</label>
+                        <input name="name" class="form-control" required />
                       </div>
-                      <div class="col-md-4">
+                      <div class="col-md-6">
+                        <label class="form-label">HSN / SAC</label>
+                        <input name="hsnSac" class="form-control" />
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label">Unit Price</label>
+                        <input name="price" type="number" min="0" step="0.01" class="form-control" required />
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label">GST Rate (%)</label>
+                        <input name="taxRate" type="number" min="0" step="0.01" value="18" class="form-control" />
+                      </div>
+                      <div class="col-12">
+                        <label class="form-label">Pricing Model</label>
+                        <select name="pricingModel" class="form-select">
+                          <option value="exclusive">Tax Exclusive</option>
+                          <option value="inclusive">Tax Inclusive</option>
+                        </select>
+                      </div>
+                      <div class="col-12">
+                        <button type="submit" class="btn btn-primary">Save Product</button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              </div>
+              <div class="col-lg-6">
+                <div class="card shadow-sm mb-4">
+                  <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Product Catalog</h6>
+                  </div>
+                  <div class="card-body">
+                    <div id="product-list"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="tab-panel tab-pane fade admin-only" data-panel="recurring" role="tabpanel">
+            <div class="row">
+              <div class="col-lg-6">
+                <div class="card shadow-sm mb-4">
+                  <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Recurring Invoice Setup</h6>
+                  </div>
+                  <div class="card-body">
+                    <form id="recurring-form" class="row g-3">
+                      <div class="col-md-6">
+                        <label class="form-label">Template Name</label>
+                        <input id="rec-name" class="form-control" required />
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label">Customer</label>
+                        <select id="rec-customer" class="form-select" required></select>
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label">Frequency</label>
+                        <select id="rec-frequency" class="form-select">
+                          <option value="monthly">Monthly</option>
+                          <option value="weekly">Weekly</option>
+                        </select>
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label">Start Date</label>
+                        <input id="rec-start-date" type="date" class="form-control" />
+                      </div>
+                      <div class="col-md-6">
                         <label class="form-label">GST Type</label>
-                        <select id="invoice-gst-type" class="form-select">
-                          <option value="intra">Intra State (CGST + SGST)</option>
-                          <option value="inter">Inter State (IGST)</option>
+                        <select id="rec-gst-type" class="form-select">
+                          <option value="intra">Intra State</option>
+                          <option value="inter">Inter State</option>
                           <option value="none">Without GST</option>
                         </select>
                       </div>
-                      <div class="col-md-4">
+                      <div class="col-md-6">
                         <label class="form-label">Due Days</label>
-                        <input id="invoice-due-days" type="number" min="0" value="15" class="form-control" />
+                        <input id="rec-due-days" type="number" min="0" value="15" class="form-control" />
                       </div>
                       <div class="col-md-4">
                         <label class="form-label">Invoice Discount</label>
-                        <input id="invoice-discount" type="number" min="0" step="0.01" value="0" class="form-control" />
+                        <input id="rec-discount" type="number" min="0" step="0.01" value="0" class="form-control" />
                       </div>
                       <div class="col-md-4">
                         <label class="form-label">Shipping</label>
-                        <input id="invoice-shipping" type="number" step="0.01" value="0" class="form-control" />
+                        <input id="rec-shipping" type="number" step="0.01" value="0" class="form-control" />
                       </div>
                       <div class="col-md-4">
                         <label class="form-label">Round Off</label>
-                        <input id="invoice-roundoff" type="number" step="0.01" value="0" class="form-control" />
+                        <input id="rec-roundoff" type="number" step="0.01" value="0" class="form-control" />
                       </div>
                       <div class="col-12">
                         <label class="form-label">Notes</label>
-                        <textarea id="invoice-notes" rows="2" placeholder="Optional notes" class="form-control"></textarea>
+                        <textarea id="rec-notes" rows="2" class="form-control"></textarea>
                       </div>
-                      <div id="invoice-company-banner" class="col-12"></div>
                       <div class="col-12 d-flex justify-content-between align-items-center">
-                        <h5>Line Items</h5>
-                        <button id="add-line-item" class="btn btn-secondary" type="button">Add Item</button>
+                        <h5>Template Items</h5>
+                        <button id="add-rec-item" class="btn btn-secondary" type="button">Add Item</button>
                       </div>
-                      <div id="line-items" class="col-12"></div>
-                      <div id="invoice-preview" class="col-12"></div>
+                      <div id="rec-items" class="col-12"></div>
                       <div class="col-12">
-                        <button id="invoice-submit" type="submit" class="btn btn-primary">Generate Invoice</button>
+                        <button type="submit" class="btn btn-primary">Save Template</button>
+                        <button id="run-recurring-now" type="button" class="btn btn-secondary">Run Due Now</button>
                       </div>
                     </form>
                   </div>
                 </div>
-
-                <div class="card shadow-sm">
+              </div>
+              <div class="col-lg-6">
+                <div class="card shadow-sm mb-4">
                   <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">Invoice Finder</h6>
-                  </div>
-                  <div class="card-body">
-                    <form id="invoice-filter-form" class="row g-3">
-                      <div class="col-md-3">
-                        <label class="form-label">Search</label>
-                        <input id="filter-query" placeholder="Invoice no, customer, note" class="form-control" />
-                      </div>
-                      <div class="col-md-2">
-                        <label class="form-label">Status</label>
-                        <select id="filter-status" class="form-select">
-                          <option value="all">All</option>
-                          <option value="unpaid">Unpaid</option>
-                          <option value="partial">Partial</option>
-                          <option value="paid">Paid</option>
-                          <option value="overdue">Overdue</option>
-                        </select>
-                      </div>
-                      <div class="col-md-2">
-                        <label class="form-label">Customer</label>
-                        <select id="filter-customer" class="form-select">
-                          <option value="">All Customers</option>
-                        </select>
-                      </div>
-                      <div class="col-md-2">
-                        <label class="form-label">Date From</label>
-                        <input id="filter-date-from" type="date" class="form-control" />
-                      </div>
-                      <div class="col-md-2">
-                        <label class="form-label">Date To</label>
-                        <input id="filter-date-to" type="date" class="form-control" />
-                      </div>
-                      <div class="col-md-1 d-flex align-items-end">
-                        <button type="submit" class="btn btn-primary">Apply</button>
-                      </div>
-                      <div class="col-md-1 d-flex align-items-end">
-                        <button id="clear-invoice-filters" type="button" class="btn btn-light">Clear</button>
-                      </div>
-                    </form>
-                    <div class="table-responsive mt-3">
-                      <table class="table table-bordered" width="100%" cellspacing="0">
-                        <thead>
-                          <tr>
-                            <th>No.</th>
-                            <th>Date</th>
-                            <th>Customer</th>
-                            <th>Status</th>
-                            <th>Total</th>
-                            <th>Paid</th>
-                            <th>Due</th>
-                            <th>Actions</th>
-                          </tr>
-                        </thead>
-                        <tbody id="invoice-table-body"></tbody>
-                      </table>
-                    </div>
-                  </div>
-                </div>
-              </section>
-
-              <section class="tab-panel tab-pane fade" data-panel="payments" role="tabpanel">
-                <div class="card shadow-sm">
-                  <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">Payment Tracker</h6>
+                    <h6 class="m-0 font-weight-bold text-primary">Recurring Templates</h6>
                   </div>
                   <div class="card-body">
                     <div class="table-responsive">
                       <table class="table table-bordered" width="100%" cellspacing="0">
                         <thead>
                           <tr>
-                            <th>Invoice</th>
+                            <th>Name</th>
                             <th>Customer</th>
-                            <th>Total</th>
-                            <th>Paid</th>
-                            <th>Due</th>
+                            <th>Frequency</th>
+                            <th>Next Run</th>
                             <th>Status</th>
                             <th>Action</th>
                           </tr>
                         </thead>
-                        <tbody id="payment-table-body"></tbody>
+                        <tbody id="recurring-table-body"></tbody>
                       </table>
                     </div>
                   </div>
                 </div>
-              </section>
+              </div>
+            </div>
+          </section>
 
-              <section class="tab-panel tab-pane fade" data-panel="customers" role="tabpanel">
+          <section class="tab-panel tab-pane fade" data-panel="reports" role="tabpanel">
+            <div class="card shadow-sm mb-4">
+              <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Reports Dashboard</h6>
+              </div>
+              <div class="card-body">
+                <form id="report-filter-form" class="row g-3">
+                  <div class="col-md-4">
+                    <label class="form-label">Date From</label>
+                    <input id="report-date-from" type="date" class="form-control" />
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label">Date To</label>
+                    <input id="report-date-to" type="date" class="form-control" />
+                  </div>
+                  <div class="col-md-4 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary">Refresh Report</button>
+                  </div>
+                </form>
+
+                <div class="row mt-4">
+                  <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card border-left-primary shadow-sm h-100 py-2">
+                      <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                          <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Invoices</div>
+                            <div id="rep-invoice-count" class="h5 mb-0 font-weight-bold text-gray-800">0</div>
+                          </div>
+                          <div class="col-auto">
+                            <i class="bx bx-receipt fs-2 text-gray-300"></i>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card border-left-success shadow-sm h-100 py-2">
+                      <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                          <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Revenue</div>
+                            <div id="rep-revenue" class="h5 mb-0 font-weight-bold text-gray-800">Rs 0.00</div>
+                          </div>
+                          <div class="col-auto">
+                            <i class="bx bx-currency-rupee fs-2 text-gray-300"></i>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card border-left-info shadow-sm h-100 py-2">
+                      <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                          <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Tax Collected</div>
+                            <div id="rep-tax" class="h5 mb-0 font-weight-bold text-gray-800">Rs 0.00</div>
+                          </div>
+                          <div class="col-auto">
+                            <i class="bx bx-file-earmark-spreadsheet-fill fs-2 text-gray-300"></i>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card border-left-warning shadow-sm h-100 py-2">
+                      <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                          <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Outstanding</div>
+                            <div id="rep-outstanding" class="h5 mb-0 font-weight-bold text-gray-800">Rs 0.00</div>
+                          </div>
+                          <div class="col-auto">
+                            <i class="bx bx-exclamation-circle-fill fs-2 text-gray-300"></i>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
                 <div class="row">
                   <div class="col-lg-6">
                     <div class="card shadow-sm mb-4">
                       <div class="card-header py-3">
-                        <h6 class="m-0 font-weight-bold text-primary">Add Customer</h6>
-                      </div>
-                      <div class="card-body">
-                        <form id="customer-form" class="row g-3">
-                          <input type="hidden" name="customerId" id="customer-id" />
-                          <div class="col-md-6">
-                            <label class="form-label">Name</label>
-                            <input name="name" class="form-control" required />
-                          </div>
-                          <div class="col-md-6">
-                            <label class="form-label">Email</label>
-                            <input name="email" type="email" class="form-control" />
-                          </div>
-                          <div class="col-md-6">
-                            <label class="form-label">Phone</label>
-                            <input name="phone" class="form-control" />
-                          </div>
-                          <div class="col-md-6">
-                            <label class="form-label">GSTIN</label>
-                            <input name="gstin" class="form-control" />
-                          </div>
-                          <div class="col-md-6">
-                            <label class="form-label">State Code</label>
-                            <input name="stateCode" class="form-control" />
-                          </div>
-                          <div class="col-12">
-                            <label class="form-label">Address</label>
-                            <textarea name="address" rows="2" class="form-control"></textarea>
-                          </div>
-                          <div class="col-12">
-                            <button id="customer-submit-btn" type="submit" class="btn btn-primary">Save Customer</button>
-                            <button id="customer-cancel-btn" type="button" class="btn btn-secondary hidden">Cancel Edit</button>
-                          </div>
-                        </form>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="col-lg-6">
-                    <div class="card shadow-sm mb-4">
-                      <div class="card-header py-3">
-                        <h6 class="m-0 font-weight-bold text-primary">Customer Statement</h6>
+                        <h6 class="m-0 font-weight-bold text-primary">Top Customers</h6>
                       </div>
                       <div class="card-body">
                         <div class="table-responsive">
@@ -576,145 +1028,20 @@
                             <thead>
                               <tr>
                                 <th>Name</th>
-                                <th>Email</th>
-                                <th>GSTIN</th>
-                                <th>Action</th>
+                                <th>Revenue</th>
+                                <th>Due</th>
                               </tr>
                             </thead>
-                            <tbody id="customer-table-body"></tbody>
+                            <tbody id="top-customers-body"></tbody>
                           </table>
                         </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              </section>
-
-              <section class="tab-panel tab-pane fade" data-panel="products" role="tabpanel">
-                <div class="row">
                   <div class="col-lg-6">
                     <div class="card shadow-sm mb-4">
                       <div class="card-header py-3">
-                        <h6 class="m-0 font-weight-bold text-primary">Add Product / Service</h6>
-                      </div>
-                      <div class="card-body">
-                        <form id="product-form" class="row g-3">
-                          <div class="col-md-6">
-                            <label class="form-label">Name</label>
-                            <input name="name" class="form-control" required />
-                          </div>
-                          <div class="col-md-6">
-                            <label class="form-label">HSN / SAC</label>
-                            <input name="hsnSac" class="form-control" />
-                          </div>
-                          <div class="col-md-6">
-                            <label class="form-label">Unit Price</label>
-                            <input name="price" type="number" min="0" step="0.01" class="form-control" required />
-                          </div>
-                          <div class="col-md-6">
-                            <label class="form-label">GST Rate (%)</label>
-                            <input name="taxRate" type="number" min="0" step="0.01" value="18" class="form-control" />
-                          </div>
-                          <div class="col-12">
-                            <label class="form-label">Pricing Model</label>
-                            <select name="pricingModel" class="form-select">
-                              <option value="exclusive">Tax Exclusive</option>
-                              <option value="inclusive">Tax Inclusive</option>
-                            </select>
-                          </div>
-                          <div class="col-12">
-                            <button type="submit" class="btn btn-primary">Save Product</button>
-                          </div>
-                        </form>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="col-lg-6">
-                    <div class="card shadow-sm mb-4">
-                      <div class="card-header py-3">
-                        <h6 class="m-0 font-weight-bold text-primary">Product Catalog</h6>
-                      </div>
-                      <div class="card-body">
-                        <div id="product-list"></div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </section>
-
-              <section class="tab-panel tab-pane fade admin-only" data-panel="recurring" role="tabpanel">
-                <div class="row">
-                  <div class="col-lg-6">
-                    <div class="card shadow-sm mb-4">
-                      <div class="card-header py-3">
-                        <h6 class="m-0 font-weight-bold text-primary">Recurring Invoice Setup</h6>
-                      </div>
-                      <div class="card-body">
-                        <form id="recurring-form" class="row g-3">
-                          <div class="col-md-6">
-                            <label class="form-label">Template Name</label>
-                            <input id="rec-name" class="form-control" required />
-                          </div>
-                          <div class="col-md-6">
-                            <label class="form-label">Customer</label>
-                            <select id="rec-customer" class="form-select" required></select>
-                          </div>
-                          <div class="col-md-6">
-                            <label class="form-label">Frequency</label>
-                            <select id="rec-frequency" class="form-select">
-                              <option value="monthly">Monthly</option>
-                              <option value="weekly">Weekly</option>
-                            </select>
-                          </div>
-                          <div class="col-md-6">
-                            <label class="form-label">Start Date</label>
-                            <input id="rec-start-date" type="date" class="form-control" />
-                          </div>
-                          <div class="col-md-6">
-                            <label class="form-label">GST Type</label>
-                            <select id="rec-gst-type" class="form-select">
-                              <option value="intra">Intra State</option>
-                              <option value="inter">Inter State</option>
-                              <option value="none">Without GST</option>
-                            </select>
-                          </div>
-                          <div class="col-md-6">
-                            <label class="form-label">Due Days</label>
-                            <input id="rec-due-days" type="number" min="0" value="15" class="form-control" />
-                          </div>
-                          <div class="col-md-4">
-                            <label class="form-label">Invoice Discount</label>
-                            <input id="rec-discount" type="number" min="0" step="0.01" value="0" class="form-control" />
-                          </div>
-                          <div class="col-md-4">
-                            <label class="form-label">Shipping</label>
-                            <input id="rec-shipping" type="number" step="0.01" value="0" class="form-control" />
-                          </div>
-                          <div class="col-md-4">
-                            <label class="form-label">Round Off</label>
-                            <input id="rec-roundoff" type="number" step="0.01" value="0" class="form-control" />
-                          </div>
-                          <div class="col-12">
-                            <label class="form-label">Notes</label>
-                            <textarea id="rec-notes" rows="2" class="form-control"></textarea>
-                          </div>
-                          <div class="col-12 d-flex justify-content-between align-items-center">
-                            <h5>Template Items</h5>
-                            <button id="add-rec-item" class="btn btn-secondary" type="button">Add Item</button>
-                          </div>
-                          <div id="rec-items" class="col-12"></div>
-                          <div class="col-12">
-                            <button type="submit" class="btn btn-primary">Save Template</button>
-                            <button id="run-recurring-now" type="button" class="btn btn-secondary">Run Due Now</button>
-                          </div>
-                        </form>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="col-lg-6">
-                    <div class="card shadow-sm mb-4">
-                      <div class="card-header py-3">
-                        <h6 class="m-0 font-weight-bold text-primary">Recurring Templates</h6>
+                        <h6 class="m-0 font-weight-bold text-primary">Top Products</h6>
                       </div>
                       <div class="card-body">
                         <div class="table-responsive">
@@ -722,339 +1049,203 @@
                             <thead>
                               <tr>
                                 <th>Name</th>
-                                <th>Customer</th>
-                                <th>Frequency</th>
-                                <th>Next Run</th>
-                                <th>Status</th>
-                                <th>Action</th>
+                                <th>Qty</th>
+                                <th>Revenue</th>
                               </tr>
                             </thead>
-                            <tbody id="recurring-table-body"></tbody>
+                            <tbody id="top-products-body"></tbody>
                           </table>
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </section>
+              </div>
+            </div>
+          </section>
 
-              <section class="tab-panel tab-pane fade" data-panel="reports" role="tabpanel">
+          <section class="tab-panel tab-pane fade admin-only" data-panel="settings" role="tabpanel">
+            <div class="row">
+              <div class="col-lg-8">
                 <div class="card shadow-sm mb-4">
                   <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">Reports Dashboard</h6>
+                    <h6 class="m-0 font-weight-bold text-primary">Business Settings</h6>
                   </div>
                   <div class="card-body">
-                    <form id="report-filter-form" class="row g-3">
-                      <div class="col-md-4">
-                        <label class="form-label">Date From</label>
-                        <input id="report-date-from" type="date" class="form-control" />
+                    <form id="settings-form" class="row g-3">
+                      <div class="col-md-6">
+                        <label class="form-label">Invoice Prefix</label>
+                        <input name="invoicePrefix" class="form-control" />
                       </div>
-                      <div class="col-md-4">
-                        <label class="form-label">Date To</label>
-                        <input id="report-date-to" type="date" class="form-control" />
+                      <div class="col-md-6">
+                        <label class="form-label">FY Start Month (1-12)</label>
+                        <input name="financialYearStartMonth" type="number" min="1" max="12" class="form-control" />
                       </div>
-                      <div class="col-md-4 d-flex align-items-end">
-                        <button type="submit" class="btn btn-primary">Refresh Report</button>
+
+                      <div class="col-12">
+                        <div class="card">
+                          <div class="card-body">
+                            <h5 class="card-title">GST Company Profile</h5>
+                            <p class="card-text">Used for Intra/Inter GST invoices.</p>
+                            <div class="row">
+                              <div class="col-md-6 mb-3">
+                                <label class="form-label">Company Name</label>
+                                <input name="gstCompanyName" class="form-control" />
+                              </div>
+                              <div class="col-md-6 mb-3">
+                                <label class="form-label">Company Email</label>
+                                <input name="gstCompanyEmail" type="email" class="form-control" />
+                              </div>
+                              <div class="col-md-6 mb-3">
+                                <label class="form-label">Company Phone</label>
+                                <input name="gstCompanyPhone" class="form-control" />
+                              </div>
+                              <div class="col-md-6 mb-3">
+                                <label class="form-label">Company GSTIN</label>
+                                <input name="gstCompanyGstin" class="form-control" />
+                              </div>
+                              <div class="col-md-6 mb-3">
+                                <label class="form-label">Company PAN</label>
+                                <input name="gstCompanyPan" class="form-control" />
+                              </div>
+                              <div class="col-md-6 mb-3">
+                                <label class="form-label">State</label>
+                                <input name="gstCompanyState" class="form-control" />
+                              </div>
+                              <div class="col-md-6 mb-3">
+                                <label class="form-label">State Code</label>
+                                <input name="gstCompanyStateCode" class="form-control" />
+                              </div>
+                              <div class="col-12">
+                                <label class="form-label">Company Address</label>
+                                <textarea name="gstCompanyAddress" rows="2" class="form-control"></textarea>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="col-12">
+                        <div class="card">
+                          <div class="card-body">
+                            <h5 class="card-title">Without GST Company Profile</h5>
+                            <p class="card-text">Used automatically when invoice type is Without GST.</p>
+                            <div class="row">
+                              <div class="col-md-6 mb-3">
+                                <label class="form-label">Company Name</label>
+                                <input name="nonGstCompanyName" class="form-control" />
+                              </div>
+                              <div class="col-md-6 mb-3">
+                                <label class="form-label">Company Email</label>
+                                <input name="nonGstCompanyEmail" type="email" class="form-control" />
+                              </div>
+                              <div class="col-md-6 mb-3">
+                                <label class="form-label">Company Phone</label>
+                                <input name="nonGstCompanyPhone" class="form-control" />
+                              </div>
+                              <div class="col-md-6 mb-3">
+                                <label class="form-label">Company GSTIN (optional)</label>
+                                <input name="nonGstCompanyGstin" class="form-control" />
+                              </div>
+                              <div class="col-12">
+                                <label class="form-label">Company Address</label>
+                                <textarea name="nonGstCompanyAddress" rows="2" class="form-control"></textarea>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="col-md-6">
+                        <label class="form-label">UPI ID</label>
+                        <input name="upiId" placeholder="name@bank" class="form-control" />
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label">UPI Payee Name</label>
+                        <input name="upiPayeeName" class="form-control" />
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label">Bank Name</label>
+                        <input name="bankName" class="form-control" />
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label">Account Name</label>
+                        <input name="bankAccountName" class="form-control" />
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label">Account Number</label>
+                        <input name="bankAccountNumber" class="form-control" />
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label">IFSC</label>
+                        <input name="bankIfsc" class="form-control" />
+                      </div>
+                      <div class="col-12">
+                        <button type="submit" class="btn btn-primary">Save Settings</button>
                       </div>
                     </form>
-
-                    <div class="row mt-4">
-                      <div class="col-xl-3 col-md-6 mb-4">
-                        <div class="card border-left-primary shadow-sm h-100 py-2">
-                          <div class="card-body">
-                            <div class="row no-gutters align-items-center">
-                              <div class="col mr-2">
-                                <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Invoices</div>
-                                <div id="rep-invoice-count" class="h5 mb-0 font-weight-bold text-gray-800">0</div>
-                              </div>
-                              <div class="col-auto">
-                                <i class="bi-receipt fs-2 text-gray-300"></i>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      <div class="col-xl-3 col-md-6 mb-4">
-                        <div class="card border-left-success shadow-sm h-100 py-2">
-                          <div class="card-body">
-                            <div class="row no-gutters align-items-center">
-                              <div class="col mr-2">
-                                <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Revenue</div>
-                                <div id="rep-revenue" class="h5 mb-0 font-weight-bold text-gray-800">Rs 0.00</div>
-                              </div>
-                              <div class="col-auto">
-                                <i class="bi-currency-rupee fs-2 text-gray-300"></i>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      <div class="col-xl-3 col-md-6 mb-4">
-                        <div class="card border-left-info shadow-sm h-100 py-2">
-                          <div class="card-body">
-                            <div class="row no-gutters align-items-center">
-                              <div class="col mr-2">
-                                <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Tax Collected</div>
-                                <div id="rep-tax" class="h5 mb-0 font-weight-bold text-gray-800">Rs 0.00</div>
-                              </div>
-                              <div class="col-auto">
-                                <i class="bi-file-earmark-spreadsheet-fill fs-2 text-gray-300"></i>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      <div class="col-xl-3 col-md-6 mb-4">
-                        <div class="card border-left-warning shadow-sm h-100 py-2">
-                          <div class="card-body">
-                            <div class="row no-gutters align-items-center">
-                              <div class="col mr-2">
-                                <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Outstanding</div>
-                                <div id="rep-outstanding" class="h5 mb-0 font-weight-bold text-gray-800">Rs 0.00</div>
-                              </div>
-                              <div class="col-auto">
-                                <i class="bi-exclamation-circle-fill fs-2 text-gray-300"></i>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div class="row">
-                      <div class="col-lg-6">
-                        <div class="card shadow-sm mb-4">
-                          <div class="card-header py-3">
-                            <h6 class="m-0 font-weight-bold text-primary">Top Customers</h6>
-                          </div>
-                          <div class="card-body">
-                            <div class="table-responsive">
-                              <table class="table table-bordered" width="100%" cellspacing="0">
-                                <thead>
-                                  <tr>
-                                    <th>Name</th>
-                                    <th>Revenue</th>
-                                    <th>Due</th>
-                                  </tr>
-                                </thead>
-                                <tbody id="top-customers-body"></tbody>
-                              </table>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      <div class="col-lg-6">
-                        <div class="card shadow-sm mb-4">
-                          <div class="card-header py-3">
-                            <h6 class="m-0 font-weight-bold text-primary">Top Products</h6>
-                          </div>
-                          <div class="card-body">
-                            <div class="table-responsive">
-                              <table class="table table-bordered" width="100%" cellspacing="0">
-                                <thead>
-                                  <tr>
-                                    <th>Name</th>
-                                    <th>Qty</th>
-                                    <th>Revenue</th>
-                                  </tr>
-                                </thead>
-                                <tbody id="top-products-body"></tbody>
-                              </table>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
                   </div>
                 </div>
-              </section>
+              </div>
 
-              <section class="tab-panel tab-pane fade admin-only" data-panel="settings" role="tabpanel">
-                <div class="row">
-                  <div class="col-lg-8">
-                    <div class="card shadow-sm mb-4">
-                      <div class="card-header py-3">
-                        <h6 class="m-0 font-weight-bold text-primary">Business Settings</h6>
-                      </div>
-                      <div class="card-body">
-                        <form id="settings-form" class="row g-3">
-                          <div class="col-md-6">
-                            <label class="form-label">Invoice Prefix</label>
-                            <input name="invoicePrefix" class="form-control" />
-                          </div>
-                          <div class="col-md-6">
-                            <label class="form-label">FY Start Month (1-12)</label>
-                            <input name="financialYearStartMonth" type="number" min="1" max="12" class="form-control" />
-                          </div>
-
-                          <div class="col-12">
-                            <div class="card">
-                              <div class="card-body">
-                                <h5 class="card-title">GST Company Profile</h5>
-                                <p class="card-text">Used for Intra/Inter GST invoices.</p>
-                                <div class="row">
-                                  <div class="col-md-6 mb-3">
-                                    <label class="form-label">Company Name</label>
-                                    <input name="gstCompanyName" class="form-control" />
-                                  </div>
-                                  <div class="col-md-6 mb-3">
-                                    <label class="form-label">Company Email</label>
-                                    <input name="gstCompanyEmail" type="email" class="form-control" />
-                                  </div>
-                                  <div class="col-md-6 mb-3">
-                                    <label class="form-label">Company Phone</label>
-                                    <input name="gstCompanyPhone" class="form-control" />
-                                  </div>
-                                  <div class="col-md-6 mb-3">
-                                    <label class="form-label">Company GSTIN</label>
-                                    <input name="gstCompanyGstin" class="form-control" />
-                                  </div>
-                                  <div class="col-md-6 mb-3">
-                                    <label class="form-label">Company PAN</label>
-                                    <input name="gstCompanyPan" class="form-control" />
-                                  </div>
-                                  <div class="col-md-6 mb-3">
-                                    <label class="form-label">State</label>
-                                    <input name="gstCompanyState" class="form-control" />
-                                  </div>
-                                  <div class="col-md-6 mb-3">
-                                    <label class="form-label">State Code</label>
-                                    <input name="gstCompanyStateCode" class="form-control" />
-                                  </div>
-                                  <div class="col-12">
-                                    <label class="form-label">Company Address</label>
-                                    <textarea name="gstCompanyAddress" rows="2" class="form-control"></textarea>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-
-                          <div class="col-12">
-                            <div class="card">
-                              <div class="card-body">
-                                <h5 class="card-title">Without GST Company Profile</h5>
-                                <p class="card-text">Used automatically when invoice type is Without GST.</p>
-                                <div class="row">
-                                  <div class="col-md-6 mb-3">
-                                    <label class="form-label">Company Name</label>
-                                    <input name="nonGstCompanyName" class="form-control" />
-                                  </div>
-                                  <div class="col-md-6 mb-3">
-                                    <label class="form-label">Company Email</label>
-                                    <input name="nonGstCompanyEmail" type="email" class="form-control" />
-                                  </div>
-                                  <div class="col-md-6 mb-3">
-                                    <label class="form-label">Company Phone</label>
-                                    <input name="nonGstCompanyPhone" class="form-control" />
-                                  </div>
-                                  <div class="col-md-6 mb-3">
-                                    <label class="form-label">Company GSTIN (optional)</label>
-                                    <input name="nonGstCompanyGstin" class="form-control" />
-                                  </div>
-                                  <div class="col-12">
-                                    <label class="form-label">Company Address</label>
-                                    <textarea name="nonGstCompanyAddress" rows="2" class="form-control"></textarea>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                          
-                          <div class="col-md-6">
-                            <label class="form-label">UPI ID</label>
-                            <input name="upiId" placeholder="name@bank" class="form-control" />
-                          </div>
-                          <div class="col-md-6">
-                            <label class="form-label">UPI Payee Name</label>
-                            <input name="upiPayeeName" class="form-control" />
-                          </div>
-                          <div class="col-md-6">
-                            <label class="form-label">Bank Name</label>
-                            <input name="bankName" class="form-control" />
-                          </div>
-                           <div class="col-md-6">
-                            <label class="form-label">Account Name</label>
-                            <input name="bankAccountName" class="form-control" />
-                          </div>
-                          <div class="col-md-6">
-                            <label class="form-label">Account Number</label>
-                            <input name="bankAccountNumber" class="form-control" />
-                          </div>
-                          <div class="col-md-6">
-                            <label class="form-label">IFSC</label>
-                            <input name="bankIfsc" class="form-control" />
-                          </div>
-                          <div class="col-12">
-                            <button type="submit" class="btn btn-primary">Save Settings</button>
-                          </div>
-                        </form>
-                      </div>
-                    </div>
+              <div class="col-lg-4">
+                <div class="card shadow-sm mb-4">
+                  <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Backup & Restore</h6>
                   </div>
+                  <div class="card-body">
+                    <h5>Backup</h5>
+                    <p>Exports customers, products, invoices, recurring templates, users, and settings.</p>
+                    <button id="download-backup-btn" type="button" class="btn btn-secondary">Download Backup
+                      JSON</button>
 
-                  <div class="col-lg-4">
-                    <div class="card shadow-sm mb-4">
-                      <div class="card-header py-3">
-                        <h6 class="m-0 font-weight-bold text-primary">Backup & Restore</h6>
+                    <hr />
+
+                    <form id="restore-backup-form">
+                      <h5>Restore</h5>
+                      <p>This will overwrite current app data with the selected backup.</p>
+                      <div class="mb-3">
+                        <label class="form-label">Backup File (.json)</label>
+                        <input id="restore-backup-file" type="file" accept="application/json,.json" class="form-control"
+                          required />
                       </div>
-                      <div class="card-body">
-                        <h5>Backup</h5>
-                        <p>Exports customers, products, invoices, recurring templates, users, and settings.</p>
-                        <button id="download-backup-btn" type="button" class="btn btn-secondary">Download Backup JSON</button>
-
-                        <hr />
-
-                        <form id="restore-backup-form">
-                          <h5>Restore</h5>
-                          <p>This will overwrite current app data with the selected backup.</p>
-                          <div class="mb-3">
-                            <label class="form-label">Backup File (.json)</label>
-                            <input id="restore-backup-file" type="file" accept="application/json,.json" class="form-control" required />
-                          </div>
-                          <button type="submit" class="btn btn-danger">Restore Backup</button>
-                        </form>
-                      </div>
-                    </div>
+                      <button type="submit" class="btn btn-danger">Restore Backup</button>
+                    </form>
                   </div>
                 </div>
-              </section>
+              </div>
             </div>
-          </main>
+          </section>
         </div>
-      </div>
-    </section>
+    </div>
+  </section>
 
-    <div class="modal fade" id="drawer" tabindex="-1" aria-labelledby="drawerTitle" aria-hidden="true">
-      <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="drawer-title">Details</h5>
-            <button id="drawer-close" type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-          </div>
-          <div class="modal-body" id="drawer-body"></div>
+  <div class="modal fade" id="drawer" tabindex="-1" aria-labelledby="drawerTitle" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="drawer-title">Details</h5>
+          <button id="drawer-close" type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
+        <div class="modal-body" id="drawer-body"></div>
       </div>
     </div>
+  </div>
 
-    <div
-      id="status"
-      class="position-fixed bottom-0 end-0 p-3"
-      style="z-index: 11"
-    >
-      <div class="toast align-items-center" role="alert" aria-live="assertive" aria-atomic="true">
-        <div class="d-flex">
-          <div class="toast-body"></div>
-          <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" data-status-close="true" aria-label="Close"></button>
-        </div>
+  <div id="status" class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+    <div class="toast align-items-center" role="alert" aria-live="assertive" aria-atomic="true">
+      <div class="d-flex">
+        <div class="toast-body"></div>
+        <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" data-status-close="true"
+          aria-label="Close"></button>
       </div>
     </div>
+  </div>
 
-    <script
-      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
-      integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
-      crossorigin="anonymous"
-    ></script>
-    <script type="module" src="./app.js?v=20260305a"></script>
-  </body>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+    crossorigin="anonymous"></script>
+  <script type="module" src="./app.js?v=20260320b"></script>
+</body>
+
 </html>

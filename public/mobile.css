@@ -1,0 +1,371 @@
+/* =========================================
+   COMPLETE RESPONSIVE OVERHAUL
+   Targets actual DOM classes in index.html
+   ========================================= */
+
+/* --- BASE: Desktop layout for the workspace --- */
+.workspace-body {
+  display: flex;
+}
+
+.workspace-body > .col-lg-2 {
+  width: 180px;
+  min-width: 180px;
+  padding: 24px 0;
+}
+
+.workspace-body > .col-lg-10,
+.workspace-body > main {
+  flex: 1;
+  min-width: 0;
+  padding: 24px;
+}
+
+/* d-lg-none: show only below lg (992px) */
+.d-lg-none {
+  display: none !important;
+}
+
+/* --- MEDIUM DESKTOP: 992px–1399px (narrow desktop, header starts getting cramped) --- */
+@media (max-width: 1399px) {
+  /* Hide action button text, keep icons */
+  .header-action-btn span,
+  .header-customize-btn span {
+    display: none;
+  }
+  .header-action-btn {
+    padding: 0 8px;
+  }
+  .header-customize-btn {
+    padding: 0 8px;
+  }
+
+  /* Hide account name/role, keep avatar */
+  .header-account-copy {
+    display: none;
+  }
+
+  /* Hide the brand tagline */
+  .app-brand-status {
+    display: none;
+  }
+
+  /* Reduce search bar width */
+  .top-search-wrap {
+    width: min(200px, 100%);
+  }
+
+  /* Logout: icon only */
+  #logout-btn span {
+    display: none;
+  }
+  #logout-btn {
+    padding: 6px 10px;
+    min-width: auto;
+  }
+}
+
+/* --- NARROW DESKTOP: 992px–1199px (hide even more) --- */
+@media (max-width: 1199px) {
+  /* Hide the search bar completely */
+  .topbar-center {
+    display: none;
+  }
+
+  /* If Create Invoice text is too wide, hide it */
+  .header-create-btn span {
+    display: none;
+  }
+  .header-create-btn {
+    padding: 0 10px;
+    border-radius: 50%;
+  }
+}
+
+@media (max-width: 991px) {
+  /* Show hamburger */
+  .d-lg-none { display: inline-flex !important; }
+
+  /* === HEADER FIX === */
+  /* Force topbar to be a clean single row */
+  .app-topbar {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+  }
+
+  .topbar-shell {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    padding: 8px 12px !important;
+    gap: 8px;
+  }
+
+  /* Brand: Keep hamburger + logo compact */
+  .topbar-left {
+    flex: 0 0 auto;
+    gap: 8px;
+  }
+
+  /* Hide the top nav tabs completely */
+  .header-tab-links {
+    display: none !important;
+  }
+
+  /* Hide brand tagline to save space */
+  .app-brand-status {
+    display: none !important;
+  }
+
+  /* Move search bar to its own row */
+  .topbar-center {
+    order: 10;
+    width: 100%;
+    margin-top: 4px;
+  }
+
+  /* Right side: keep minimal */
+  .topbar-right {
+    margin-left: auto;
+    display: flex !important;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: nowrap;
+  }
+
+  /* HIDE most action buttons - only keep Create and dots menu */
+  .header-customize-btn {
+    display: none !important;
+  }
+  .header-action-group {
+    display: none !important;
+  }
+  .header-account-card {
+    display: none !important;
+  }
+
+  /* Create Invoice: icon only, circular */
+  .header-create-btn span {
+    display: none !important;
+  }
+  .header-create-btn {
+    padding: 8px 12px !important;
+    border-radius: 50% !important;
+    min-width: auto !important;
+  }
+
+  /* Logout: icon only, circular */
+  #logout-btn span {
+    display: none !important;
+  }
+  #logout-btn {
+    padding: 6px 10px !important;
+    border-radius: 50% !important;
+    min-width: auto !important;
+  }
+
+  /* === CRITICAL: Override styles.css bug-fix grid rules === */
+  .app-topbar {
+    height: auto !important;
+    min-height: 56px;
+  }
+
+  .workspace-body {
+    display: block !important;
+    grid-template-columns: none !important;
+  }
+
+  /* Override styles.css .invoice-studio-grid 5fr 7fr !important */
+  .invoice-studio-grid {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+
+  .invoice-editor-panel {
+    position: static !important;
+    max-height: none !important;
+  }
+
+  /* === SIDEBAR: Hidden by default, shown as overlay when .active === */
+  .workspace-body > .col-lg-2,
+  .workspace-body > div:first-child {
+    display: none !important;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 260px !important;
+    height: 100vh;
+    z-index: 9999;
+    background: var(--surface-1, #111);
+    border-right: 1px solid var(--border, rgba(255,255,255,0.08));
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.5);
+    padding: 24px 16px;
+    overflow-y: auto;
+  }
+  .workspace-body > .col-lg-2.active,
+  .workspace-body > div:first-child.active {
+    display: block !important;
+    transform: translateX(0);
+  }
+
+  /* === WORKSPACE === */
+  .workspace-body > .col-lg-10,
+  .workspace-body > main {
+    width: 100% !important;
+    padding: 16px !important;
+    grid-column: 1 !important;
+  }
+
+  /* Dashboard grids */
+  .invoice-dashboard-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Tables scrollable */
+  table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Invoice list: card-style on mobile */
+  .invoice-feed-row {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 4px;
+    padding: 12px !important;
+    border-bottom: 1px solid var(--border, rgba(255,255,255,0.08));
+  }
+
+  /* Stack filter rows */
+  .invoice-filter-bar {
+    flex-direction: column !important;
+    gap: 8px;
+  }
+  .invoice-filter-bar > * {
+    width: 100% !important;
+  }
+
+  /* Dashboard filter form stacking */
+  .dashboard-filter-form {
+    flex-direction: column !important;
+  }
+  .dashboard-filter-form > * {
+    flex: 1 1 100% !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+}
+
+/* Sidebar Backdrop */
+.sidebar-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  z-index: 9998;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+.sidebar-backdrop.active {
+  opacity: 1;
+  pointer-events: all;
+}
+
+/* --- MOBILE: max-width 576px --- */
+@media (max-width: 576px) {
+  /* Dynamic font scale */
+  html {
+    font-size: 13px !important;
+  }
+
+  /* Clamp large headers */
+  .dashboard-title,
+  .invoice-doc-title h1,
+  h1 {
+    font-size: clamp(1.4rem, 5vw, 2rem) !important;
+    line-height: 1.15;
+  }
+
+  h2 {
+    font-size: clamp(1.1rem, 4vw, 1.6rem) !important;
+  }
+
+  /* Reduce padding everywhere */
+  .workspace-body > .col-lg-10,
+  .workspace-body > main {
+    padding: 12px 8px !important;
+  }
+
+  .dashboard-hero-card,
+  .card,
+  .card-body {
+    padding: 14px !important;
+  }
+
+  /* Compact form inputs */
+  .form-control,
+  .form-select,
+  input[type="text"],
+  input[type="number"],
+  input[type="email"],
+  input[type="search"],
+  select,
+  textarea {
+    padding: 8px 10px !important;
+    font-size: 0.9rem !important;
+  }
+
+  /* Add Item bar tight */
+  .add-item-bar {
+    flex-direction: column !important;
+    gap: 6px;
+    padding: 10px !important;
+  }
+  .add-item-bar .input-group,
+  .add-item-bar input {
+    max-width: none !important;
+    width: 100% !important;
+  }
+
+  /* Search bar */
+  .topbar-center {
+    margin-top: 4px;
+  }
+  .top-search-input {
+    font-size: 0.85rem !important;
+    padding: 6px 10px !important;
+  }
+
+  /* Hero actions wrap */
+  .dashboard-hero-actions,
+  .dashboard-hero-head {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 8px;
+  }
+
+  /* KPI stat cards */
+  .invoice-kpi-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px;
+  }
+
+  /* Invoice doc bill grid: stack */
+  .invoice-doc-bill {
+    grid-template-columns: 1fr !important;
+    gap: 12px;
+  }
+
+  /* Invoice doc info grid */
+  .invoice-doc-info-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px;
+  }
+}

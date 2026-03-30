@@ -3,6 +3,7 @@ const workspaceView = document.querySelector("#workspace-view");
 const loginForm = document.querySelector("#login-form");
 const logoutButton = document.querySelector("#logout-btn");
 const currentUserNode = document.querySelector("#current-user");
+const currentUserRoleNode = document.querySelector("#current-user-role");
 const statusToastEl = document.querySelector(".toast");
 const bootstrapApi = globalThis.bootstrap || null;
 const statusToast = bootstrapApi && statusToastEl ? new bootstrapApi.Toast(statusToastEl) : null;
@@ -16,6 +17,7 @@ const sidebarToggleButton = document.querySelector("#sidebar-toggle");
 const sidebarOverlay = document.querySelector("#sidebar-overlay");
 const globalSearchInput = document.querySelector("#global-search");
 const topMenuButtons = [...document.querySelectorAll("[data-tab-open]")];
+const headerNavButtons = [...document.querySelectorAll("[data-top-nav][data-tab-open]")];
 
 const customerForm = document.querySelector("#customer-form");
 const customerTableBody = document.querySelector("#customer-table-body");
@@ -37,8 +39,16 @@ const invoiceNotesInput = document.querySelector("#invoice-notes");
 const invoiceSubmitButton = document.querySelector("#invoice-submit");
 const invoicePreview = document.querySelector("#invoice-preview");
 const invoiceCompanyBanner = document.querySelector("#invoice-company-banner");
+const invoiceEditorSummary = document.querySelector("#invoice-editor-summary");
 const lineItemsContainer = document.querySelector("#line-items");
 const addLineItemButton = document.querySelector("#add-line-item");
+const headerDownloadInvoiceButton = document.querySelector("#header-download-invoice");
+const headerEmailInvoiceButton = document.querySelector("#header-email-invoice");
+const headerSaveInvoiceButton = document.querySelector("#header-save-invoice");
+const headerSendInvoiceButton = document.querySelector("#header-send-invoice");
+const headerCreateInvoiceButton = document.querySelector("#header-create-invoice");
+const previewModeButtons = [...document.querySelectorAll("[data-preview-mode]")];
+const previewActionButtons = [...document.querySelectorAll("[data-preview-action]")];
 
 const invoiceFilterForm = document.querySelector("#invoice-filter-form");
 const filterQueryInput = document.querySelector("#filter-query");
@@ -89,7 +99,34 @@ const metricRevenue = document.querySelector("#metric-revenue");
 const metricOutstanding = document.querySelector("#metric-outstanding");
 const metricOverdue = document.querySelector("#metric-overdue");
 const metricBase = document.querySelector("#metric-base");
-const overviewRecentBody = document.querySelector("#overview-recent-body");
+const overviewFilterForm = document.querySelector("#overview-filter-form");
+const overviewFilterQueryInput = document.querySelector("#overview-filter-query");
+const overviewFilterStatusSelect = document.querySelector("#overview-filter-status");
+const overviewFilterCustomerSelect = document.querySelector("#overview-filter-customer");
+const overviewFilterDateFromInput = document.querySelector("#overview-filter-date-from");
+const overviewFilterDateToInput = document.querySelector("#overview-filter-date-to");
+const overviewClearFiltersButton = document.querySelector("#overview-clear-filters");
+const overviewActiveFilters = document.querySelector("#overview-active-filters");
+const overviewInvoiceList = document.querySelector("#overview-invoice-list");
+const overviewActivityList = document.querySelector("#overview-activity-list");
+const overviewSharingDefaults = document.querySelector("#overview-sharing-defaults");
+const overviewListCaption = document.querySelector("#overview-list-caption");
+const overviewListCount = document.querySelector("#overview-list-count");
+const overviewOutstandingBadge = document.querySelector("#overview-outstanding-badge");
+const overviewRevenueBadge = document.querySelector("#overview-revenue-badge");
+const overviewOverdueBadge = document.querySelector("#overview-overdue-badge");
+const overviewBaseBadge = document.querySelector("#overview-base-badge");
+const overviewOutstandingNote = document.querySelector("#overview-outstanding-note");
+const overviewRevenueNote = document.querySelector("#overview-revenue-note");
+const overviewOverdueNote = document.querySelector("#overview-overdue-note");
+const overviewBaseNote = document.querySelector("#overview-base-note");
+const overviewExportButton = document.querySelector("#overview-export-btn");
+const overviewShareWorkspaceButton = document.querySelector("#overview-share-workspace-btn");
+const overviewOpenInvoicesButton = document.querySelector("#overview-open-invoices");
+const overviewQuickShareButton = document.querySelector("#overview-quick-share");
+const overviewQuickDownloadButton = document.querySelector("#overview-quick-download");
+const overviewQuickCreateButton = document.querySelector("#overview-quick-create");
+const overviewQuickSettingsButton = document.querySelector("#overview-quick-settings");
 const walletBalanceValue = document.querySelector("#wallet-balance-value");
 const walletProgressFill = document.querySelector("#wallet-progress-fill");
 const walletProgressText = document.querySelector("#wallet-progress-text");
@@ -117,6 +154,7 @@ const CURRENCY = new Intl.NumberFormat("en-IN", {
 
 const state = {
   token: localStorage.getItem("billing_token") || "",
+  theme: "light",
   user: null,
   users: [],
   customers: [],
@@ -136,6 +174,7 @@ const state = {
     dateFrom: "",
     dateTo: ""
   },
+  invoicePreviewMode: "preview",
   statusTimer: null
 };
 
@@ -150,19 +189,81 @@ function formatCurrency(value) {
 function formatShortCurrency(value) {
   const amount = Number(value || 0);
   if (amount >= 10000000) {
-    return `Rs ${(amount / 10000000).toFixed(1).replace(/\.0$/, "")}Cr`;
+    return `₹ ${(amount / 10000000).toFixed(1).replace(/\.0$/, "")}Cr`;
   }
   if (amount >= 100000) {
-    return `Rs ${(amount / 100000).toFixed(1).replace(/\.0$/, "")}L`;
+    return `₹ ${(amount / 100000).toFixed(1).replace(/\.0$/, "")}L`;
   }
   if (amount >= 1000) {
-    return `Rs ${(amount / 1000).toFixed(1).replace(/\.0$/, "")}K`;
+    return `₹ ${(amount / 1000).toFixed(1).replace(/\.0$/, "")}K`;
   }
-  return `Rs ${Math.round(amount)}`;
+  return `₹ ${Math.round(amount)}`;
 }
 
 function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max);
+}
+
+function formatRelativeTime(value) {
+  const target = new Date(value || "");
+  const timestamp = target.getTime();
+  if (Number.isNaN(timestamp)) {
+    return "Updated recently";
+  }
+
+  const diffMs = Date.now() - timestamp;
+  const diffMinutes = Math.max(1, Math.round(diffMs / 60000));
+
+  if (diffMinutes < 60) {
+    return `Updated ${diffMinutes} minute${diffMinutes === 1 ? "" : "s"} ago`;
+  }
+
+  const diffHours = Math.round(diffMinutes / 60);
+  if (diffHours < 24) {
+    return `Updated ${diffHours} hour${diffHours === 1 ? "" : "s"} ago`;
+  }
+
+  const diffDays = Math.round(diffHours / 24);
+  if (diffDays < 7) {
+    return `Updated ${diffDays} day${diffDays === 1 ? "" : "s"} ago`;
+  }
+
+  return `Updated ${formatLongDate(value)}`;
+}
+
+function applyTheme() {
+  state.theme = "light";
+  document.body.dataset.theme = "light";
+  document.documentElement.setAttribute("data-bs-theme", "light");
+  localStorage.removeItem("billing_theme");
+}
+
+function formatLongDate(value) {
+  return new Date(value).toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric"
+  });
+}
+
+function formatPreviewText(value, fallback = "Not set") {
+  const text = String(value || "").trim();
+  if (!text) {
+    return escapeHtml(fallback);
+  }
+  return escapeHtml(text).replace(/\n/g, "<br />");
+}
+
+function getLatestInvoice() {
+  if (!Array.isArray(state.invoices) || state.invoices.length === 0) {
+    return null;
+  }
+
+  return [...state.invoices].sort((left, right) => {
+    const leftDate = new Date(left?.createdAt || 0).getTime();
+    const rightDate = new Date(right?.createdAt || 0).getTime();
+    return rightDate - leftDate;
+  })[0];
 }
 
 function maskAccountNumber(rawValue) {
@@ -186,8 +287,71 @@ function maskAccountNumber(rawValue) {
 }
 
 function closeMobileSidebar() {
-  workspaceView?.classList.remove("sidebar-open");
-  sidebarOverlay?.classList.add("hidden");
+  setSidebarOpen(false);
+}
+
+function setSidebarOpen(open) {
+  const shouldOpen = Boolean(open) && window.matchMedia("(max-width: 1080px)").matches;
+  workspaceView?.classList.toggle("sidebar-open", shouldOpen);
+  sidebarOverlay?.classList.toggle("hidden", !shouldOpen);
+  sidebarToggleButton?.setAttribute("aria-expanded", shouldOpen ? "true" : "false");
+  document.body.classList.toggle("mobile-nav-open", shouldOpen);
+}
+
+function updateLayoutMetrics() {
+  const topbarHeight = document.querySelector(".app-topbar")?.offsetHeight || 0;
+  if (topbarHeight > 0) {
+    document.documentElement.style.setProperty("--app-topbar-height", `${topbarHeight}px`);
+  }
+}
+
+function renderCurrentUserChip() {
+  const name = state.user?.name || "Workspace User";
+  const role = state.user?.role ? String(state.user.role) : "Finance";
+
+  if (currentUserNode) {
+    currentUserNode.textContent = name;
+  }
+  if (currentUserRoleNode) {
+    currentUserRoleNode.textContent = role.charAt(0).toUpperCase() + role.slice(1);
+  }
+}
+
+function updateHeaderNavState(activeTab) {
+  headerNavButtons.forEach((button) => {
+    const active = button.dataset.tabOpen === activeTab;
+    button.classList.toggle("is-active", active);
+  });
+}
+
+function syncResponsiveTables(root = document) {
+  const tables = root.querySelectorAll(".table-responsive .table");
+  tables.forEach((table) => {
+    const headers = [...table.querySelectorAll("thead th")].map((header) =>
+      header.textContent.replace(/\s+/g, " ").trim()
+    );
+
+    if (headers.length === 0) {
+      delete table.dataset.responsiveStack;
+      return;
+    }
+
+    table.dataset.responsiveStack = "true";
+    [...table.querySelectorAll("tbody tr")].forEach((row) => {
+      [...row.children].forEach((cell, index) => {
+        if (!(cell instanceof HTMLTableCellElement)) {
+          return;
+        }
+
+        if (cell.hasAttribute("colspan")) {
+          delete cell.dataset.label;
+          return;
+        }
+
+        cell.dataset.label = headers[index] || `Column ${index + 1}`;
+      });
+    });
+  });
 }
 
 function getCompanyProfileForInvoiceType(gstType) {
@@ -246,6 +410,8 @@ function resetAuthState() {
   state.user = null;
   state.users = [];
   localStorage.removeItem("billing_token");
+  closeMobileSidebar();
+  renderCurrentUserChip();
   loginView.classList.remove("hidden");
   workspaceView.classList.add("hidden");
 }
@@ -287,6 +453,7 @@ async function requestJson(url, options = {}) {
 function openDrawer(title, html) {
   drawerTitle.textContent = title;
   drawerBody.innerHTML = html;
+  syncResponsiveTables(drawerBody);
   if (drawer) {
     drawer.show();
     return;
@@ -322,6 +489,9 @@ function setActiveTab(tabId) {
   if (window.matchMedia("(max-width: 1080px)").matches) {
     closeMobileSidebar();
   }
+
+  updateHeaderNavState(tabId);
+  updateHeaderActionState();
 }
 
 function applyRoleVisibility() {
@@ -353,6 +523,33 @@ function statusPill(status) {
   const normalized = String(status || "unpaid").toLowerCase();
   return `<span class="pill ${normalized}">${escapeHtml(normalized)}</span>`;
 }
+
+function updatePreviewModeButtons() {
+  previewModeButtons.forEach((button) => {
+    button.classList.toggle("is-active", button.dataset.previewMode === state.invoicePreviewMode);
+  });
+}
+
+function updateHeaderActionState() {
+  const activeTab = document.querySelector(".nav-link.active[data-tab]")?.dataset.tab || "overview";
+  const latestInvoice = getLatestInvoice();
+  const hasInvoice = Boolean(latestInvoice);
+  const canSaveDraft = activeTab === "invoices";
+
+  if (headerDownloadInvoiceButton) {
+    headerDownloadInvoiceButton.disabled = !hasInvoice;
+  }
+  if (headerEmailInvoiceButton) {
+    headerEmailInvoiceButton.disabled = !hasInvoice;
+  }
+  if (headerSaveInvoiceButton) {
+    headerSaveInvoiceButton.disabled = !canSaveDraft;
+  }
+  if (headerSendInvoiceButton) {
+    headerSendInvoiceButton.disabled = !(canSaveDraft || hasInvoice);
+  }
+}
+
 function productById(productId) {
   return state.products.find((product) => product.id === Number(productId)) || null;
 }
@@ -385,80 +582,231 @@ function buildProductOptions(selectedValue = "") {
   ].join("");
 }
 
+function inputNumberValue(rawValue, fallback = 0) {
+  const value = Number(rawValue);
+  return Number.isFinite(value) ? String(value) : String(fallback);
+}
+
+function syncLineItemIndices(container, labelPrefix = "Item") {
+  [...container.querySelectorAll(".line-item")].forEach((row, index) => {
+    const label = row.querySelector(".item-index");
+    if (label) {
+      label.textContent = `${labelPrefix} #${index + 1}`;
+    }
+  });
+}
+
+function applyRowProductDefaults(row) {
+  const product = productById(Number(row.querySelector(".row-product")?.value));
+  if (!product) {
+    return;
+  }
+
+  const unitPriceInput = row.querySelector(".row-unit-price");
+  const taxRateInput = row.querySelector(".row-tax-rate");
+
+  if (unitPriceInput) {
+    unitPriceInput.value = inputNumberValue(product.price, 0);
+  }
+  if (taxRateInput) {
+    taxRateInput.value = inputNumberValue(product.taxRate, 0);
+  }
+}
+
 function createLineItemRow(container, initial = {}) {
+  const fallbackProduct = productById(initial.productId) || state.products[0] || null;
+  const selectedProductId = initial.productId || fallbackProduct?.id || "";
+  const unitPriceValue =
+    initial.unitPrice !== undefined && initial.unitPrice !== null
+      ? initial.unitPrice
+      : fallbackProduct?.price || 0;
+  const taxRateValue =
+    initial.taxRate !== undefined && initial.taxRate !== null
+      ? initial.taxRate
+      : fallbackProduct?.taxRate || 0;
+
   const row = document.createElement("div");
-  row.className = "line-item row";
+  row.className = "line-item item-entry-card";
   row.innerHTML = `
-    <div class="col-md-4">
-      <label class="form-label">Product</label>
-      <select class="form-select row-product" required>
-        ${buildProductOptions(initial.productId)}
-      </select>
+    <div class="item-entry-header">
+      <div>
+        <p class="item-index">Item #1</p>
+        <p class="item-caption">Choose a product and fine-tune quantity, price, and GST before you send.</p>
+      </div>
+      <button type="button" class="row-remove item-remove-btn">
+        <i class="bi bi-trash3"></i>
+        Remove
+      </button>
     </div>
-    <div class="col-md-2">
-      <label class="form-label">Qty</label>
-      <input class="form-control row-qty" type="number" min="0.01" step="0.01" value="${
-        initial.quantity || 1
-      }" required />
+    <div class="item-entry-grid">
+      <label class="premium-field premium-field-span-2">
+        <span class="field-label">Product</span>
+        <select class="form-select row-product" required>
+          ${buildProductOptions(selectedProductId)}
+        </select>
+      </label>
+      <label class="premium-field">
+        <span class="field-label">Qty</span>
+        <input
+          class="form-control row-qty"
+          type="number"
+          min="0.01"
+          step="0.01"
+          value="${inputNumberValue(initial.quantity, 1)}"
+          required
+        />
+      </label>
+      <label class="premium-field">
+        <span class="field-label">Unit Price</span>
+        <input
+          class="form-control row-unit-price"
+          type="number"
+          min="0"
+          step="0.01"
+          value="${inputNumberValue(unitPriceValue, 0)}"
+        />
+      </label>
+      <label class="premium-field">
+        <span class="field-label">Tax %</span>
+        <input
+          class="form-control row-tax-rate"
+          type="number"
+          min="0"
+          step="0.01"
+          value="${inputNumberValue(taxRateValue, 0)}"
+        />
+      </label>
+      <label class="premium-field">
+        <span class="field-label">Line Discount</span>
+        <input
+          class="form-control row-discount"
+          type="number"
+          min="0"
+          step="0.01"
+          value="${inputNumberValue(initial.lineDiscount, 0)}"
+        />
+      </label>
     </div>
-    <div class="col-md-2">
-      <label class="form-label">Line Discount</label>
-      <input class="form-control row-discount" type="number" min="0" step="0.01" value="${
-        initial.lineDiscount || 0
-      }" />
-    </div>
-    <div class="col-md-3">
-      <p class="meta small">
-        Taxable: <strong class="row-taxable">${formatCurrency(0)}</strong><br />
-        Tax: <strong class="row-tax">${formatCurrency(0)}</strong><br />
-        Total: <strong class="row-total">${formatCurrency(0)}</strong>
-      </p>
-    </div>
-    <div class="col-md-1 d-flex align-items-end">
-      <button type="button" class="btn btn-sm btn-outline-danger row-remove">Remove</button>
+    <div class="item-entry-meta">
+      <div class="item-meta-pill">
+        <span>Taxable</span>
+        <strong class="row-taxable">${formatCurrency(0)}</strong>
+      </div>
+      <div class="item-meta-pill">
+        <span>Tax</span>
+        <strong class="row-tax">${formatCurrency(0)}</strong>
+      </div>
+      <div class="item-meta-pill item-meta-pill-strong">
+        <span>Total</span>
+        <strong class="row-total">${formatCurrency(0)}</strong>
+      </div>
     </div>
   `;
 
   row.querySelector(".row-remove").addEventListener("click", () => {
     row.remove();
+    syncLineItemIndices(container);
     updateInvoicePreview();
   });
-  row.querySelector(".row-product").addEventListener("change", updateInvoicePreview);
+  row.querySelector(".row-product").addEventListener("change", () => {
+    applyRowProductDefaults(row);
+    updateInvoicePreview();
+  });
   row.querySelector(".row-qty").addEventListener("input", updateInvoicePreview);
+  row.querySelector(".row-unit-price").addEventListener("input", updateInvoicePreview);
+  row.querySelector(".row-tax-rate").addEventListener("input", updateInvoicePreview);
   row.querySelector(".row-discount").addEventListener("input", updateInvoicePreview);
 
   container.append(row);
+  syncLineItemIndices(container);
 }
 
 function createRecurringItemRow(container, initial = {}) {
+  const fallbackProduct = productById(initial.productId) || state.products[0] || null;
+  const selectedProductId = initial.productId || fallbackProduct?.id || "";
+  const unitPriceValue =
+    initial.unitPrice !== undefined && initial.unitPrice !== null
+      ? initial.unitPrice
+      : fallbackProduct?.price || 0;
+  const taxRateValue =
+    initial.taxRate !== undefined && initial.taxRate !== null
+      ? initial.taxRate
+      : fallbackProduct?.taxRate || 0;
+
   const row = document.createElement("div");
-  row.className = "line-item row";
+  row.className = "line-item item-entry-card recurring-item-card";
   row.innerHTML = `
-    <div class="col-md-4">
-      <label class="form-label">Product</label>
-      <select class="form-select row-product" required>
-        ${buildProductOptions(initial.productId)}
-      </select>
+    <div class="item-entry-header">
+      <div>
+        <p class="item-index">Item #1</p>
+        <p class="item-caption">Saved with the recurring template and reused on every schedule run.</p>
+      </div>
+      <button type="button" class="row-remove item-remove-btn">
+        <i class="bi bi-trash3"></i>
+        Remove
+      </button>
     </div>
-    <div class="col-md-3">
-      <label class="form-label">Qty</label>
-      <input class="form-control row-qty" type="number" min="0.01" step="0.01" value="${
-        initial.quantity || 1
-      }" required />
-    </div>
-    <div class="col-md-3">
-      <label class="form-label">Line Discount</label>
-      <input class="form-control row-discount" type="number" min="0" step="0.01" value="${
-        initial.lineDiscount || 0
-      }" />
-    </div>
-    <div class="col-md-2 d-flex align-items-end">
-      <button type="button" class="btn btn-sm btn-outline-danger row-remove">Remove</button>
+    <div class="item-entry-grid">
+      <label class="premium-field premium-field-span-2">
+        <span class="field-label">Product</span>
+        <select class="form-select row-product" required>
+          ${buildProductOptions(selectedProductId)}
+        </select>
+      </label>
+      <label class="premium-field">
+        <span class="field-label">Qty</span>
+        <input
+          class="form-control row-qty"
+          type="number"
+          min="0.01"
+          step="0.01"
+          value="${inputNumberValue(initial.quantity, 1)}"
+          required
+        />
+      </label>
+      <label class="premium-field">
+        <span class="field-label">Unit Price</span>
+        <input
+          class="form-control row-unit-price"
+          type="number"
+          min="0"
+          step="0.01"
+          value="${inputNumberValue(unitPriceValue, 0)}"
+        />
+      </label>
+      <label class="premium-field">
+        <span class="field-label">Tax %</span>
+        <input
+          class="form-control row-tax-rate"
+          type="number"
+          min="0"
+          step="0.01"
+          value="${inputNumberValue(taxRateValue, 0)}"
+        />
+      </label>
+      <label class="premium-field">
+        <span class="field-label">Line Discount</span>
+        <input
+          class="form-control row-discount"
+          type="number"
+          min="0"
+          step="0.01"
+          value="${inputNumberValue(initial.lineDiscount, 0)}"
+        />
+      </label>
     </div>
   `;
 
-  row.querySelector(".row-remove").addEventListener("click", () => row.remove());
+  row.querySelector(".row-remove").addEventListener("click", () => {
+    row.remove();
+    syncLineItemIndices(container);
+  });
+  row.querySelector(".row-product").addEventListener("change", () => {
+    applyRowProductDefaults(row);
+  });
+
   container.append(row);
+  syncLineItemIndices(container);
 }
 
 function getInvoiceRowsPayload() {
@@ -466,6 +814,8 @@ function getInvoiceRowsPayload() {
     .map((row) => ({
       productId: Number(row.querySelector(".row-product")?.value),
       quantity: Number(row.querySelector(".row-qty")?.value),
+      unitPrice: Number(row.querySelector(".row-unit-price")?.value),
+      taxRate: Number(row.querySelector(".row-tax-rate")?.value),
       lineDiscount: Number(row.querySelector(".row-discount")?.value || 0)
     }))
     .filter(
@@ -482,6 +832,8 @@ function getRecurringRowsPayload() {
     .map((row) => ({
       productId: Number(row.querySelector(".row-product")?.value),
       quantity: Number(row.querySelector(".row-qty")?.value),
+      unitPrice: Number(row.querySelector(".row-unit-price")?.value),
+      taxRate: Number(row.querySelector(".row-tax-rate")?.value),
       lineDiscount: Number(row.querySelector(".row-discount")?.value || 0)
     }))
     .filter(
@@ -493,11 +845,19 @@ function getRecurringRowsPayload() {
     );
 }
 
-function calculateLinePreview(product, qty, lineDiscount, gstType) {
+function calculateLinePreview(product, qty, lineDiscount, gstType, overrides = {}) {
   const quantity = Number(qty || 0);
   const discount = Math.max(0, Number(lineDiscount || 0));
-  const unitPrice = Number(product.price || 0);
-  const taxRate = Number(product.taxRate || 0);
+  const overrideUnitPrice = Number(overrides.unitPrice);
+  const overrideTaxRate = Number(overrides.taxRate);
+  const unitPrice =
+    Number.isFinite(overrideUnitPrice) && overrideUnitPrice >= 0
+      ? overrideUnitPrice
+      : Number(product.price || 0);
+  const taxRate =
+    Number.isFinite(overrideTaxRate) && overrideTaxRate >= 0
+      ? overrideTaxRate
+      : Number(product.taxRate || 0);
   const pricingModel = String(product.pricingModel || "exclusive");
 
   const gross = unitPrice * quantity;
@@ -537,6 +897,9 @@ function calculateLinePreview(product, qty, lineDiscount, gstType) {
     cgst,
     sgst,
     igst,
+    quantity,
+    unitPrice,
+    taxRate,
     lineDiscount: discount
   };
 }
@@ -544,16 +907,23 @@ function calculateLinePreview(product, qty, lineDiscount, gstType) {
 function updateInvoicePreview() {
   const rows = [...lineItemsContainer.querySelectorAll(".line-item")];
   const gstType = invoiceGstTypeSelect.value || "intra";
+  const issueDate = new Date();
+  const dueDays = Number(invoiceDueDaysInput.value || 15);
+  const dueDate = new Date(issueDate);
+  dueDate.setDate(dueDate.getDate() + Math.max(0, dueDays));
 
   let subtotalTaxable = 0;
   let lineDiscountTotal = 0;
   let cgstTotal = 0;
   let sgstTotal = 0;
   let igstTotal = 0;
+  const previewItems = [];
 
   for (const row of rows) {
     const productId = Number(row.querySelector(".row-product")?.value);
     const quantity = Number(row.querySelector(".row-qty")?.value);
+    const unitPrice = Number(row.querySelector(".row-unit-price")?.value);
+    const taxRate = Number(row.querySelector(".row-tax-rate")?.value);
     const lineDiscount = Number(row.querySelector(".row-discount")?.value || 0);
     const product = productById(productId);
 
@@ -568,7 +938,10 @@ function updateInvoicePreview() {
       continue;
     }
 
-    const calc = calculateLinePreview(product, quantity, lineDiscount, gstType);
+    const calc = calculateLinePreview(product, quantity, lineDiscount, gstType, {
+      unitPrice,
+      taxRate
+    });
     taxableNode.textContent = formatCurrency(calc.taxable);
     taxNode.textContent = formatCurrency(calc.tax);
     totalNode.textContent = formatCurrency(calc.total);
@@ -578,6 +951,14 @@ function updateInvoicePreview() {
     cgstTotal += calc.cgst;
     sgstTotal += calc.sgst;
     igstTotal += calc.igst;
+    previewItems.push({
+      name: product.name || "Item",
+      quantity: calc.quantity,
+      unitPrice: calc.unitPrice,
+      taxRate: calc.taxRate,
+      lineDiscount: calc.lineDiscount,
+      total: calc.total
+    });
   }
 
   const taxTotal = cgstTotal + sgstTotal + igstTotal;
@@ -589,45 +970,193 @@ function updateInvoicePreview() {
   const invoiceTypeText = gstType === "none" ? "Without GST" : "With GST";
   const companyProfile = getCompanyProfileForInvoiceType(gstType);
   const companyName = companyProfile.name || "Company not configured";
-  const companyGstinText = companyProfile.gstin ? ` | GSTIN ${escapeHtml(companyProfile.gstin)}` : "";
   const selectedCustomer = state.customers.find(
     (customer) => customer.id === Number(invoiceCustomerSelect.value)
   );
-  const selectedCustomerGstin = selectedCustomer?.gstin ? escapeHtml(selectedCustomer.gstin) : "-";
-  const customerGstRow =
-    gstType === "none"
-      ? ""
-      : `<div class="row mt-2"><div class="col"><strong>Customer GSTIN:</strong> ${selectedCustomerGstin}</div></div>`;
+  const companyContactLines = [
+    companyProfile.address,
+    [companyProfile.phone, companyProfile.email].filter(Boolean).join(" | "),
+    companyProfile.gstin ? `GSTIN ${companyProfile.gstin}` : gstType === "none" ? "Non-GST billing profile" : ""
+  ].filter(Boolean);
+  const customerLines = [
+    selectedCustomer?.address,
+    [selectedCustomer?.phone, selectedCustomer?.email].filter(Boolean).join(" | "),
+    gstType === "none" ? "" : selectedCustomer?.gstin ? `GSTIN ${selectedCustomer.gstin}` : "GSTIN not provided"
+  ].filter(Boolean);
+  const previewRows = previewItems.length
+    ? previewItems
+        .map(
+          (item) => `
+            <tr>
+              <td>
+                <strong>${escapeHtml(item.name)}</strong>
+                <span>GST ${escapeHtml(String(item.taxRate))}%</span>
+              </td>
+              <td>${escapeHtml(String(item.quantity))}</td>
+              <td>${formatCurrency(item.unitPrice)}</td>
+              <td>${formatCurrency(item.lineDiscount)}</td>
+              <td>${formatCurrency(item.total)}</td>
+            </tr>
+          `
+        )
+        .join("")
+    : `
+      <tr class="preview-empty-row">
+        <td colspan="5">Add line items to see the live invoice table here.</td>
+      </tr>
+    `;
+  const notesCopy = formatPreviewText(
+    invoiceNotesInput.value,
+    "Add payment terms, delivery instructions, or a thank-you note for the customer."
+  );
+  const summaryBadge = previewItems.length > 0 ? "Ready to send" : "Draft preview";
 
   if (invoiceCompanyBanner) {
     const modeText = gstType === "none" ? "Without GST Company" : "GST Company";
-    invoiceCompanyBanner.innerHTML = `<div class="alert alert-info"><strong>${modeText}:</strong> ${escapeHtml(companyName)}${companyGstinText}</div>`;
+    invoiceCompanyBanner.innerHTML = `
+      <div class="company-profile-banner">
+        <div>
+          <p class="company-profile-label">${escapeHtml(modeText)}</p>
+          <h4>${escapeHtml(companyName)}</h4>
+          <p>${formatPreviewText(companyContactLines.join("\n"), "Add your company details in Settings.")}</p>
+        </div>
+        <div class="company-profile-meta">
+          <span>${gstType === "none" ? "No GST applied" : escapeHtml(companyProfile.gstin || "GSTIN missing")}</span>
+        </div>
+      </div>
+    `;
+  }
+
+  if (invoiceEditorSummary) {
+    invoiceEditorSummary.innerHTML = `
+      <div class="summary-row">
+        <span>Subtotal</span>
+        <strong>${formatCurrency(subtotalTaxable)}</strong>
+      </div>
+      <div class="summary-row">
+        <span>Tax</span>
+        <strong>${formatCurrency(taxTotal)}</strong>
+      </div>
+      <div class="summary-row">
+        <span>Discounts</span>
+        <strong>${formatCurrency(lineDiscountTotal + invoiceDiscount)}</strong>
+      </div>
+      <div class="summary-row">
+        <span>Shipping + Round Off</span>
+        <strong>${formatCurrency(shipping + roundOff)}</strong>
+      </div>
+      <div class="summary-divider"></div>
+      <div class="summary-total-row">
+        <div>
+          <span>Total payable</span>
+          <h4>${formatCurrency(finalTotal)}</h4>
+        </div>
+        <span class="preview-ready-badge">${escapeHtml(summaryBadge)}</span>
+      </div>
+    `;
   }
 
   invoicePreview.innerHTML = `
-    <div class="card mt-3">
-      <div class="card-body">
-        <h5 class="card-title">Invoice Preview</h5>
-        <div class="row">
-          <div class="col"><strong>Billing Company:</strong> ${escapeHtml(companyName)}</div>
-          <div class="col"><strong>Invoice Type:</strong> ${invoiceTypeText}</div>
+    <div class="invoice-preview-page ${state.invoicePreviewMode === "notes" ? "is-notes-view" : ""}">
+      <article class="invoice-doc">
+        <div class="invoice-doc-top">
+          <div class="invoice-doc-from">
+            <p class="invoice-doc-overline">From</p>
+            <h2>${escapeHtml(companyName)}</h2>
+            <p>${formatPreviewText(companyContactLines.join("\n"), "Add your company details in Settings.")}</p>
+          </div>
+          <div class="invoice-doc-title">
+            <span class="invoice-doc-type">${escapeHtml(invoiceTypeText)}</span>
+            <h1>Invoice</h1>
+            <p>Invoice number is generated automatically on save.</p>
+          </div>
         </div>
-        ${customerGstRow}
-        <table class="table mt-2">
-          <tbody>
-            <tr><td>Taxable</td><td class="text-end">${formatCurrency(subtotalTaxable)}</td></tr>
-            <tr><td>Line Discount</td><td class="text-end">${formatCurrency(lineDiscountTotal)}</td></tr>
-            <tr><td>CGST</td><td class="text-end">${formatCurrency(cgstTotal)}</td></tr>
-            <tr><td>SGST</td><td class="text-end">${formatCurrency(sgstTotal)}</td></tr>
-            <tr><td>IGST</td><td class="text-end">${formatCurrency(igstTotal)}</td></tr>
-            <tr><td>Tax Total</td><td class="text-end">${formatCurrency(taxTotal)}</td></tr>
-            <tr><td>Invoice Discount</td><td class="text-end">${formatCurrency(invoiceDiscount)}</td></tr>
-            <tr><td>Shipping</td><td class="text-end">${formatCurrency(shipping)}</td></tr>
-            <tr><td>Round Off</td><td class="text-end">${formatCurrency(roundOff)}</td></tr>
-            <tr><td><strong>Final Total</strong></td><td class="text-end"><strong>${formatCurrency(finalTotal)}</strong></td></tr>
-          </tbody>
-        </table>
-      </div>
+
+        <div class="invoice-doc-bill">
+          <div class="invoice-doc-customer">
+            <p class="invoice-doc-overline">Billed to</p>
+            <h3>${escapeHtml(selectedCustomer?.name || "Choose a customer")}</h3>
+            <p>${formatPreviewText(customerLines.join("\n"), "Select a customer to populate billing details.")}</p>
+          </div>
+          <div class="invoice-doc-info-grid">
+            <div>
+              <span>Issued</span>
+              <strong>${escapeHtml(formatLongDate(issueDate))}</strong>
+            </div>
+            <div>
+              <span>Due</span>
+              <strong>${escapeHtml(formatLongDate(dueDate))}</strong>
+            </div>
+            <div>
+              <span>Terms</span>
+              <strong>${escapeHtml(`${Math.max(0, dueDays)} days`)}</strong>
+            </div>
+            <div>
+              <span>Currency</span>
+              <strong>INR (₹)</strong>
+            </div>
+          </div>
+        </div>
+
+        <div class="invoice-doc-table-wrap">
+          <table class="invoice-doc-table">
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th>Qty</th>
+                <th>Unit</th>
+                <th>Discount</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody>${previewRows}</tbody>
+          </table>
+        </div>
+
+        <div class="invoice-doc-bottom">
+          <section class="invoice-doc-notes">
+            <p class="invoice-doc-overline">Notes</p>
+            <div class="invoice-doc-note-copy">${notesCopy}</div>
+          </section>
+
+          <aside class="invoice-doc-total-card">
+            <span class="preview-ready-badge">${escapeHtml(summaryBadge)}</span>
+            <div class="invoice-doc-total-row">
+              <span>Taxable</span>
+              <strong>${formatCurrency(subtotalTaxable)}</strong>
+            </div>
+            <div class="invoice-doc-total-row">
+              <span>CGST / SGST</span>
+              <strong>${formatCurrency(cgstTotal + sgstTotal)}</strong>
+            </div>
+            <div class="invoice-doc-total-row">
+              <span>IGST</span>
+              <strong>${formatCurrency(igstTotal)}</strong>
+            </div>
+            <div class="invoice-doc-total-row">
+              <span>Invoice Discount</span>
+              <strong>${formatCurrency(invoiceDiscount)}</strong>
+            </div>
+            <div class="invoice-doc-total-row">
+              <span>Shipping</span>
+              <strong>${formatCurrency(shipping)}</strong>
+            </div>
+            <div class="invoice-doc-total-row">
+              <span>Round Off</span>
+              <strong>${formatCurrency(roundOff)}</strong>
+            </div>
+            <div class="invoice-doc-total-row invoice-doc-total-row-strong">
+              <span>Total</span>
+              <strong>${formatCurrency(finalTotal)}</strong>
+            </div>
+          </aside>
+        </div>
+
+        <footer class="invoice-doc-footer">
+          <span>Thank you for your business.</span>
+          <span>Preview generated live from the editor.</span>
+        </footer>
+      </article>
     </div>
   `;
 
@@ -637,13 +1166,49 @@ function updateInvoicePreview() {
     validItems > 0 &&
     state.products.length > 0
   );
+  updatePreviewModeButtons();
+  updateHeaderActionState();
+}
+
+function syncInvoiceFilterControls() {
+  if (filterQueryInput) {
+    filterQueryInput.value = state.invoiceFilters.query;
+  }
+  if (filterStatusSelect) {
+    filterStatusSelect.value = state.invoiceFilters.status;
+  }
+  if (filterCustomerSelect) {
+    filterCustomerSelect.value = state.invoiceFilters.customerId;
+  }
+  if (filterDateFromInput) {
+    filterDateFromInput.value = state.invoiceFilters.dateFrom;
+  }
+  if (filterDateToInput) {
+    filterDateToInput.value = state.invoiceFilters.dateTo;
+  }
+
+  if (overviewFilterQueryInput) {
+    overviewFilterQueryInput.value = state.invoiceFilters.query;
+  }
+  if (overviewFilterStatusSelect) {
+    overviewFilterStatusSelect.value = state.invoiceFilters.status;
+  }
+  if (overviewFilterCustomerSelect) {
+    overviewFilterCustomerSelect.value = state.invoiceFilters.customerId;
+  }
+  if (overviewFilterDateFromInput) {
+    overviewFilterDateFromInput.value = state.invoiceFilters.dateFrom;
+  }
+  if (overviewFilterDateToInput) {
+    overviewFilterDateToInput.value = state.invoiceFilters.dateTo;
+  }
 }
 
 function syncSelects() {
   invoiceCustomerSelect.innerHTML = buildCustomerOptions(invoiceCustomerSelect.value);
   recurringCustomerSelect.innerHTML = buildCustomerOptions(recurringCustomerSelect.value);
 
-  filterCustomerSelect.innerHTML = [
+  const customerOptions = [
     '<option value="">All Customers</option>',
     ...state.customers.map(
       (customer) =>
@@ -652,6 +1217,10 @@ function syncSelects() {
         }>${escapeHtml(customer.name)}</option>`
     )
   ].join("");
+  filterCustomerSelect.innerHTML = customerOptions;
+  if (overviewFilterCustomerSelect) {
+    overviewFilterCustomerSelect.innerHTML = customerOptions;
+  }
 
   for (const row of [...lineItemsContainer.querySelectorAll(".line-item")]) {
     const select = row.querySelector(".row-product");
@@ -664,6 +1233,7 @@ function syncSelects() {
     select.innerHTML = buildProductOptions(selected);
   }
 
+  syncInvoiceFilterControls();
   updateInvoicePreview();
 }
 
@@ -825,6 +1395,244 @@ function renderOverviewCardList() {
     `
     )
     .join("");
+  syncResponsiveTables();
+}
+
+function getDashboardStatusMeta(status) {
+  const normalized = String(status || "unpaid").toLowerCase();
+  if (normalized === "paid") {
+    return { label: "Paid", tone: "paid", icon: "bi bi-check2-circle" };
+  }
+  if (normalized === "partial") {
+    return { label: "Partial", tone: "partial", icon: "bi bi-hourglass-split" };
+  }
+  if (normalized === "overdue") {
+    return { label: "Overdue", tone: "overdue", icon: "bi bi-exclamation-circle" };
+  }
+  return { label: normalized === "unpaid" ? "Outstanding" : normalized, tone: "unpaid", icon: "bi bi-receipt" };
+}
+
+function renderOverviewActiveFilters() {
+  if (!overviewActiveFilters) {
+    return;
+  }
+
+  const chips = [];
+  const customer = state.customers.find((entry) => entry.id === Number(state.invoiceFilters.customerId));
+
+  if (state.invoiceFilters.query) {
+    chips.push({ key: "query", label: `Search: ${state.invoiceFilters.query}` });
+  }
+  if (state.invoiceFilters.status && state.invoiceFilters.status !== "all") {
+    chips.push({ key: "status", label: `Status: ${state.invoiceFilters.status}` });
+  }
+  if (customer) {
+    chips.push({ key: "customerId", label: `Client: ${customer.name}` });
+  }
+  if (state.invoiceFilters.dateFrom) {
+    chips.push({ key: "dateFrom", label: `From: ${formatLongDate(state.invoiceFilters.dateFrom)}` });
+  }
+  if (state.invoiceFilters.dateTo) {
+    chips.push({ key: "dateTo", label: `To: ${formatLongDate(state.invoiceFilters.dateTo)}` });
+  }
+
+  if (chips.length === 0) {
+    overviewActiveFilters.innerHTML = '<span class="dashboard-filter-empty">No filters applied. Showing the latest invoice activity.</span>';
+    return;
+  }
+
+  overviewActiveFilters.innerHTML = [
+    ...chips.map(
+      (chip) => `
+        <span class="dashboard-filter-chip">
+          ${escapeHtml(chip.label)}
+          <button type="button" class="dashboard-chip-clear" data-clear-filter="${chip.key}" aria-label="Remove ${escapeHtml(chip.label)}">
+            <i class="bi bi-x"></i>
+          </button>
+        </span>
+      `
+    ),
+    '<button type="button" class="dashboard-clear-all" data-clear-filter="all">Clear all</button>'
+  ].join("");
+}
+
+function renderOverviewInvoiceFeed(invoices) {
+  if (!overviewInvoiceList) {
+    return;
+  }
+
+  if (invoices.length === 0) {
+    overviewInvoiceList.innerHTML = `
+      <div class="dashboard-empty-state">
+        <i class="bi bi-receipt-cutoff"></i>
+        <div>
+          <strong>No invoices found</strong>
+          <p>Create a new invoice or adjust the filters to see matching activity.</p>
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  overviewInvoiceList.innerHTML = invoices
+    .slice(0, 4)
+    .map((invoice, index) => {
+      const statusMeta = getDashboardStatusMeta(invoice.status);
+      const dueDate = invoice?.dueDate ? formatLongDate(invoice.dueDate) : "No due date";
+      const secondaryAmount =
+        Number(invoice.dueAmount || 0) > 0.009
+          ? `Due ${formatCurrency(invoice.dueAmount)}`
+          : `Paid ${formatCurrency(invoice.paidAmount)}`;
+      return `
+        <article class="dashboard-invoice-row ${index === 0 ? "is-featured" : ""}">
+          <div class="dashboard-invoice-primary">
+            <span class="dashboard-invoice-icon">
+              <i class="${statusMeta.icon}"></i>
+            </span>
+            <div class="dashboard-invoice-copy">
+              <div class="dashboard-invoice-title-row">
+                <button type="button" class="dashboard-text-link" data-tab-open="invoices">
+                  ${escapeHtml(invoice.invoiceNumber || `#${invoice.id}`)}
+                </button>
+                ${index === 0 ? '<span class="dashboard-inline-tag">Recent</span>' : ""}
+              </div>
+              <p class="dashboard-invoice-meta">${escapeHtml(formatRelativeTime(invoice.createdAt))}</p>
+            </div>
+          </div>
+          <div class="dashboard-invoice-client">
+            <strong>${escapeHtml(invoice.customer?.name || "Unknown customer")}</strong>
+            <span>Due ${escapeHtml(dueDate)}</span>
+          </div>
+          <div class="dashboard-invoice-amount">
+            <strong>${formatCurrency(invoice.total)}</strong>
+            <span>${escapeHtml(secondaryAmount)}</span>
+          </div>
+          <div class="dashboard-invoice-status">
+            <span class="dashboard-status-chip is-${statusMeta.tone}">
+              <span class="dashboard-status-dot"></span>
+              ${escapeHtml(statusMeta.label)}
+            </span>
+          </div>
+          <div class="dashboard-invoice-actions">
+            <button type="button" class="dashboard-icon-btn" data-action="download-invoice" data-invoice-id="${invoice.id}" aria-label="Download PDF">
+              <i class="bi bi-download"></i>
+            </button>
+            <button type="button" class="dashboard-icon-btn" data-action="share-invoice" data-invoice-id="${invoice.id}" aria-label="Share invoice">
+              <i class="bi bi-share"></i>
+            </button>
+            <button type="button" class="dashboard-icon-btn" data-action="pay-invoice" data-invoice-id="${invoice.id}" aria-label="Add payment">
+              <i class="bi bi-wallet2"></i>
+            </button>
+          </div>
+        </article>
+      `;
+    })
+    .join("");
+}
+
+function renderOverviewActivityFeed(invoices) {
+  if (!overviewActivityList) {
+    return;
+  }
+
+  const latestInvoices = [...invoices].slice(0, 2);
+  if (latestInvoices.length === 0) {
+    overviewActivityList.innerHTML = '<p class="dashboard-empty-copy">No recent invoice activity yet.</p>';
+    return;
+  }
+
+  overviewActivityList.innerHTML = latestInvoices
+    .map((invoice) => {
+      const statusMeta = getDashboardStatusMeta(invoice.status);
+      return `
+        <article class="dashboard-activity-item">
+          <div class="dashboard-activity-head">
+            <div>
+              <div class="dashboard-activity-title-row">
+                <button type="button" class="dashboard-text-link" data-tab-open="invoices">
+                  ${escapeHtml(invoice.invoiceNumber || `#${invoice.id}`)}
+                </button>
+                <span class="dashboard-status-chip is-${statusMeta.tone}">
+                  <span class="dashboard-status-dot"></span>
+                  ${escapeHtml(statusMeta.label)}
+                </span>
+              </div>
+              <p class="dashboard-activity-copy">${escapeHtml(invoice.customer?.name || "Unknown customer")} • ${formatCurrency(invoice.total)}</p>
+            </div>
+            <div class="dashboard-activity-actions">
+              <button type="button" class="dashboard-icon-btn" data-action="download-invoice" data-invoice-id="${invoice.id}" aria-label="Download invoice">
+                <i class="bi bi-download"></i>
+              </button>
+              <button type="button" class="dashboard-icon-btn" data-action="share-invoice" data-invoice-id="${invoice.id}" aria-label="Share invoice">
+                <i class="bi bi-share"></i>
+              </button>
+            </div>
+          </div>
+          <div class="dashboard-activity-metrics">
+            <div>
+              <span>Updated</span>
+              <strong>${escapeHtml(formatRelativeTime(invoice.createdAt).replace(/^Updated /, ""))}</strong>
+            </div>
+            <div>
+              <span>Due</span>
+              <strong>${formatCurrency(invoice.dueAmount)}</strong>
+            </div>
+            <div>
+              <span>Due Date</span>
+              <strong>${escapeHtml(invoice?.dueDate ? formatLongDate(invoice.dueDate) : "Not set")}</strong>
+            </div>
+          </div>
+        </article>
+      `;
+    })
+    .join("");
+}
+
+function renderOverviewSharingDefaults() {
+  if (!overviewSharingDefaults) {
+    return;
+  }
+
+  const bankLabel = state.settings?.bankName || "No bank profile";
+  const paymentHandle = state.settings?.upiId
+    || (state.settings?.bankAccountNumber ? maskAccountNumber(state.settings.bankAccountNumber) : "")
+    || "Add a bank or UPI handle";
+
+  const rows = [
+    {
+      icon: "bi bi-lock",
+      title: "Share-ready PDFs",
+      copy: "Latest invoice download and share actions are available from the dashboard.",
+      badge: "Ready"
+    },
+    {
+      icon: "bi bi-bank",
+      title: bankLabel,
+      copy: paymentHandle,
+      badge: state.settings?.bankName || state.settings?.upiId ? "Configured" : "Missing"
+    },
+    {
+      icon: "bi bi-image",
+      title: "Brand assets",
+      copy: "Workspace logo and invoice branding are live in preview and PDF exports.",
+      badge: "Live"
+    }
+  ];
+
+  overviewSharingDefaults.innerHTML = rows
+    .map(
+      (row) => `
+        <article class="dashboard-sharing-item">
+          <span class="dashboard-sharing-icon"><i class="${row.icon}"></i></span>
+          <span class="dashboard-sharing-copy">
+            <strong>${escapeHtml(row.title)}</strong>
+            <span>${escapeHtml(row.copy)}</span>
+          </span>
+          <span class="dashboard-sharing-badge">${escapeHtml(row.badge)}</span>
+        </article>
+      `
+    )
+    .join("");
 }
 
 function renderOverview() {
@@ -832,11 +1640,49 @@ function renderOverview() {
   const revenue = Number(totals.revenue || 0);
   const outstanding = Number(totals.outstanding || 0);
   const overdueInvoices = Number(totals.overdueInvoices || 0);
+  const outstandingCount = state.invoices.filter((invoice) => Number(invoice.dueAmount || 0) > 0.009).length;
+  const statusSummary = countInvoiceStatuses(state.invoices);
 
-  metricRevenue.textContent = formatCurrency(revenue);
-  metricOutstanding.textContent = formatCurrency(outstanding);
-  metricOverdue.textContent = String(overdueInvoices);
-  metricBase.textContent = `${state.customers.length} / ${state.products.length}`;
+  if (metricRevenue) {
+    metricRevenue.textContent = formatCurrency(revenue);
+  }
+  if (metricOutstanding) {
+    metricOutstanding.textContent = formatCurrency(outstanding);
+  }
+  if (metricOverdue) {
+    metricOverdue.textContent = String(overdueInvoices);
+  }
+  if (metricBase) {
+    metricBase.textContent = `${state.customers.length} / ${state.products.length}`;
+  }
+  if (overviewOutstandingBadge) {
+    overviewOutstandingBadge.textContent = `${outstandingCount} invoice${outstandingCount === 1 ? "" : "s"}`;
+  }
+  if (overviewRevenueBadge) {
+    overviewRevenueBadge.textContent = `${Number(totals.invoiceCount || state.invoices.length)} invoice${Number(totals.invoiceCount || state.invoices.length) === 1 ? "" : "s"}`;
+  }
+  if (overviewOverdueBadge) {
+    overviewOverdueBadge.textContent = `${overdueInvoices} flagged`;
+  }
+  if (overviewBaseBadge) {
+    overviewBaseBadge.textContent = `${state.customers.length + state.products.length} records`;
+  }
+  if (overviewOutstandingNote) {
+    overviewOutstandingNote.textContent = outstandingCount > 0
+      ? `${outstandingCount} invoice${outstandingCount === 1 ? "" : "s"} still waiting for payment.`
+      : "All clear. No open dues right now.";
+  }
+  if (overviewRevenueNote) {
+    overviewRevenueNote.textContent = `${statusSummary.paid} paid and ${statusSummary.partial} partial invoice${statusSummary.partial === 1 ? "" : "s"} in the current report view.`;
+  }
+  if (overviewOverdueNote) {
+    overviewOverdueNote.textContent = overdueInvoices > 0
+      ? "Review and follow up on the invoices that have crossed their due date."
+      : "No overdue invoices in the current view.";
+  }
+  if (overviewBaseNote) {
+    overviewBaseNote.textContent = `${state.customers.length} customer${state.customers.length === 1 ? "" : "s"} and ${state.products.length} product${state.products.length === 1 ? "" : "s"} ready to invoice.`;
+  }
 
   const availableBalance = Math.max(revenue - outstanding, 0);
   const availablePercentage = revenue > 0 ? clamp(Math.round((availableBalance / revenue) * 100), 0, 100) : 0;
@@ -861,7 +1707,6 @@ function renderOverview() {
 
   renderOverviewCardList();
 
-  const statusSummary = countInvoiceStatuses(state.invoices);
   renderDoughnutOverview(statusSummary);
 
   const monthlySeries = buildMonthlyOverviewSeries(state.invoices, 6);
@@ -869,29 +1714,27 @@ function renderOverview() {
   renderMiniBarChart(outcomeBars, monthlySeries, "outcome", "outcome");
 
   const recent = [...state.invoices].slice(0, 8);
-  if (recent.length === 0) {
-    overviewRecentBody.innerHTML = `<tr><td colspan="5">No invoices yet.</td></tr>`;
-    return;
+  if (overviewListCaption) {
+    overviewListCaption.textContent = `${state.invoices.length} matching invoice${state.invoices.length === 1 ? "" : "s"} • Sorted by updated time`;
+  }
+  if (overviewListCount) {
+    const shownCount = Math.min(state.invoices.length, 4);
+    overviewListCount.textContent = state.invoices.length
+      ? `Showing ${shownCount} of ${state.invoices.length} invoice${state.invoices.length === 1 ? "" : "s"}`
+      : "Showing 0 invoices";
   }
 
-  overviewRecentBody.innerHTML = recent
-    .map(
-      (invoice) => `
-      <tr>
-        <td>${escapeHtml(invoice.invoiceNumber || `#${invoice.id}`)}</td>
-        <td>${escapeHtml(invoice.customer?.name || "Unknown")}</td>
-        <td>${statusPill(invoice.status)}</td>
-        <td>${formatCurrency(invoice.total)}</td>
-        <td>${formatCurrency(invoice.dueAmount)}</td>
-      </tr>
-    `
-    )
-    .join("");
+  renderOverviewActiveFilters();
+  renderOverviewInvoiceFeed(recent);
+  renderOverviewActivityFeed(recent);
+  renderOverviewSharingDefaults();
+  syncResponsiveTables();
 }
 
 function renderCustomers() {
   if (state.customers.length === 0) {
     customerTableBody.innerHTML = `<tr><td colspan="4">No customers yet.</td></tr>`;
+    syncResponsiveTables();
     return;
   }
 
@@ -921,6 +1764,7 @@ function renderCustomers() {
     `
     )
     .join("");
+  syncResponsiveTables();
 }
 
 function resetCustomerForm() {
@@ -986,6 +1830,8 @@ function renderProducts() {
 function renderInvoices() {
   if (state.invoices.length === 0) {
     invoiceTableBody.innerHTML = `<tr><td colspan="8">No invoices found.</td></tr>`;
+    syncResponsiveTables();
+    updateHeaderActionState();
     return;
   }
 
@@ -1016,12 +1862,15 @@ function renderInvoices() {
     `
     )
     .join("");
+  syncResponsiveTables();
+  updateHeaderActionState();
 }
 
 function renderPayments() {
   const payable = state.invoices.filter((invoice) => Number(invoice.dueAmount || 0) > 0.009);
   if (payable.length === 0) {
     paymentTableBody.innerHTML = `<tr><td colspan="7">No pending payments.</td></tr>`;
+    syncResponsiveTables();
     return;
   }
 
@@ -1040,16 +1889,19 @@ function renderPayments() {
     `
     )
     .join("");
+  syncResponsiveTables();
 }
 
 function renderRecurringTemplates() {
   if (!isAdmin()) {
     recurringTableBody.innerHTML = "";
+    syncResponsiveTables();
     return;
   }
 
   if (state.recurringTemplates.length === 0) {
     recurringTableBody.innerHTML = `<tr><td colspan="6">No recurring templates yet.</td></tr>`;
+    syncResponsiveTables();
     return;
   }
 
@@ -1074,6 +1926,7 @@ function renderRecurringTemplates() {
     `
     )
     .join("");
+  syncResponsiveTables();
 }
 
 function renderReports() {
@@ -1112,6 +1965,7 @@ function renderReports() {
         )
         .join("")
     : `<tr><td colspan="3">No product data.</td></tr>`;
+  syncResponsiveTables();
 }
 
 function renderSettings() {
@@ -1221,6 +2075,14 @@ async function loadReport() {
   state.report = await requestJson(`/api/reports/summary${query}`);
 }
 
+async function refreshInvoiceDashboardViews() {
+  await Promise.all([loadInvoices(), loadReport()]);
+  renderInvoices();
+  renderPayments();
+  renderOverview();
+  renderReports();
+}
+
 async function refreshBaseData() {
   const [customers, products, settings, users, recurringTemplates] = await Promise.all([
     requestJson("/api/customers"),
@@ -1260,13 +2122,14 @@ async function login(username, password) {
   localStorage.setItem("billing_token", state.token);
   state.user = response.user;
 
-  currentUserNode.textContent = `${state.user.name} (${state.user.role})`;
+  renderCurrentUserChip();
   applyRoleVisibility();
 
   loginView.classList.add("hidden");
   workspaceView.classList.remove("hidden");
 
   await refreshBaseData();
+  updateLayoutMetrics();
   setStatus("Logged in.");
 }
 
@@ -1279,11 +2142,12 @@ async function restoreSession() {
   try {
     const me = await requestJson("/api/auth/me");
     state.user = me.user;
-    currentUserNode.textContent = `${state.user.name} (${state.user.role})`;
+    renderCurrentUserChip();
     applyRoleVisibility();
     loginView.classList.add("hidden");
     workspaceView.classList.remove("hidden");
     await refreshBaseData();
+    updateLayoutMetrics();
   } catch (_error) {
     resetAuthState();
   }
@@ -1300,7 +2164,7 @@ async function doLogout() {
   resetAuthState();
 }
 
-async function submitInvoice() {
+async function submitInvoice(options = {}) {
   const payload = {
     customerId: Number(invoiceCustomerSelect.value),
     gstType: invoiceGstTypeSelect.value,
@@ -1317,7 +2181,7 @@ async function submitInvoice() {
     return;
   }
 
-  await requestJson("/api/invoices", {
+  const createdInvoice = await requestJson("/api/invoices", {
     method: "POST",
     body: JSON.stringify(payload)
   });
@@ -1335,6 +2199,10 @@ async function submitInvoice() {
   renderReports();
   updateInvoicePreview();
   setStatus("Invoice generated.");
+  if (options.shareAfterCreate && createdInvoice?.id) {
+    await shareInvoice(createdInvoice.id);
+  }
+  return createdInvoice;
 }
 
 async function addInvoicePaymentPrompt(invoiceId) {
@@ -1424,6 +2292,37 @@ async function shareInvoice(invoiceId) {
   setStatus("WhatsApp opened with invoice link.");
 }
 
+function emailInvoice(invoiceId) {
+  const invoice = state.invoices.find((entry) => entry.id === Number(invoiceId));
+  if (!invoice) {
+    setStatus("Invoice not found.", true);
+    return;
+  }
+
+  const customerEmail = String(invoice.customer?.email || "").trim();
+  if (!customerEmail) {
+    setStatus("Selected invoice customer has no email address.", true);
+    return;
+  }
+
+  const companyName = state.settings?.companyName || "InvoiceFlow Pro";
+  const subject = `Invoice ${invoice.invoiceNumber || `#${invoice.id}`} from ${companyName}`;
+  const body = [
+    `Hello ${invoice.customer?.name || "Customer"},`,
+    "",
+    `Please find invoice ${invoice.invoiceNumber || `#${invoice.id}`} for ${formatCurrency(invoice.total)}.`,
+    `Outstanding amount: ${formatCurrency(invoice.dueAmount)}.`,
+    "",
+    "Attach the generated PDF from InvoiceFlow Pro before sending.",
+    "",
+    `Regards,`,
+    companyName
+  ].join("\n");
+
+  window.location.href = `mailto:${encodeURIComponent(customerEmail)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  setStatus("Email draft opened.");
+}
+
 function downloadInvoice(invoiceId) {
   requestJson(`/api/invoices/${invoiceId}`).then(async (invoice) => {
     const response = await fetch(`/api/invoices/${invoiceId}/pdf`, {
@@ -1447,6 +2346,38 @@ function downloadInvoice(invoiceId) {
   }).catch((error) => {
     setStatus(error.message, true);
   });
+}
+
+function withLatestInvoice(callback, emptyMessage) {
+  const latestInvoice = getLatestInvoice();
+  if (!latestInvoice) {
+    setStatus(emptyMessage, true);
+    return null;
+  }
+
+  callback(latestInvoice);
+  return latestInvoice;
+}
+
+async function handleHeaderSendAction() {
+  const activeTab = document.querySelector(".nav-link.active[data-tab]")?.dataset.tab || "overview";
+  const canSubmitDraft =
+    activeTab === "invoices" &&
+    Number(invoiceCustomerSelect.value) > 0 &&
+    getInvoiceRowsPayload().length > 0;
+
+  if (canSubmitDraft) {
+    await submitInvoice({ shareAfterCreate: true });
+    return;
+  }
+
+  const latestInvoice = getLatestInvoice();
+  if (!latestInvoice) {
+    setStatus("Create an invoice first to send it.", true);
+    return;
+  }
+
+  await shareInvoice(latestInvoice.id);
 }
 
 async function deleteInvoice(invoiceId) {
@@ -1703,6 +2634,54 @@ async function adminResetUserPassword() {
   setStatus("User password reset.");
 }
 
+async function applyInvoiceFilterState(nextFilters, successMessage) {
+  state.invoiceFilters = {
+    ...state.invoiceFilters,
+    ...nextFilters
+  };
+  syncInvoiceFilterControls();
+  await refreshInvoiceDashboardViews();
+  setStatus(successMessage);
+}
+
+async function resetInvoiceFilterState(successMessage) {
+  state.invoiceFilters = {
+    query: "",
+    status: "all",
+    customerId: "",
+    dateFrom: "",
+    dateTo: ""
+  };
+  syncInvoiceFilterControls();
+  await refreshInvoiceDashboardViews();
+  setStatus(successMessage);
+}
+
+async function handleInvoiceActionButton(button) {
+  const invoiceId = Number(button.dataset.invoiceId);
+  const action = button.dataset.action;
+
+  if (!Number.isInteger(invoiceId) || invoiceId <= 0 || !action) {
+    return;
+  }
+
+  if (action === "share-invoice") {
+    await shareInvoice(invoiceId);
+    return;
+  }
+  if (action === "download-invoice") {
+    downloadInvoice(invoiceId);
+    return;
+  }
+  if (action === "pay-invoice") {
+    await addInvoicePaymentPrompt(invoiceId);
+    return;
+  }
+  if (action === "remove-invoice") {
+    await deleteInvoice(invoiceId);
+  }
+}
+
 loginForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   const formData = new FormData(loginForm);
@@ -1732,9 +2711,7 @@ tabNav.addEventListener('click', (event) => {
 });
 
 sidebarToggleButton?.addEventListener("click", () => {
-  const opening = !workspaceView.classList.contains("sidebar-open");
-  workspaceView.classList.toggle("sidebar-open", opening);
-  sidebarOverlay?.classList.toggle("hidden", !opening);
+  setSidebarOpen(!workspaceView.classList.contains("sidebar-open"));
 });
 
 sidebarOverlay?.addEventListener("click", () => {
@@ -1758,31 +2735,137 @@ globalSearchInput?.addEventListener("keydown", async (event) => {
   }
   event.preventDefault();
   const query = globalSearchInput.value.trim();
-  state.invoiceFilters = { ...state.invoiceFilters, query };
-  filterQueryInput.value = query;
   setActiveTab("invoices");
   try {
-    await Promise.all([loadInvoices(), loadReport()]);
-    renderInvoices();
-    renderPayments();
-    renderOverview();
-    renderReports();
-    setStatus(query ? `Showing results for "${query}".` : "Search cleared.");
+    await applyInvoiceFilterState({ query }, query ? `Showing results for "${query}".` : "Search cleared.");
   } catch (error) {
     setStatus(error.message, true);
   }
 });
 
 window.addEventListener("resize", () => {
+  updateLayoutMetrics();
   if (window.innerWidth > 1080) {
     closeMobileSidebar();
   }
 });
 
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") {
+    closeMobileSidebar();
+  }
+});
+
+previewModeButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    state.invoicePreviewMode = button.dataset.previewMode || "preview";
+    updateInvoicePreview();
+  });
+});
+
+previewActionButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    if (button.dataset.previewAction === "print") {
+      window.print();
+    }
+  });
+});
+
+headerDownloadInvoiceButton?.addEventListener("click", () => {
+  withLatestInvoice(
+    (invoice) => {
+      downloadInvoice(invoice.id);
+    },
+    "Create at least one invoice before downloading a PDF."
+  );
+});
+
+headerEmailInvoiceButton?.addEventListener("click", () => {
+  withLatestInvoice(
+    (invoice) => {
+      shareInvoice(invoice.id);
+    },
+    "Create at least one invoice before sharing it."
+  );
+});
+
+headerSaveInvoiceButton?.addEventListener("click", () => {
+  if (invoiceForm?.requestSubmit) {
+    invoiceForm.requestSubmit();
+    return;
+  }
+  invoiceSubmitButton?.click();
+});
+
+headerCreateInvoiceButton?.addEventListener("click", () => {
+  setActiveTab("invoices");
+  invoiceCustomerSelect?.focus();
+});
+
+overviewExportButton?.addEventListener("click", () => {
+  withLatestInvoice(
+    (invoice) => {
+      downloadInvoice(invoice.id);
+    },
+    "Create at least one invoice before exporting a PDF."
+  );
+});
+
+overviewShareWorkspaceButton?.addEventListener("click", () => {
+  withLatestInvoice(
+    (invoice) => {
+      shareInvoice(invoice.id);
+    },
+    "Create at least one invoice before sharing it."
+  );
+});
+
+overviewOpenInvoicesButton?.addEventListener("click", () => {
+  setActiveTab("invoices");
+});
+
+overviewQuickShareButton?.addEventListener("click", () => {
+  withLatestInvoice(
+    (invoice) => {
+      shareInvoice(invoice.id);
+    },
+    "Create at least one invoice before sharing it."
+  );
+});
+
+overviewQuickDownloadButton?.addEventListener("click", () => {
+  withLatestInvoice(
+    (invoice) => {
+      downloadInvoice(invoice.id);
+    },
+    "Create at least one invoice before downloading a PDF."
+  );
+});
+
+overviewQuickCreateButton?.addEventListener("click", () => {
+  setActiveTab("invoices");
+  invoiceCustomerSelect?.focus();
+});
+
+overviewQuickSettingsButton?.addEventListener("click", () => {
+  setActiveTab("settings");
+});
+
+headerSendInvoiceButton?.addEventListener("click", async () => {
+  try {
+    await handleHeaderSendAction();
+  } catch (error) {
+    setStatus(error.message, true);
+  }
+});
+
+invoiceCustomerSelect.addEventListener("change", updateInvoicePreview);
 invoiceGstTypeSelect.addEventListener("change", updateInvoicePreview);
+invoiceDueDaysInput.addEventListener("input", updateInvoicePreview);
 invoiceDiscountInput.addEventListener("input", updateInvoicePreview);
 invoiceShippingInput.addEventListener("input", updateInvoicePreview);
 invoiceRoundoffInput.addEventListener("input", updateInvoicePreview);
+invoiceNotesInput.addEventListener("input", updateInvoicePreview);
 
 addLineItemButton.addEventListener("click", () => {
   createLineItemRow(lineItemsContainer);
@@ -1804,47 +2887,79 @@ invoiceForm.addEventListener("submit", async (event) => {
 
 invoiceFilterForm.addEventListener("submit", async (event) => {
   event.preventDefault();
-  state.invoiceFilters = {
-    query: filterQueryInput.value.trim(),
-    status: filterStatusSelect.value,
-    customerId: filterCustomerSelect.value,
-    dateFrom: filterDateFromInput.value,
-    dateTo: filterDateToInput.value
-  };
-
   try {
-    await Promise.all([loadInvoices(), loadReport()]);
-    renderInvoices();
-    renderPayments();
-    renderOverview();
-    renderReports();
-    setStatus("Invoice filter applied.");
+    await applyInvoiceFilterState(
+      {
+        query: filterQueryInput.value.trim(),
+        status: filterStatusSelect.value,
+        customerId: filterCustomerSelect.value,
+        dateFrom: filterDateFromInput.value,
+        dateTo: filterDateToInput.value
+      },
+      "Invoice filter applied."
+    );
   } catch (error) {
     setStatus(error.message, true);
   }
 });
 
 clearInvoiceFiltersButton.addEventListener("click", async () => {
-  state.invoiceFilters = {
-    query: "",
-    status: "all",
-    customerId: "",
-    dateFrom: "",
-    dateTo: ""
-  };
-  filterQueryInput.value = "";
-  filterStatusSelect.value = "all";
-  filterCustomerSelect.value = "";
-  filterDateFromInput.value = "";
-  filterDateToInput.value = "";
+  try {
+    await resetInvoiceFilterState("Invoice filter cleared.");
+  } catch (error) {
+    setStatus(error.message, true);
+  }
+});
+
+overviewFilterForm?.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  try {
+    await applyInvoiceFilterState(
+      {
+        query: overviewFilterQueryInput?.value.trim() || "",
+        status: overviewFilterStatusSelect?.value || "all",
+        customerId: overviewFilterCustomerSelect?.value || "",
+        dateFrom: overviewFilterDateFromInput?.value || "",
+        dateTo: overviewFilterDateToInput?.value || ""
+      },
+      "Dashboard filters applied."
+    );
+  } catch (error) {
+    setStatus(error.message, true);
+  }
+});
+
+overviewClearFiltersButton?.addEventListener("click", async () => {
+  try {
+    await resetInvoiceFilterState("Dashboard filters cleared.");
+  } catch (error) {
+    setStatus(error.message, true);
+  }
+});
+
+overviewActiveFilters?.addEventListener("click", async (event) => {
+  const button = event.target.closest("[data-clear-filter]");
+  if (!button) {
+    return;
+  }
+
+  const key = button.dataset.clearFilter;
+  if (!key) {
+    return;
+  }
 
   try {
-    await Promise.all([loadInvoices(), loadReport()]);
-    renderInvoices();
-    renderPayments();
-    renderOverview();
-    renderReports();
-    setStatus("Invoice filter cleared.");
+    if (key === "all") {
+      await resetInvoiceFilterState("Dashboard filters cleared.");
+      return;
+    }
+
+    await applyInvoiceFilterState(
+      {
+        [key]: key === "status" ? "all" : ""
+      },
+      "Dashboard filter updated."
+    );
   } catch (error) {
     setStatus(error.message, true);
   }
@@ -1856,25 +2971,46 @@ invoiceTableBody.addEventListener("click", async (event) => {
     return;
   }
 
-  const invoiceId = Number(button.dataset.invoiceId);
-  const action = button.dataset.action;
+  try {
+    await handleInvoiceActionButton(button);
+  } catch (error) {
+    setStatus(error.message, true);
+  }
+});
+
+overviewInvoiceList?.addEventListener("click", async (event) => {
+  const tabButton = event.target.closest("[data-tab-open]");
+  if (tabButton?.dataset.tabOpen) {
+    setActiveTab(tabButton.dataset.tabOpen);
+    return;
+  }
+
+  const button = event.target.closest("button[data-action][data-invoice-id]");
+  if (!button) {
+    return;
+  }
 
   try {
-    if (action === "share-invoice") {
-      await shareInvoice(invoiceId);
-      return;
-    }
-    if (action === "download-invoice") {
-      downloadInvoice(invoiceId);
-      return;
-    }
-    if (action === "pay-invoice") {
-      await addInvoicePaymentPrompt(invoiceId);
-      return;
-    }
-    if (action === "remove-invoice") {
-      await deleteInvoice(invoiceId);
-    }
+    await handleInvoiceActionButton(button);
+  } catch (error) {
+    setStatus(error.message, true);
+  }
+});
+
+overviewActivityList?.addEventListener("click", async (event) => {
+  const tabButton = event.target.closest("[data-tab-open]");
+  if (tabButton?.dataset.tabOpen) {
+    setActiveTab(tabButton.dataset.tabOpen);
+    return;
+  }
+
+  const button = event.target.closest("button[data-action][data-invoice-id]");
+  if (!button) {
+    return;
+  }
+
+  try {
+    await handleInvoiceActionButton(button);
   } catch (error) {
     setStatus(error.message, true);
   }
@@ -2105,8 +3241,16 @@ drawerEl?.addEventListener('hidden.bs.modal', () => {
 });
 
 async function init() {
+  applyTheme();
+  renderCurrentUserChip();
+  updateHeaderNavState("overview");
+  sidebarToggleButton?.setAttribute("aria-controls", "tab-nav");
+  sidebarToggleButton?.setAttribute("aria-expanded", "false");
   createLineItemRow(lineItemsContainer);
   createRecurringItemRow(recurringItemsContainer);
+  syncResponsiveTables();
+  syncInvoiceFilterControls();
+  updateLayoutMetrics();
 
   const today = new Date().toISOString().slice(0, 10);
   if(recurringStartDateInput) {
