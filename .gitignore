@@ -6,3 +6,6 @@ data/store.sqlite-shm
 .vscode/
 sample_preview.pdf
 public/sample_preview.pdf
+.gsd/STATE.md
+.gsd/JOURNAL.md
+.gsd/TODO.md
