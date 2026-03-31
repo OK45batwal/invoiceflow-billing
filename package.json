@@ -3,12 +3,17 @@
   "version": "1.0.0",
   "description": "InvoiceFlow Pro billing app with customer, product, and invoice management",
   "type": "module",
+  "engines": {
+    "node": "20.x"
+  },
   "scripts": {
     "start": "node src/server.js",
     "dev": "node --watch src/server.js"
   },
   "dependencies": {
     "express": "^4.21.2",
+    "firebase-admin": "^13.7.0",
+    "nodemailer": "^8.0.4",
     "pdfkit": "^0.15.2",
     "qrcode": "^1.5.4"
   }

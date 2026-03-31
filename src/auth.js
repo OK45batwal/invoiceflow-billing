@@ -47,6 +47,9 @@ export function sanitizeUser(user) {
     id: user.id,
     username: user.username,
     name: user.name,
-    role: user.role
+    role: user.role,
+    email: user.email,
+    authMethod: user.authMethod,
+    createdAt: user.createdAt
   };
 }

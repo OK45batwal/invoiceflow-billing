@@ -1,6 +1,6 @@
 const loginView = document.querySelector("#login-view");
 const workspaceView = document.querySelector("#workspace-view");
-const loginForm = document.querySelector("#login-form");
+const loginRoot = document.querySelector("#login-root");
 const logoutButton = document.querySelector("#logout-btn");
 const currentUserNode = document.querySelector("#current-user");
 const currentUserRoleNode = document.querySelector("#current-user-role");
@@ -91,6 +91,8 @@ const settingsForm = document.querySelector("#settings-form");
 const changePasswordForm = document.querySelector("#change-password-form");
 const adminResetPasswordForm = document.querySelector("#admin-reset-password-form");
 const passwordUserSelect = document.querySelector("#password-user-id");
+const otpAuthNotice = document.querySelector("#otp-auth-note");
+const passwordAuthOnlyNodes = [...document.querySelectorAll("[data-password-auth-only='true']")];
 const downloadBackupButton = document.querySelector("#download-backup-btn");
 const restoreBackupForm = document.querySelector("#restore-backup-form");
 const restoreBackupFileInput = document.querySelector("#restore-backup-file");
@@ -180,6 +182,10 @@ const state = {
 
 function isAdmin() {
   return state.user?.role === "admin";
+}
+
+function isOtpUser() {
+  return state.user?.authMethod === "otp";
 }
 
 function formatCurrency(value) {
@@ -306,7 +312,7 @@ function updateLayoutMetrics() {
 }
 
 function renderCurrentUserChip() {
-  const name = state.user?.name || "Workspace User";
+  const name = state.user?.name || state.user?.email || "Workspace User";
   const role = state.user?.role ? String(state.user.role) : "Finance";
 
   if (currentUserNode) {
@@ -412,6 +418,7 @@ function resetAuthState() {
   localStorage.removeItem("billing_token");
   closeMobileSidebar();
   renderCurrentUserChip();
+  applyAuthMethodVisibility();
   loginView.classList.remove("hidden");
   workspaceView.classList.add("hidden");
 }
@@ -548,6 +555,16 @@ function updateHeaderActionState() {
   if (headerSendInvoiceButton) {
     headerSendInvoiceButton.disabled = !(canSaveDraft || hasInvoice);
   }
+}
+
+function applyAuthMethodVisibility() {
+  const otpUser = isOtpUser();
+
+  passwordAuthOnlyNodes.forEach((node) => {
+    node.classList.toggle("hidden", otpUser);
+  });
+
+  otpAuthNotice?.classList.toggle("hidden", !otpUser);
 }
 
 function productById(productId) {
@@ -1987,7 +2004,7 @@ function renderPasswordUserOptions() {
     return;
   }
 
-  if (!isAdmin()) {
+  if (!isAdmin() || isOtpUser()) {
     passwordUserSelect.innerHTML = "";
     return;
   }
@@ -2084,11 +2101,12 @@ async function refreshInvoiceDashboardViews() {
 }
 
 async function refreshBaseData() {
+  const loadUsers = isAdmin() && !isOtpUser();
   const [customers, products, settings, users, recurringTemplates] = await Promise.all([
     requestJson("/api/customers"),
     requestJson("/api/products"),
     requestJson("/api/settings"),
-    isAdmin() ? requestJson("/api/users") : Promise.resolve([]),
+    loadUsers ? requestJson("/api/users") : Promise.resolve([]),
     isAdmin() ? requestJson("/api/recurring") : Promise.resolve([])
   ]);
 
@@ -2112,25 +2130,21 @@ async function refreshBaseData() {
   renderPasswordUserOptions();
 }
 
-async function login(username, password) {
-  const response = await requestJson("/api/auth/login", {
-    method: "POST",
-    body: JSON.stringify({ username, password })
-  });
-
+async function completeLoginSession(response, successMessage = "Logged in.") {
   state.token = response.token;
   localStorage.setItem("billing_token", state.token);
   state.user = response.user;
 
   renderCurrentUserChip();
   applyRoleVisibility();
+  applyAuthMethodVisibility();
 
   loginView.classList.add("hidden");
   workspaceView.classList.remove("hidden");
 
   await refreshBaseData();
   updateLayoutMetrics();
-  setStatus("Logged in.");
+  setStatus(successMessage);
 }
 
 async function restoreSession() {
@@ -2144,6 +2158,7 @@ async function restoreSession() {
     state.user = me.user;
     renderCurrentUserChip();
     applyRoleVisibility();
+    applyAuthMethodVisibility();
     loginView.classList.add("hidden");
     workspaceView.classList.remove("hidden");
     await refreshBaseData();
@@ -2162,6 +2177,34 @@ async function doLogout() {
     // Ignore logout failure and clear local session anyway.
   }
   resetAuthState();
+}
+
+function mountLoginExperience() {
+  if (!loginRoot) {
+    return;
+  }
+
+  if (typeof window.renderBillingLogin !== "function") {
+    loginRoot.innerHTML = `
+      <div class="auth-wrapper">
+        <div class="auth-container">
+          <div class="auth-glass-card">
+            <div class="auth-message is-error">React login component failed to load. Refresh the page.</div>
+          </div>
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  window.renderBillingLogin(loginRoot, {
+    appName: "InvoiceFlow Pro",
+    heading: "Welcome back",
+    subheading: "Enter your email to receive a one-time password and access your workspace.",
+    onAuthenticated: async (response) => {
+      await completeLoginSession(response, response.message || "Logged in.");
+    }
+  });
 }
 
 async function submitInvoice(options = {}) {
@@ -2681,19 +2724,6 @@ async function handleInvoiceActionButton(button) {
     await deleteInvoice(invoiceId);
   }
 }
-
-loginForm.addEventListener("submit", async (event) => {
-  event.preventDefault();
-  const formData = new FormData(loginForm);
-  const username = String(formData.get("username") || "");
-  const password = String(formData.get("password") || "");
-
-  try {
-    await login(username, password);
-  } catch (error) {
-    setStatus(error.message, true);
-  }
-});
 
 logoutButton.addEventListener("click", async () => {
   await doLogout();
@@ -3243,6 +3273,7 @@ drawerEl?.addEventListener('hidden.bs.modal', () => {
 async function init() {
   applyTheme();
   renderCurrentUserChip();
+  applyAuthMethodVisibility();
   updateHeaderNavState("overview");
   sidebarToggleButton?.setAttribute("aria-controls", "tab-nav");
   sidebarToggleButton?.setAttribute("aria-expanded", "false");
@@ -3251,6 +3282,7 @@ async function init() {
   syncResponsiveTables();
   syncInvoiceFilterControls();
   updateLayoutMetrics();
+  mountLoginExperience();
 
   const today = new Date().toISOString().slice(0, 10);
   if(recurringStartDateInput) {

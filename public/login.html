@@ -4,114 +4,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sign In - InvoiceFlow Pro</title>
-    <!-- Modern Typography: Outfit & Inter -->
+    <title>Login - InvoiceFlow Pro</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
         href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@500;600;700&display=swap"
         rel="stylesheet">
-    <!-- Boxicons for Modern Vector Icons -->
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
-    <!-- Custom Stylesheet -->
     <link rel="stylesheet" href="login.css">
-    <meta name="description" content="Premium SaaS Login Interface">
 </head>
 
 <body>
-    <div class="auth-wrapper">
-        <!-- Ambient Animated Glow Orbs -->
-        <div class="bg-orb orb-1"></div>
-        <div class="bg-orb orb-2"></div>
-        <div class="bg-orb orb-3"></div>
+    <div id="login-root"></div>
 
-        <!-- Premium Film Noise Texture Overlay -->
-        <div class="noise-overlay"></div>
-
-        <div class="auth-container">
-            <div class="auth-glass-card">
-
-                <div class="auth-header">
-                    <div class="logo">
-                        <i class='bx bxs-polygon'></i>
-                        <span>InvoiceFlow Pro</span>
-                    </div>
-                    <h1>Welcome back</h1>
-                    <p>Enter your credentials to access your account.</p>
-                </div>
-
-                <form class="auth-form" onsubmit="event.preventDefault();">
-                    <div class="input-group">
-                        <label for="email">Email address</label>
-                        <div class="input-wrapper">
-                            <i class='bx bx-envelope'></i>
-                            <input type="email" id="email" placeholder="name@company.com" required autocomplete="email">
-                        </div>
-                    </div>
-
-                    <div class="input-group">
-                        <label for="password">Password</label>
-                        <div class="input-wrapper">
-                            <i class='bx bx-lock-alt'></i>
-                            <input type="password" id="password" placeholder="••••••••" required
-                                autocomplete="current-password">
-                            <button type="button" class="btn-icon" id="togglePassword"
-                                aria-label="Toggle Password Visibility">
-                                <i class='bx bx-hide'></i>
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="form-actions">
-                        <label class="checkbox-container">
-                            <input type="checkbox">
-                            <span class="checkmark"></span>
-                            Remember me
-                        </label>
-                        <a href="#" class="forgot-link">Forgot password?</a>
-                    </div>
-
-                    <button type="submit" class="btn-primary">
-                        Sign In
-                        <i class='bx bx-right-arrow-alt'></i>
-                    </button>
-
-                    <div class="divider">
-                        <span>or continue with</span>
-                    </div>
-
-                    <div class="social-login">
-                        <button type="button" class="btn-social">
-                            <i class='bx bxl-google'></i>
-                            Google
-                        </button>
-                        <button type="button" class="btn-social">
-                            <i class='bx bxl-github'></i>
-                            GitHub
-                        </button>
-                    </div>
-                </form>
-
-                <div class="auth-footer">
-                    Don't have an account? <a href="#">Create an account</a>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Password Visibility Toggle Script -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin="anonymous"></script>
+    <script src="/src/Login.js"></script>
     <script>
-        const toggleBtn = document.getElementById('togglePassword');
-        const passwordInput = document.getElementById('password');
-        const icon = toggleBtn.querySelector('i');
-
-        toggleBtn.addEventListener('click', () => {
-            if (passwordInput.type === 'password') {
-                passwordInput.type = 'text';
-                icon.classList.replace('bx-hide', 'bx-show');
-            } else {
-                passwordInput.type = 'password';
-                icon.classList.replace('bx-show', 'bx-hide');
+        window.renderBillingLogin(document.getElementById("login-root"), {
+            appName: "InvoiceFlow Pro",
+            heading: "Welcome back",
+            subheading: "Enter your email to receive a one-time password and access your workspace.",
+            onAuthenticated: async function (response) {
+                localStorage.setItem("billing_token", response.token);
+                window.location.href = "/";
             }
         });
     </script>

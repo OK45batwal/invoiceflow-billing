@@ -6,6 +6,8 @@ data/store.sqlite-shm
 .vscode/
 sample_preview.pdf
 public/sample_preview.pdf
+.env
+.gcloud/
 .gsd/STATE.md
 .gsd/JOURNAL.md
 .gsd/TODO.md

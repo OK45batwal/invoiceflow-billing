@@ -6,10 +6,38 @@ services:
     buildCommand: npm install
     startCommand: npm start
     healthCheckPath: /api/health
+    disk:
+      name: data
+      mountPath: /var/data
+      sizeGB: 1
     envVars:
       - key: NODE_VERSION
         value: "20"
-      - key: DEFAULT_ADMIN_PASSWORD
+      - key: NODE_ENV
+        value: production
+      - key: DATA_DIR
+        value: /var/data
+      - key: STORAGE_DRIVER
+        value: json
+      - key: FIREBASE_PROJECT_ID
         sync: false
-      - key: DEFAULT_STAFF_PASSWORD
+      - key: FIREBASE_CLIENT_EMAIL
+        sync: false
+      - key: FIREBASE_PRIVATE_KEY
+        sync: false
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        sync: false
+      - key: SMTP_SECURE
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: SMTP_FROM
+        sync: false
+      - key: DEFAULT_OTP_ROLE
+        sync: false
+      - key: OTP_APP_NAME
         sync: false
