@@ -4,6 +4,53 @@
 
 ---
 
+## Render Deployment — Email Configuration
+
+### Why not SMTP?
+
+Render free-tier web services **block all outbound SMTP** (ports 25, 465, 587).
+InvoiceFlow Pro sends OTP emails via the **Resend HTTP API** (HTTPS port 443),
+which Render allows on every plan including free.
+
+### One-time Resend setup
+
+1. Create a free account at <https://resend.com>.
+2. **Add your sending domain** under *Domains* and follow the DNS verification steps
+   (add the provided MX / TXT / DKIM records to your DNS provider).
+   - During development, Resend lets you send to your own verified email address without a custom domain.
+3. Go to *API Keys* and create a key with **Sending access**.
+4. Copy the key — you will only see it once.
+
+### Environment variables to set in Render Dashboard
+
+| Variable | Example value | Notes |
+|---|---|---|
+| `RESEND_API_KEY` | `re_abc123…` | From the Resend dashboard |
+| `RESEND_FROM` | `InvoiceFlow Pro <otp@yourdomain.com>` | Must match your verified domain |
+| `OTP_APP_NAME` | `InvoiceFlow Pro` | Appears in email subject & body |
+
+> **Do not** add `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, or `SMTP_FROM` — those variables are no longer used.
+
+### Local development (no Resend account required)
+
+Leave `RESEND_API_KEY` and `RESEND_FROM` unset in your `.env`.
+The server will detect their absence and print the OTP to the console, returning
+it in the API response as `developmentOtp`. The login page displays it automatically.
+
+### Free-tier limits
+
+| Limit | Value |
+|---|---|
+| Emails per month | 3,000 |
+| Emails per day | 100 |
+| Custom domains | 1 |
+
+For a low-traffic internal billing tool these limits are well within range.
+If you exceed them, Resend will return a `429` error and the `/send-otp` endpoint
+will respond with HTTP 400 and a clear error message.
+
+---
+
 ## Quick Commands
 
 ### Status Check

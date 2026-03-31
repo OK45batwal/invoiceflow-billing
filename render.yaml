@@ -25,17 +25,12 @@ services:
         sync: false
       - key: FIREBASE_PRIVATE_KEY
         sync: false
-      - key: SMTP_HOST
+      # ── Email via Brevo HTTP API (replaces SMTP — Render free tier blocks SMTP) ──
+      - key: BREVO_API_KEY
         sync: false
-      - key: SMTP_PORT
+      - key: BREVO_FROM_EMAIL
         sync: false
-      - key: SMTP_SECURE
-        sync: false
-      - key: SMTP_USER
-        sync: false
-      - key: SMTP_PASS
-        sync: false
-      - key: SMTP_FROM
+      - key: BREVO_FROM_NAME
         sync: false
       - key: DEFAULT_OTP_ROLE
         sync: false
