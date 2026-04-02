@@ -30,10 +30,7 @@
     <header class="navbar navbar-expand-lg navbar-light bg-white shadow-sm app-topbar">
       <div class="container-fluid topbar-shell">
         <div class="topbar-left d-flex align-items-center">
-          <button id="sidebar-toggle" type="button" class="nav-btn me-3 d-lg-none" aria-label="Toggle Sidebar">
-            <i class="bx bx-menu"></i>
-          </button>
-          <a class="app-brand d-flex align-items-center" href="#" aria-label="InvoiceFlow Pro Home">
+          <a class="app-brand d-flex align-items-center" id="workspace-home-link" href="#" aria-label="InvoiceFlow Pro Home">
             <span class="app-brand-mark app-brand-logo-wrap" aria-hidden="true">
               <img src="./logo.png" alt="" class="app-brand-logo" />
             </span>
@@ -49,8 +46,17 @@
             <button type="button" class="header-tab-link" data-top-nav="true" data-tab-open="invoices">
               Invoices
             </button>
+            <button type="button" class="header-tab-link" data-top-nav="true" data-tab-open="payments">
+              Payments
+            </button>
             <button type="button" class="header-tab-link" data-top-nav="true" data-tab-open="customers">
-              Clients
+              Customers
+            </button>
+            <button type="button" class="header-tab-link" data-top-nav="true" data-tab-open="products">
+              Products
+            </button>
+            <button type="button" class="header-tab-link admin-only" data-top-nav="true" data-tab-open="recurring">
+              Recurring
             </button>
             <button type="button" class="header-tab-link" data-top-nav="true" data-tab-open="reports">
               Reports
@@ -95,54 +101,40 @@
               <i class="bx bx-plus"></i>
               <span>Create Invoice</span>
             </button>
-            <div class="header-account-card">
-              <span class="header-account-avatar" aria-hidden="true">
-                <img id="header-profile-pic" src="" alt="" class="hidden" />
-                <i class="bx bx-user" id="header-profile-icon"></i>
-              </span>
-              <span class="header-account-copy">
-                <span id="current-user" class="header-account-name">Workspace User</span>
-                <span id="current-user-role" class="header-account-role">Finance</span>
-              </span>
+            <div class="header-account-shell" id="account-menu-shell">
+              <button type="button" class="header-account-card" id="account-menu-toggle" aria-haspopup="menu"
+                aria-expanded="false" aria-controls="account-menu">
+                <span class="header-account-avatar" aria-hidden="true">
+                  <img id="header-profile-pic" src="" alt="" class="hidden" />
+                  <i class="bx bx-user" id="header-profile-icon"></i>
+                </span>
+                <span class="header-account-copy">
+                  <span id="current-user" class="header-account-name">Workspace User</span>
+                  <span id="current-user-role" class="header-account-role">Finance</span>
+                </span>
+                <i class="bx bx-chevron-down header-account-chevron" aria-hidden="true"></i>
+              </button>
+              <div class="header-account-dropdown" id="account-menu" role="menu" aria-labelledby="account-menu-toggle"
+                aria-hidden="true">
+                <button type="button" class="header-account-menu-item" id="account-change-photo-btn" role="menuitem">
+                  <i class="bx bx-image-add"></i>
+                  <span>Change photo</span>
+                </button>
+                <button id="account-logout-btn" type="button" class="header-account-menu-item is-danger"
+                  data-logout-trigger="true" role="menuitem">
+                  <i class="bx bx-log-out"></i>
+                  <span>Logout</span>
+                </button>
+              </div>
             </div>
 
-            <button id="logout-btn" type="button" class="btn btn-outline-danger"><i class="bx bx-log-out"></i><span>Logout</span></button>
+            <button id="logout-btn" type="button" class="btn btn-outline-danger" data-logout-trigger="true"><i class="bx bx-log-out"></i><span>Logout</span></button>
           </div>
       </div>
     </header>
-    <div id="sidebar-overlay" class="sidebar-overlay hidden"></div>
 
     <div class="workspace-body">
-      <div class="col-lg-2">
-        <nav class="nav flex-column" id="tab-nav" role="tablist" aria-orientation="vertical">
-          <button class="nav-link text-start active" data-tab="overview" data-bs-toggle="pill" type="button">
-            <i class="bx bxs-grid-alt"></i>Overview
-          </button>
-          <button class="nav-link text-start" data-tab="invoices" data-bs-toggle="pill" type="button">
-            <i class="bx bx-receipt"></i>Invoices
-          </button>
-          <button class="nav-link text-start" data-tab="payments" data-bs-toggle="pill" type="button">
-            <i class="bx bxs-credit-card"></i>Payments
-          </button>
-          <button class="nav-link text-start" data-tab="customers" data-bs-toggle="pill" type="button">
-            <i class="bx bxs-group"></i>Customers
-          </button>
-          <button class="nav-link text-start" data-tab="products" data-bs-toggle="pill" type="button">
-            <i class="bx bxs-box"></i>Products
-          </button>
-          <button class="nav-link text-start admin-only" data-tab="recurring" data-bs-toggle="pill" type="button">
-            <i class="bx bx-revision"></i>Recurring
-          </button>
-          <button class="nav-link text-start" data-tab="reports" data-bs-toggle="pill" type="button">
-            <i class="bx bxs-bar-chart-alt-2"></i>Reports
-          </button>
-          <button class="nav-link text-start admin-only" data-tab="settings" data-bs-toggle="pill" type="button">
-            <i class="bx bxs-cog"></i>Settings
-          </button>
-        </nav>
-      </div>
-
-      <main class="col-lg-10">
+      <main class="workspace-main">
         <div class="tab-content" id="tab-panels">
           <section class="tab-panel tab-pane fade show active" data-panel="overview" role="tabpanel">
             <div class="invoice-dashboard-shell">
@@ -1281,14 +1273,16 @@
     .vf-shell {
       position: relative;
       z-index: 1;
-      width: min(1120px, calc(100% - 40px));
+      width: min(460px, calc(100% - 32px));
       margin: 20px auto;
       padding: 24px 0 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
     }
     .vf-theme-toggle {
-      position: absolute;
-      top: 0;
-      right: 0;
+      position: static;
+      align-self: flex-end;
       display: inline-flex;
       align-items: center;
       gap: 10px;
@@ -1316,183 +1310,15 @@
       font-size: 1rem;
     }
     .vf-stage {
-      display: grid;
-      grid-template-columns: minmax(0, 1.15fr) minmax(360px, 430px);
-      gap: 22px;
-      align-items: stretch;
+      display: block;
+      width: 100%;
     }
-    .vf-story,
     .vf-card {
       border: 1px solid var(--vf-border);
       border-radius: 32px;
       background: var(--vf-surface);
       backdrop-filter: blur(24px);
       box-shadow: var(--vf-shadow);
-    }
-    .vf-story {
-      position: relative;
-      overflow: hidden;
-      padding: 40px;
-      background:
-        linear-gradient(160deg, rgba(20, 150, 108, 0.12), transparent 42%),
-        linear-gradient(215deg, rgba(204, 123, 47, 0.12), transparent 30%),
-        var(--vf-surface);
-    }
-    .vf-story::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
-      background: linear-gradient(115deg, rgba(255, 255, 255, 0.2), transparent 34%, transparent 70%, rgba(255, 255, 255, 0.08));
-    }
-    .vf-story-badge {
-      display: inline-flex;
-      align-items: center;
-      min-height: 30px;
-      padding: 0 12px;
-      border-radius: 999px;
-      background: rgba(20, 150, 108, 0.12);
-      color: var(--vf-accent);
-      font-size: 0.74rem;
-      font-weight: 700;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
-    .vf-story-title {
-      margin: 18px 0 14px;
-      font-family: 'Cabinet Grotesk', 'Outfit', sans-serif;
-      font-size: clamp(2.35rem, 4.7vw, 4.15rem);
-      line-height: 0.95;
-      letter-spacing: -0.05em;
-      color: var(--vf-text);
-      max-width: 10ch;
-    }
-    .vf-story-copy {
-      max-width: 48ch;
-      color: var(--vf-text-soft);
-      font-size: 1rem;
-      line-height: 1.7;
-    }
-    .vf-story-grid {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 14px;
-      margin: 28px 0 24px;
-    }
-    .vf-story-stat {
-      padding: 18px;
-      border-radius: 22px;
-      background: var(--vf-surface-strong);
-      border: 1px solid var(--vf-border-soft);
-      box-shadow: 0 12px 26px rgba(18, 28, 23, 0.08);
-      animation: vf-float 7s ease-in-out infinite;
-    }
-    .vf-story-stat:nth-child(2) {
-      animation-delay: 1.2s;
-    }
-    .vf-story-stat:nth-child(3) {
-      animation-delay: 2.1s;
-    }
-    .vf-story-label {
-      display: block;
-      margin-bottom: 10px;
-      color: var(--vf-text-muted);
-      font-size: 0.72rem;
-      font-weight: 700;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
-    .vf-story-value {
-      display: block;
-      margin-bottom: 8px;
-      font-family: 'Cabinet Grotesk', 'Outfit', sans-serif;
-      font-size: 1.45rem;
-      line-height: 1;
-      letter-spacing: -0.04em;
-      color: var(--vf-text);
-    }
-    .vf-story-note {
-      color: var(--vf-text-soft);
-      font-size: 0.88rem;
-      line-height: 1.55;
-    }
-    .vf-story-board {
-      padding: 24px;
-      border-radius: 26px;
-      background: var(--vf-surface-strong);
-      border: 1px solid var(--vf-border-soft);
-      box-shadow: 0 16px 30px rgba(18, 28, 23, 0.1);
-    }
-    .vf-board-head {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-    }
-    .vf-board-head strong {
-      font-size: 1rem;
-      font-weight: 700;
-      color: var(--vf-text);
-    }
-    .vf-board-pill {
-      display: inline-flex;
-      align-items: center;
-      min-height: 28px;
-      padding: 0 10px;
-      border-radius: 999px;
-      background: rgba(20, 150, 108, 0.12);
-      color: var(--vf-accent);
-      font-size: 0.72rem;
-      font-weight: 700;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
-    .vf-board-list {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      margin-top: 18px;
-    }
-    .vf-board-row {
-      display: grid;
-      grid-template-columns: auto 1fr auto;
-      align-items: center;
-      gap: 12px;
-      padding: 12px 14px;
-      border-radius: 18px;
-      background: var(--vf-rail);
-      border: 1px solid var(--vf-border-soft);
-    }
-    .vf-board-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 999px;
-      background: var(--vf-accent);
-      box-shadow: 0 0 0 6px rgba(20, 150, 108, 0.1);
-    }
-    .vf-board-dot.is-warm {
-      background: var(--vf-warm);
-      box-shadow: 0 0 0 6px rgba(204, 123, 47, 0.1);
-    }
-    .vf-board-copy {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      min-width: 0;
-    }
-    .vf-board-copy strong {
-      font-size: 0.95rem;
-      font-weight: 700;
-      color: var(--vf-text);
-    }
-    .vf-board-copy span,
-    .vf-board-amount {
-      color: var(--vf-text-soft);
-      font-size: 0.84rem;
-    }
-    .vf-board-amount {
-      font-weight: 700;
-      color: var(--vf-text);
     }
     .vf-card {
       padding: 34px;
@@ -1761,35 +1587,16 @@
     @keyframes vf-spin {
       to { transform: rotate(360deg); }
     }
-    @keyframes vf-float {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-5px); }
-    }
     @media (max-width: 980px) {
       .vf-shell {
-        width: min(760px, calc(100% - 24px));
+        width: min(460px, calc(100% - 24px));
         padding-top: 16px;
       }
       .vf-theme-toggle {
-        position: static;
         margin-left: auto;
-        margin-bottom: 14px;
       }
-      .vf-stage {
-        grid-template-columns: 1fr;
-      }
-      .vf-story,
       .vf-card {
         border-radius: 28px;
-      }
-      .vf-story {
-        padding: 28px;
-      }
-      .vf-story-title {
-        max-width: none;
-      }
-      .vf-story-grid {
-        grid-template-columns: 1fr;
       }
     }
     @media (max-width: 640px) {
@@ -1800,7 +1607,6 @@
       .vf-theme-toggle span {
         display: none;
       }
-      .vf-story,
       .vf-card {
         padding: 22px;
         border-radius: 24px;
@@ -1808,17 +1614,8 @@
       .vf-title {
         font-size: 1.72rem;
       }
-      .vf-story-title {
-        font-size: clamp(2rem, 10vw, 3rem);
-      }
       .vf-tabs {
         margin-bottom: 22px;
-      }
-      .vf-board-row {
-        grid-template-columns: auto 1fr;
-      }
-      .vf-board-amount {
-        grid-column: 2;
       }
       .vf-submit,
       .vf-btn-social,
@@ -1896,16 +1693,6 @@
     const normalizedEmail = email.trim().toLowerCase();
     const emailValid = EMAIL_PATTERN.test(normalizedEmail);
     const anyLoading = isLoading || googleLoading;
-    const storyStats = [
-      { label: "Average collection", value: "2.4x faster", note: "Share links and branded PDFs keep payments moving." },
-      { label: "Workspace ready", value: "Live themes", note: "Dark and light modes stay synced across login and dashboard." },
-      { label: "Customer follow-up", value: "One click", note: "Jump from dashboard insights straight into invoice actions." }
-    ];
-    const storyActivity = [
-      { title: "INV-2048 paid", copy: "Studio Obsidian · 12 minutes ago", value: "Rs 48,000", warm: false },
-      { title: "Reminder queued", copy: "Northline Projects · Due tomorrow", value: "2 follow-ups", warm: true },
-      { title: "Branding updated", copy: "Logo, bank profile, and share defaults", value: "Synced", warm: false }
-    ];
 
     useEffect(() => {
       const syncTheme = () => {
@@ -2052,65 +1839,6 @@
         e(
           "div",
           { className: "vf-stage" },
-          e(
-            "aside",
-            { className: "vf-story" },
-            e("span", { className: "vf-story-badge" }, "Executive Ledger"),
-            e(
-              "h2",
-              { className: "vf-story-title" },
-              tab === "signin"
-                ? "Invoices, collections, and follow-up in one elegant workspace."
-                : "Launch your billing workspace with a client-ready finance system."
-            ),
-            e(
-              "p",
-              { className: "vf-story-copy" },
-              "Create polished invoices, share payment-ready links, and monitor collections from one dashboard designed to feel calm, modern, and fast."
-            ),
-            e(
-              "div",
-              { className: "vf-story-grid" },
-              ...storyStats.map((stat) =>
-                e(
-                  "article",
-                  { key: stat.label, className: "vf-story-stat" },
-                  e("span", { className: "vf-story-label" }, stat.label),
-                  e("strong", { className: "vf-story-value" }, stat.value),
-                  e("p", { className: "vf-story-note" }, stat.note)
-                )
-              )
-            ),
-            e(
-              "div",
-              { className: "vf-story-board" },
-              e(
-                "div",
-                { className: "vf-board-head" },
-                e("span", { className: "vf-board-pill" }, "Live workspace"),
-                e("strong", null, "Collections overview")
-              ),
-              e(
-                "div",
-                { className: "vf-board-list" },
-                ...storyActivity.map((item) =>
-                  e(
-                    "div",
-                    { key: item.title, className: "vf-board-row" },
-                    e("span", { className: "vf-board-dot" + (item.warm ? " is-warm" : "") }),
-                    e(
-                      "div",
-                      { className: "vf-board-copy" },
-                      e("strong", null, item.title),
-                      e("span", null, item.copy)
-                    ),
-                    e("span", { className: "vf-board-amount" }, item.value)
-                  )
-                )
-              )
-            )
-          ),
-
           e(
             "div",
             { className: "vf-card" },

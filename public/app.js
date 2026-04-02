@@ -1,23 +1,30 @@
 const loginView = document.querySelector("#login-view");
 const workspaceView = document.querySelector("#workspace-view");
 const loginRoot = document.querySelector("#login-root");
-const logoutButton = document.querySelector("#logout-btn");
+const logoutButtons = [...document.querySelectorAll("[data-logout-trigger='true']")];
 const currentUserNode = document.querySelector("#current-user");
 const currentUserRoleNode = document.querySelector("#current-user-role");
 const statusToastEl = document.querySelector(".toast");
 const bootstrapApi = globalThis.bootstrap || null;
-const statusToast = bootstrapApi && statusToastEl ? new bootstrapApi.Toast(statusToastEl) : null;
+const statusToast = bootstrapApi && statusToastEl
+  ? new bootstrapApi.Toast(statusToastEl, { autohide: true, delay: 2400 })
+  : null;
 const statusCloseButton = statusToastEl?.querySelector("[data-status-close='true']");
 
 const tabNav = document.querySelector("#tab-nav");
-const tabButtons = [...document.querySelectorAll('[data-bs-toggle="pill"]')];
 const tabPanels = [...document.querySelectorAll(".tab-panel")];
 const adminOnlyNodes = [...document.querySelectorAll(".admin-only")];
 const sidebarToggleButton = document.querySelector("#sidebar-toggle");
 const sidebarOverlay = document.querySelector("#sidebar-overlay");
 const globalSearchInput = document.querySelector("#global-search");
+const workspaceHomeLink = document.querySelector("#workspace-home-link");
+const topbarNode = document.querySelector(".app-topbar");
 const topMenuButtons = [...document.querySelectorAll("[data-tab-open]")];
 const headerNavButtons = [...document.querySelectorAll("[data-top-nav][data-tab-open]")];
+const accountMenuShell = document.querySelector("#account-menu-shell");
+const accountMenuToggle = document.querySelector("#account-menu-toggle");
+const accountMenu = document.querySelector("#account-menu");
+const accountChangePhotoButton = document.querySelector("#account-change-photo-btn");
 const mobileNavMediaQuery = "(max-width: 991px)";
 
 const customerForm = document.querySelector("#customer-form");
@@ -369,6 +376,53 @@ function updateLayoutMetrics() {
   }
 }
 
+function openProfileImagePicker() {
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = "image/*";
+  input.onchange = (event) => {
+    const file = event.target.files[0];
+    if (!file) {
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (readerEvent) => {
+      const dataUrl = readerEvent.target.result;
+      localStorage.setItem("billing_profile_pic", dataUrl);
+      renderProfilePic();
+    };
+    reader.readAsDataURL(file);
+  };
+  input.click();
+}
+
+function setAccountMenuOpen(open) {
+  const shouldOpen = Boolean(open) && Boolean(accountMenuShell && accountMenuToggle && accountMenu);
+  accountMenuShell?.classList.toggle("is-open", shouldOpen);
+  accountMenuToggle?.setAttribute("aria-expanded", shouldOpen ? "true" : "false");
+  accountMenu?.setAttribute("aria-hidden", shouldOpen ? "false" : "true");
+}
+
+function closeAccountMenu() {
+  setAccountMenuOpen(false);
+}
+
+function toggleAccountMenu(force) {
+  const shouldOpen = typeof force === "boolean"
+    ? force
+    : !accountMenuShell?.classList.contains("is-open");
+  setAccountMenuOpen(shouldOpen);
+}
+
+function animateTopbarControl(control) {
+  if (!(control instanceof HTMLElement)) {
+    return;
+  }
+  control.classList.remove("is-tapped");
+  void control.offsetWidth;
+  control.classList.add("is-tapped");
+}
+
 window.setBillingTheme = (theme) => setTheme(theme);
 window.toggleBillingTheme = () => toggleTheme();
 window.getBillingTheme = () => state.theme;
@@ -386,10 +440,19 @@ function renderCurrentUserChip() {
 }
 
 function updateHeaderNavState(activeTab) {
+  let activeButton = null;
   headerNavButtons.forEach((button) => {
     const active = button.dataset.tabOpen === activeTab;
     button.classList.toggle("is-active", active);
+    if (active) {
+      activeButton = button;
+    }
   });
+  activeButton?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+}
+
+function getActiveTabId() {
+  return document.querySelector(".tab-panel.active[data-panel]")?.dataset.panel || "overview";
 }
 
 function syncResponsiveTables(root = document) {
@@ -452,11 +515,21 @@ function setStatus(message, isError = false) {
   if (!statusToastEl) {
     return;
   }
+  const text = String(message ?? "").trim();
+  if (!text) {
+    clearTimeout(state.statusTimer);
+    if (statusToast) {
+      statusToast.hide();
+    } else {
+      statusToastEl.classList.remove("show");
+    }
+    return;
+  }
   const toastBody = statusToastEl.querySelector(".toast-body");
   if (toastBody) {
-    toastBody.textContent = message;
+    toastBody.textContent = text;
   } else {
-    statusToastEl.textContent = message;
+    statusToastEl.textContent = text;
   }
   statusToastEl.classList.toggle("bg-danger", isError);
   statusToastEl.classList.toggle("text-white", isError);
@@ -478,6 +551,7 @@ function resetAuthState() {
   state.user = null;
   state.users = [];
   localStorage.removeItem("billing_token");
+  closeAccountMenu();
   closeMobileSidebar();
   renderCurrentUserChip();
   applyAuthMethodVisibility();
@@ -541,24 +615,26 @@ function closeDrawer() {
 }
 
 function setActiveTab(tabId) {
-  const tab = document.querySelector(`[data-tab="${tabId}"]`);
-  if (!tab) {
+  const panel = document.querySelector(`.tab-panel[data-panel="${tabId}"]`);
+  if (!panel) {
     return;
   }
-
-  tabButtons.forEach((button) => {
-    button.classList.toggle("active", button.dataset.tab === tabId);
-  });
   tabPanels.forEach((panel) => {
     const active = panel.dataset.panel === tabId;
     panel.classList.toggle("active", active);
     panel.classList.toggle("show", active);
+    panel.classList.toggle("is-entering", active);
   });
 
   if (isMobileNavViewport()) {
     closeMobileSidebar();
   }
 
+  requestAnimationFrame(() => {
+    panel.classList.remove("is-entering");
+  });
+
+  closeAccountMenu();
   updateHeaderNavState(tabId);
   updateHeaderActionState();
 }
@@ -570,8 +646,8 @@ function applyRoleVisibility() {
   });
 
   if (!admin) {
-    const activeTab = document.querySelector('.nav-link.active[data-tab]');
-    if (activeTab && activeTab.classList.contains("admin-only")) {
+    const activePanel = document.querySelector(`.tab-panel[data-panel="${getActiveTabId()}"]`);
+    if (activePanel?.classList.contains("admin-only")) {
       setActiveTab("overview");
     }
   }
@@ -600,7 +676,7 @@ function updatePreviewModeButtons() {
 }
 
 function updateHeaderActionState() {
-  const activeTab = document.querySelector(".nav-link.active[data-tab]")?.dataset.tab || "overview";
+  const activeTab = getActiveTabId();
   const latestInvoice = getLatestInvoice();
   const hasInvoice = Boolean(latestInvoice);
   const canSaveDraft = activeTab === "invoices";
@@ -2192,7 +2268,7 @@ async function refreshBaseData() {
   renderPasswordUserOptions();
 }
 
-async function completeLoginSession(response, successMessage = "Logged in.") {
+async function completeLoginSession(response, successMessage = "") {
   state.token = response.token;
   localStorage.setItem("billing_token", state.token);
   state.user = response.user;
@@ -2240,6 +2316,7 @@ async function doLogout() {
   } catch (_error) {
     // Ignore logout failure and clear local session anyway.
   }
+  closeAccountMenu();
   resetAuthState();
 }
 
@@ -2266,7 +2343,7 @@ function mountLoginExperience() {
     heading: "Welcome back",
     subheading: "Enter your email to receive a one-time password and access your workspace.",
     onAuthenticated: async (response) => {
-      await completeLoginSession(response, response.message || "Logged in.");
+      await completeLoginSession(response);
     }
   });
 }
@@ -2467,7 +2544,7 @@ function withLatestInvoice(callback, emptyMessage) {
 }
 
 async function handleHeaderSendAction() {
-  const activeTab = document.querySelector(".nav-link.active[data-tab]")?.dataset.tab || "overview";
+  const activeTab = getActiveTabId();
   const canSubmitDraft =
     activeTab === "invoices" &&
     Number(invoiceCustomerSelect.value) > 0 &&
@@ -2789,12 +2866,14 @@ async function handleInvoiceActionButton(button) {
   }
 }
 
-logoutButton.addEventListener("click", async () => {
-  await doLogout();
-  setStatus("Logged out.");
+logoutButtons.forEach((button) => {
+  button.addEventListener("click", async () => {
+    await doLogout();
+    setStatus("Logged out.");
+  });
 });
 
-tabNav.addEventListener('click', (event) => {
+tabNav?.addEventListener('click', (event) => {
   const button = event.target.closest('button[data-tab]');
   if (!button) {
     return;
@@ -2823,6 +2902,12 @@ topMenuButtons.forEach((button) => {
   });
 });
 
+workspaceHomeLink?.addEventListener("click", (event) => {
+  event.preventDefault();
+  setActiveTab("overview");
+  window.scrollTo({ top: 0, behavior: "smooth" });
+});
+
 globalSearchInput?.addEventListener("keydown", async (event) => {
   if (event.key !== "Enter") {
     return;
@@ -2842,10 +2927,12 @@ window.addEventListener("resize", () => {
   if (!isMobileNavViewport()) {
     closeMobileSidebar();
   }
+  closeAccountMenu();
 });
 
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") {
+    closeAccountMenu();
     closeMobileSidebar();
   }
 });
@@ -3336,22 +3423,43 @@ drawerEl?.addEventListener('hidden.bs.modal', () => {
 
 document.querySelector("#theme-toggle")?.addEventListener("click", toggleTheme);
 
-document.querySelector(".header-account-card")?.addEventListener("click", () => {
-  const input = document.createElement("input");
-  input.type = "file";
-  input.accept = "image/*";
-  input.onchange = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const dataUrl = ev.target.result;
-      localStorage.setItem("billing_profile_pic", dataUrl);
-      renderProfilePic();
-    };
-    reader.readAsDataURL(file);
-  };
-  input.click();
+accountMenuToggle?.addEventListener("click", (event) => {
+  event.stopPropagation();
+  animateTopbarControl(accountMenuToggle);
+  toggleAccountMenu();
+});
+
+accountMenu?.addEventListener("click", (event) => {
+  event.stopPropagation();
+});
+
+accountChangePhotoButton?.addEventListener("click", () => {
+  closeAccountMenu();
+  openProfileImagePicker();
+});
+
+document.addEventListener("click", (event) => {
+  if (event.target instanceof Element && event.target.closest("#account-menu-shell")) {
+    return;
+  }
+  closeAccountMenu();
+});
+
+topbarNode?.addEventListener("click", (event) => {
+  if (!(event.target instanceof Element)) {
+    return;
+  }
+  const control = event.target.closest(".app-brand, .header-tab-link, .theme-toggle, .header-customize-btn, .header-action-btn, .header-create-btn, .header-account-card, #logout-btn");
+  if (!control || !topbarNode.contains(control)) {
+    return;
+  }
+  animateTopbarControl(control);
+});
+
+topbarNode?.addEventListener("animationend", (event) => {
+  if (event.target instanceof HTMLElement && event.target.classList.contains("is-tapped")) {
+    event.target.classList.remove("is-tapped");
+  }
 });
 
 async function init() {
