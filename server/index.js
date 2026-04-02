@@ -5,6 +5,7 @@ import * as store from "../src/store.js";
 import { deleteSession, getSessionUser } from "../src/auth.js";
 import { createInvoicePdfBuffer } from "../src/invoicePdf.js";
 import { getFirebaseDb, hasFirebaseConfig } from "./firebase.js";
+import authRouter from "./routes/auth.js";
 import otpRouter from "./routes/otp.js";
 
 const app = express();
@@ -12,8 +13,6 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const publicDir = path.join(__dirname, "..", "public");
 const loginComponentPath = path.join(__dirname, "..", "src", "Login.js");
-const port = process.env.PORT || 3000;
-const host = process.env.HOST || '0.0.0.0';
 
 app.use(express.json({ limit: "10mb" }));
 app.use(express.static(publicDir));
@@ -21,8 +20,8 @@ app.get("/src/Login.js", (_req, res) => {
   res.type("application/javascript");
   res.sendFile(loginComponentPath);
 });
-app.use("/api/auth", otpRouter);
-app.use("/", otpRouter);
+app.use("/api/auth", authRouter);
+app.use("/api/otp", otpRouter);
 
 function getToken(req) {
   const header = String(req.headers.authorization || "");
@@ -446,20 +445,18 @@ app.post("/api/backup/restore", requireAuth, requireRole("admin"), (req, res) =>
   }
 });
 
-app.listen(port, host, () => {
-  console.log(`InvoiceFlow Pro listening on http://${host}:${port}`);
 
-  if (hasFirebaseConfig()) {
-    try {
-      getFirebaseDb();
-      console.log("Firebase connection ready for OTP login.");
-    } catch (error) {
-      console.error(`Firebase connection failed: ${error.message}`);
-    }
-  } else {
-    console.warn(
-      "Firebase is not configured. OTP verification will use temporary in-memory users until Firebase is configured."
-    );
+if (hasFirebaseConfig()) {
+  try {
+    getFirebaseDb();
+    console.log("Firebase connection ready.");
+  } catch (error) {
+    console.error(`Firebase connection failed: ${error.message}`);
   }
-});
+} else {
+  console.warn(
+    "Firebase is not configured. Emitting warnings."
+  );
+}
 
+export { app };

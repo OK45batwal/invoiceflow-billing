@@ -5,9 +5,9 @@ import { applicationDefault, cert, getApps, initializeApp } from "firebase-admin
 import { getFirestore } from "firebase-admin/firestore";
 
 function getInlineFirebaseConfig() {
-  const projectId = String(process.env.FIREBASE_PROJECT_ID || "").trim();
-  const clientEmail = String(process.env.FIREBASE_CLIENT_EMAIL || "").trim();
-  const privateKey = String(process.env.FIREBASE_PRIVATE_KEY || "")
+  const projectId = String(process.env.GCP_PROJECT_ID || "").trim();
+  const clientEmail = String(process.env.GCP_CLIENT_EMAIL || "").trim();
+  const privateKey = String(process.env.GCP_PRIVATE_KEY || "")
     .replace(/\\n/g, "\n")
     .trim();
 
@@ -25,7 +25,7 @@ function hasInlineFirebaseConfig() {
 
 function getFirebaseProjectId() {
   return String(
-    process.env.FIREBASE_PROJECT_ID || process.env.GOOGLE_CLOUD_PROJECT || process.env.GCLOUD_PROJECT || ""
+    process.env.GCP_PROJECT_ID || process.env.GOOGLE_CLOUD_PROJECT || process.env.GCLOUD_PROJECT || ""
   ).trim();
 }
 
@@ -68,13 +68,22 @@ function getFirebaseAppOptions() {
     };
   }
 
-  throw new Error(
-    "Firebase is not configured. Provide FIREBASE_PROJECT_ID + Application Default Credentials, or the full service account env values."
-  );
+  if (process.env.FIREBASE_CONFIG || process.env.FUNCTIONS_EMULATOR || process.env.K_SERVICE || process.env.FUNCTION_TARGET) {
+    const resolvedProjectId = projectId || "project-c4492f83-8ec7-42fe-89b";
+    console.log("Initializing Firebase with explicit applicationDefault for project:", resolvedProjectId);
+    return {
+      credential: applicationDefault(),
+      projectId: resolvedProjectId
+    };
+  }
+
+  // Gracefully fallback to undefined so firebase-admin can try its default resolution
+  // which works seamlessly on GCP services like Cloud Run & Functions Gen 2
+  return undefined;
 }
 
 export function hasFirebaseConfig() {
-  return hasInlineFirebaseConfig() || Boolean(getFirebaseProjectId() && hasApplicationDefaultCredentials());
+  return hasInlineFirebaseConfig() || hasApplicationDefaultCredentials() || !!getFirebaseProjectId();
 }
 
 export function getFirebaseDb() {
