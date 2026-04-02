@@ -18,6 +18,7 @@ const sidebarOverlay = document.querySelector("#sidebar-overlay");
 const globalSearchInput = document.querySelector("#global-search");
 const topMenuButtons = [...document.querySelectorAll("[data-tab-open]")];
 const headerNavButtons = [...document.querySelectorAll("[data-top-nav][data-tab-open]")];
+const mobileNavMediaQuery = "(max-width: 991px)";
 
 const customerForm = document.querySelector("#customer-form");
 const customerTableBody = document.querySelector("#customer-table-body");
@@ -237,11 +238,64 @@ function formatRelativeTime(value) {
   return `Updated ${formatLongDate(value)}`;
 }
 
+function setTheme(theme, options = {}) {
+  const nextTheme = theme === "dark" ? "dark" : "light";
+  const persist = options.persist !== false;
+  const announce = options.announce !== false;
+
+  state.theme = nextTheme;
+  document.body.dataset.theme = nextTheme;
+  document.documentElement.setAttribute("data-bs-theme", nextTheme);
+
+  if (persist) {
+    localStorage.setItem("billing_theme", nextTheme);
+  }
+
+  updateThemeToggleIcon();
+  document.body.classList.add("theme-transitioning");
+  setTimeout(() => document.body.classList.remove("theme-transitioning"), 400);
+
+  if (announce) {
+    window.dispatchEvent(new CustomEvent("billing-theme-change", {
+      detail: { theme: nextTheme }
+    }));
+  }
+}
+
 function applyTheme() {
-  state.theme = "light";
-  document.body.dataset.theme = "light";
-  document.documentElement.setAttribute("data-bs-theme", "light");
-  localStorage.removeItem("billing_theme");
+  const savedTheme = localStorage.getItem("billing_theme") || "light";
+  setTheme(savedTheme, { persist: false, announce: false });
+}
+
+function toggleTheme() {
+  setTheme(state.theme === "light" ? "dark" : "light");
+}
+
+function updateThemeToggleIcon() {
+  const themeToggle = document.querySelector("#theme-toggle");
+  if (!themeToggle) return;
+  const icon = themeToggle.querySelector("i");
+  if (state.theme === "dark") {
+    icon.className = "bx bx-sun";
+  } else {
+    icon.className = "bx bx-moon";
+  }
+}
+
+function renderProfilePic() {
+  const profilePic = document.querySelector("#header-profile-pic");
+  const profileIcon = document.querySelector("#header-profile-icon");
+  if (!profilePic || !profileIcon) return;
+
+  const savedPic = localStorage.getItem("billing_profile_pic");
+  if (savedPic) {
+    profilePic.src = savedPic;
+    profilePic.classList.remove("hidden");
+    profileIcon.classList.add("hidden");
+  } else {
+    profilePic.classList.add("hidden");
+    profileIcon.classList.remove("hidden");
+  }
 }
 
 function formatLongDate(value) {
@@ -296,8 +350,12 @@ function closeMobileSidebar() {
   setSidebarOpen(false);
 }
 
+function isMobileNavViewport() {
+  return window.matchMedia(mobileNavMediaQuery).matches;
+}
+
 function setSidebarOpen(open) {
-  const shouldOpen = Boolean(open) && window.matchMedia("(max-width: 1080px)").matches;
+  const shouldOpen = Boolean(open) && isMobileNavViewport();
   workspaceView?.classList.toggle("sidebar-open", shouldOpen);
   sidebarOverlay?.classList.toggle("hidden", !shouldOpen);
   sidebarToggleButton?.setAttribute("aria-expanded", shouldOpen ? "true" : "false");
@@ -310,6 +368,10 @@ function updateLayoutMetrics() {
     document.documentElement.style.setProperty("--app-topbar-height", `${topbarHeight}px`);
   }
 }
+
+window.setBillingTheme = (theme) => setTheme(theme);
+window.toggleBillingTheme = () => toggleTheme();
+window.getBillingTheme = () => state.theme;
 
 function renderCurrentUserChip() {
   const name = state.user?.name || state.user?.email || "Workspace User";
@@ -493,7 +555,7 @@ function setActiveTab(tabId) {
     panel.classList.toggle("show", active);
   });
 
-  if (window.matchMedia("(max-width: 1080px)").matches) {
+  if (isMobileNavViewport()) {
     closeMobileSidebar();
   }
 
@@ -2136,6 +2198,7 @@ async function completeLoginSession(response, successMessage = "Logged in.") {
   state.user = response.user;
 
   renderCurrentUserChip();
+  renderProfilePic();
   applyRoleVisibility();
   applyAuthMethodVisibility();
 
@@ -2157,6 +2220,7 @@ async function restoreSession() {
     const me = await requestJson("/api/auth/me");
     state.user = me.user;
     renderCurrentUserChip();
+    renderProfilePic();
     applyRoleVisibility();
     applyAuthMethodVisibility();
     loginView.classList.add("hidden");
@@ -2775,7 +2839,7 @@ globalSearchInput?.addEventListener("keydown", async (event) => {
 
 window.addEventListener("resize", () => {
   updateLayoutMetrics();
-  if (window.innerWidth > 1080) {
+  if (!isMobileNavViewport()) {
     closeMobileSidebar();
   }
 });
@@ -3270,9 +3334,30 @@ drawerEl?.addEventListener('hidden.bs.modal', () => {
   drawerBody.innerHTML = '';
 });
 
+document.querySelector("#theme-toggle")?.addEventListener("click", toggleTheme);
+
+document.querySelector(".header-account-card")?.addEventListener("click", () => {
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = "image/*";
+  input.onchange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const dataUrl = ev.target.result;
+      localStorage.setItem("billing_profile_pic", dataUrl);
+      renderProfilePic();
+    };
+    reader.readAsDataURL(file);
+  };
+  input.click();
+});
+
 async function init() {
   applyTheme();
   renderCurrentUserChip();
+  renderProfilePic();
   applyAuthMethodVisibility();
   updateHeaderNavState("overview");
   sidebarToggleButton?.setAttribute("aria-controls", "tab-nav");

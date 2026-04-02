@@ -15,22 +15,13 @@
     rel="stylesheet">
   <!-- Boxicons -->
   <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
   <link rel="stylesheet" href="./styles.css?v=v5_preview" />
   <link rel="stylesheet" href="./mobile.css" />
   <link rel="stylesheet" href="./login.css" />
-  
-  <script>
-    function toggleMobileSidebar() {
-      const sidebar = document.querySelector('.workspace-body > .col-lg-2');
-      const backdrop = document.getElementById('sidebar-backdrop');
-      if (sidebar) sidebar.classList.toggle('active');
-      if (backdrop) backdrop.classList.toggle('active');
-    }
-  </script>
 </head>
 
 <body data-theme="light">
-  <div class="sidebar-backdrop" id="sidebar-backdrop" onclick="toggleMobileSidebar()"></div>
   <section id="login-view">
     <div id="login-root"></div>
   </section>
@@ -39,7 +30,7 @@
     <header class="navbar navbar-expand-lg navbar-light bg-white shadow-sm app-topbar">
       <div class="container-fluid topbar-shell">
         <div class="topbar-left d-flex align-items-center">
-          <button class="nav-btn me-3 d-lg-none" onclick="toggleMobileSidebar()" aria-label="Toggle Sidebar" style="background: none; border: none; font-size: 1.5rem; color: var(--text-primary); cursor: pointer;">
+          <button id="sidebar-toggle" type="button" class="nav-btn me-3 d-lg-none" aria-label="Toggle Sidebar">
             <i class="bx bx-menu"></i>
           </button>
           <a class="app-brand d-flex align-items-center" href="#" aria-label="InvoiceFlow Pro Home">
@@ -78,41 +69,45 @@
           </label>
         </div>
 
-        <div class="topbar-right d-flex align-items-center">
-          <button type="button" class="btn btn-light header-customize-btn admin-only" data-tab-open="settings">
-            <i class="bx bx-slider-alt"></i>
-            <span>Customize</span>
-          </button>
-          <div class="header-action-group" aria-label="Invoice quick actions">
-            <button id="header-download-invoice" type="button" class="btn btn-light header-action-btn">
-              <i class="bx bx-download"></i>
-              <span>PDF</span>
+          <div class="topbar-right d-flex align-items-center">
+            <button type="button" class="theme-toggle" id="theme-toggle" aria-label="Toggle theme">
+              <i class="bx bx-moon"></i>
             </button>
-            <button id="header-email-invoice" type="button" class="btn btn-light header-action-btn">
-              <i class="bx bx-share-alt"></i>
-              <span>Share</span>
+            <button type="button" class="btn btn-light header-customize-btn admin-only" data-tab-open="settings">
+              <i class="bx bx-slider-alt"></i>
+              <span>Customize</span>
             </button>
-            <button id="header-save-invoice" type="button" class="btn btn-light header-action-btn">
-              <i class="bx bx-save"></i>
-              <span>Save Draft</span>
+            <div class="header-action-group" aria-label="Invoice quick actions">
+              <button id="header-download-invoice" type="button" class="btn btn-light header-action-btn">
+                <i class="bx bx-download"></i>
+                <span>PDF</span>
+              </button>
+              <button id="header-email-invoice" type="button" class="btn btn-light header-action-btn">
+                <i class="bx bx-share-alt"></i>
+                <span>Share</span>
+              </button>
+              <button id="header-save-invoice" type="button" class="btn btn-light header-action-btn">
+                <i class="bx bx-save"></i>
+                <span>Save Draft</span>
+              </button>
+            </div>
+            <button id="header-create-invoice" type="button" class="btn btn-primary header-create-btn">
+              <i class="bx bx-plus"></i>
+              <span>Create Invoice</span>
             </button>
-          </div>
-          <button id="header-create-invoice" type="button" class="btn btn-primary header-create-btn">
-            <i class="bx bx-plus"></i>
-            <span>Create Invoice</span>
-          </button>
-          <div class="header-account-card">
-            <span class="header-account-avatar" aria-hidden="true">
-              <i class="bx bx-user"></i>
-            </span>
-            <span class="header-account-copy">
-              <span id="current-user" class="header-account-name">Workspace User</span>
-              <span id="current-user-role" class="header-account-role">Finance</span>
-            </span>
-          </div>
+            <div class="header-account-card">
+              <span class="header-account-avatar" aria-hidden="true">
+                <img id="header-profile-pic" src="" alt="" class="hidden" />
+                <i class="bx bx-user" id="header-profile-icon"></i>
+              </span>
+              <span class="header-account-copy">
+                <span id="current-user" class="header-account-name">Workspace User</span>
+                <span id="current-user-role" class="header-account-role">Finance</span>
+              </span>
+            </div>
 
-          <button id="logout-btn" type="button" class="btn btn-outline-danger"><i class="bx bx-log-out"></i><span>Logout</span></button>
-        </div>
+            <button id="logout-btn" type="button" class="btn btn-outline-danger"><i class="bx bx-log-out"></i><span>Logout</span></button>
+          </div>
       </div>
     </header>
     <div id="sidebar-overlay" class="sidebar-overlay hidden"></div>
@@ -1212,182 +1207,485 @@
 
   // ---- InvoiceFlow Login Styles ----
   const VF_STYLES = `
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
     .vf-wrapper {
+      --vf-bg: #f5efe5;
+      --vf-bg-deep: #ece1d0;
+      --vf-surface: rgba(255, 251, 245, 0.74);
+      --vf-surface-strong: rgba(255, 252, 248, 0.92);
+      --vf-rail: rgba(245, 238, 228, 0.84);
+      --vf-text: #171d19;
+      --vf-text-soft: #5d6761;
+      --vf-text-muted: #88918b;
+      --vf-border: rgba(54, 69, 60, 0.14);
+      --vf-border-soft: rgba(54, 69, 60, 0.08);
+      --vf-accent: #14966c;
+      --vf-accent-strong: #0f7a57;
+      --vf-warm: #cc7b2f;
+      --vf-link: #0f7a57;
+      --vf-mesh-1: rgba(20, 150, 108, 0.18);
+      --vf-mesh-2: rgba(204, 123, 47, 0.16);
+      --vf-shadow: 0 32px 72px rgba(24, 34, 29, 0.14), 0 12px 28px rgba(24, 34, 29, 0.08);
       position: fixed;
       inset: 0;
-      background: linear-gradient(135deg, #0a0a0f 0%, #0f0f1a 50%, #0a0a0f 100%);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
       z-index: 99999;
-      color: #f5f5f5;
-      overflow: hidden;
+      overflow: auto;
+      color: var(--vf-text);
+      font-family: 'Satoshi', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background:
+        radial-gradient(circle at 14% 18%, var(--vf-mesh-1), transparent 32%),
+        radial-gradient(circle at 84% 12%, var(--vf-mesh-2), transparent 28%),
+        linear-gradient(135deg, var(--vf-bg), var(--vf-bg-deep));
     }
-    .vf-wrapper::before {
-      content: '';
-      position: absolute;
-      top: -20%; right: -10%; width: 60%; height: 60%;
-      background: radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 70%);
-      pointer-events: none;
-      z-index: 0;
+    body[data-theme="dark"] .vf-wrapper {
+      --vf-bg: #0d1311;
+      --vf-bg-deep: #101816;
+      --vf-surface: rgba(18, 25, 22, 0.76);
+      --vf-surface-strong: rgba(20, 28, 25, 0.92);
+      --vf-rail: rgba(16, 24, 21, 0.82);
+      --vf-text: #f5efe4;
+      --vf-text-soft: #b8c2bc;
+      --vf-text-muted: #75817b;
+      --vf-border: rgba(206, 218, 210, 0.12);
+      --vf-border-soft: rgba(206, 218, 210, 0.08);
+      --vf-accent: #35be8a;
+      --vf-accent-strong: #22a274;
+      --vf-warm: #f0a24a;
+      --vf-link: #67d7a8;
+      --vf-mesh-1: rgba(53, 190, 138, 0.18);
+      --vf-mesh-2: rgba(240, 162, 74, 0.16);
+      --vf-shadow: 0 36px 84px rgba(0, 0, 0, 0.34), 0 16px 34px rgba(0, 0, 0, 0.18);
     }
+    .vf-wrapper::before,
     .vf-wrapper::after {
       content: '';
       position: absolute;
-      bottom: -10%; left: -10%; width: 50%; height: 50%;
-      background: radial-gradient(circle, rgba(16,185,129,0.08) 0%, transparent 70%);
       pointer-events: none;
-      z-index: 0;
+      border-radius: 50%;
+      filter: blur(12px);
+      opacity: 0.8;
     }
-    .vf-card {
-      background: rgba(17, 17, 27, 0.95);
-      backdrop-filter: blur(20px);
-      width: 100%;
-      max-width: 440px;
-      border-radius: 20px;
-      padding: 44px 40px;
-      box-shadow:
-        0 40px 80px -20px rgba(0, 0, 0, 0.8),
-        0 0 0 1px rgba(255, 255, 255, 0.06),
-        inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    .vf-wrapper::before {
+      width: 420px;
+      height: 420px;
+      top: -160px;
+      right: -120px;
+      background: radial-gradient(circle, rgba(255, 255, 255, 0.28), transparent 68%);
+    }
+    .vf-wrapper::after {
+      width: 300px;
+      height: 300px;
+      bottom: -120px;
+      left: -120px;
+      background: radial-gradient(circle, rgba(20, 150, 108, 0.1), transparent 68%);
+    }
+    .vf-shell {
       position: relative;
       z-index: 1;
+      width: min(1120px, calc(100% - 40px));
+      margin: 20px auto;
+      padding: 24px 0 32px;
     }
-    .vf-header {
-      text-align: center;
-      margin-bottom: 32px;
+    .vf-theme-toggle {
+      position: absolute;
+      top: 0;
+      right: 0;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      min-height: 42px;
+      padding: 0 16px;
+      border-radius: 999px;
+      border: 1px solid var(--vf-border);
+      background: var(--vf-surface-strong);
+      color: var(--vf-text-soft);
+      cursor: pointer;
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      box-shadow: 0 14px 28px rgba(18, 28, 23, 0.08);
+      transition: transform 180ms ease, box-shadow 180ms ease, color 180ms ease, border-color 180ms ease;
+      backdrop-filter: blur(18px);
+    }
+    .vf-theme-toggle:hover {
+      transform: translateY(-2px);
+      color: var(--vf-accent);
+      border-color: rgba(20, 150, 108, 0.32);
+      box-shadow: 0 18px 34px rgba(18, 28, 23, 0.12);
+    }
+    .vf-theme-toggle i {
+      font-size: 1rem;
+    }
+    .vf-stage {
+      display: grid;
+      grid-template-columns: minmax(0, 1.15fr) minmax(360px, 430px);
+      gap: 22px;
+      align-items: stretch;
+    }
+    .vf-story,
+    .vf-card {
+      border: 1px solid var(--vf-border);
+      border-radius: 32px;
+      background: var(--vf-surface);
+      backdrop-filter: blur(24px);
+      box-shadow: var(--vf-shadow);
+    }
+    .vf-story {
+      position: relative;
+      overflow: hidden;
+      padding: 40px;
+      background:
+        linear-gradient(160deg, rgba(20, 150, 108, 0.12), transparent 42%),
+        linear-gradient(215deg, rgba(204, 123, 47, 0.12), transparent 30%),
+        var(--vf-surface);
+    }
+    .vf-story::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background: linear-gradient(115deg, rgba(255, 255, 255, 0.2), transparent 34%, transparent 70%, rgba(255, 255, 255, 0.08));
+    }
+    .vf-story-badge {
+      display: inline-flex;
+      align-items: center;
+      min-height: 30px;
+      padding: 0 12px;
+      border-radius: 999px;
+      background: rgba(20, 150, 108, 0.12);
+      color: var(--vf-accent);
+      font-size: 0.74rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .vf-story-title {
+      margin: 18px 0 14px;
+      font-family: 'Cabinet Grotesk', 'Outfit', sans-serif;
+      font-size: clamp(2.35rem, 4.7vw, 4.15rem);
+      line-height: 0.95;
+      letter-spacing: -0.05em;
+      color: var(--vf-text);
+      max-width: 10ch;
+    }
+    .vf-story-copy {
+      max-width: 48ch;
+      color: var(--vf-text-soft);
+      font-size: 1rem;
+      line-height: 1.7;
+    }
+    .vf-story-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+      margin: 28px 0 24px;
+    }
+    .vf-story-stat {
+      padding: 18px;
+      border-radius: 22px;
+      background: var(--vf-surface-strong);
+      border: 1px solid var(--vf-border-soft);
+      box-shadow: 0 12px 26px rgba(18, 28, 23, 0.08);
+      animation: vf-float 7s ease-in-out infinite;
+    }
+    .vf-story-stat:nth-child(2) {
+      animation-delay: 1.2s;
+    }
+    .vf-story-stat:nth-child(3) {
+      animation-delay: 2.1s;
+    }
+    .vf-story-label {
+      display: block;
+      margin-bottom: 10px;
+      color: var(--vf-text-muted);
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .vf-story-value {
+      display: block;
+      margin-bottom: 8px;
+      font-family: 'Cabinet Grotesk', 'Outfit', sans-serif;
+      font-size: 1.45rem;
+      line-height: 1;
+      letter-spacing: -0.04em;
+      color: var(--vf-text);
+    }
+    .vf-story-note {
+      color: var(--vf-text-soft);
+      font-size: 0.88rem;
+      line-height: 1.55;
+    }
+    .vf-story-board {
+      padding: 24px;
+      border-radius: 26px;
+      background: var(--vf-surface-strong);
+      border: 1px solid var(--vf-border-soft);
+      box-shadow: 0 16px 30px rgba(18, 28, 23, 0.1);
+    }
+    .vf-board-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .vf-board-head strong {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--vf-text);
+    }
+    .vf-board-pill {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      padding: 0 10px;
+      border-radius: 999px;
+      background: rgba(20, 150, 108, 0.12);
+      color: var(--vf-accent);
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .vf-board-list {
       display: flex;
       flex-direction: column;
+      gap: 12px;
+      margin-top: 18px;
+    }
+    .vf-board-row {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
       align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      border-radius: 18px;
+      background: var(--vf-rail);
+      border: 1px solid var(--vf-border-soft);
+    }
+    .vf-board-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: var(--vf-accent);
+      box-shadow: 0 0 0 6px rgba(20, 150, 108, 0.1);
+    }
+    .vf-board-dot.is-warm {
+      background: var(--vf-warm);
+      box-shadow: 0 0 0 6px rgba(204, 123, 47, 0.1);
+    }
+    .vf-board-copy {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 0;
+    }
+    .vf-board-copy strong {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--vf-text);
+    }
+    .vf-board-copy span,
+    .vf-board-amount {
+      color: var(--vf-text-soft);
+      font-size: 0.84rem;
+    }
+    .vf-board-amount {
+      font-weight: 700;
+      color: var(--vf-text);
+    }
+    .vf-card {
+      padding: 34px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .vf-card-kicker {
+      display: inline-flex;
+      margin-bottom: 14px;
+      color: var(--vf-accent);
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .vf-header {
+      margin-bottom: 28px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      text-align: left;
+    }
+    .vf-logo-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 18px;
     }
     .vf-logo-box {
-      width: 56px;
-      height: 56px;
-      background: linear-gradient(135deg, rgba(99,102,241,0.2), rgba(99,102,241,0.05));
-      color: #818cf8;
-      border-radius: 16px;
-      display: flex;
+      width: 60px;
+      height: 60px;
+      flex: 0 0 60px;
+      border-radius: 20px;
+      display: inline-flex;
       align-items: center;
       justify-content: center;
-      margin-bottom: 20px;
-      border: 1px solid rgba(99,102,241,0.25);
-      box-shadow: 0 4px 20px rgba(99,102,241,0.15);
+      background: linear-gradient(135deg, rgba(20, 150, 108, 0.16), rgba(204, 123, 47, 0.16));
+      color: var(--vf-accent);
+      border: 1px solid rgba(20, 150, 108, 0.16);
+      box-shadow: 0 16px 28px rgba(18, 28, 23, 0.12);
     }
     .vf-title {
-      font-size: 1.6rem;
-      font-weight: 700;
-      margin: 0 0 8px 0;
-      color: #f1f1f1;
-      letter-spacing: -0.02em;
+      margin: 0 0 8px;
+      font-family: 'Cabinet Grotesk', 'Outfit', sans-serif;
+      font-size: 2rem;
+      line-height: 1;
+      letter-spacing: -0.04em;
+      color: var(--vf-text);
     }
     .vf-subtitle {
-      font-size: 0.875rem;
-      color: #71717a;
       margin: 0;
-      line-height: 1.5;
+      max-width: 34ch;
+      color: var(--vf-text-soft);
+      font-size: 0.95rem;
+      line-height: 1.7;
     }
     .vf-tabs {
-      display: flex;
-      background: rgba(255,255,255,0.04);
-      border-radius: 12px;
-      padding: 4px;
-      margin-bottom: 28px;
-      gap: 4px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      margin-bottom: 26px;
+      padding: 5px;
+      border-radius: 20px;
+      background: var(--vf-rail);
+      border: 1px solid var(--vf-border-soft);
     }
     .vf-tab {
-      flex: 1;
-      text-align: center;
-      padding: 10px 0;
-      font-size: 0.875rem;
-      font-weight: 600;
+      min-height: 44px;
+      border: none;
+      border-radius: 16px;
+      font-size: 0.9rem;
+      font-weight: 700;
       cursor: pointer;
-      color: #71717a;
-      border-radius: 10px;
-      transition: all 0.2s ease;
+      color: var(--vf-text-soft);
+      background: transparent;
+      transition: all 180ms ease;
     }
     .vf-tab.active {
-      color: #f1f1f1;
-      background: rgba(255,255,255,0.08);
-      box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+      color: #fff;
+      background: linear-gradient(135deg, var(--vf-accent), var(--vf-accent-strong));
+      box-shadow: 0 16px 26px rgba(20, 150, 108, 0.18);
     }
     .vf-form-group {
-      margin-bottom: 18px;
+      margin-bottom: 16px;
       text-align: left;
     }
     .vf-label {
       display: block;
-      font-size: 0.8rem;
-      font-weight: 600;
-      color: #a1a1aa;
       margin-bottom: 8px;
-      letter-spacing: 0.04em;
+      color: var(--vf-text-muted);
+      font-size: 0.74rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
       text-transform: uppercase;
+    }
+    .vf-helper {
+      margin: 0 0 14px;
+      color: var(--vf-text-soft);
+      font-size: 0.85rem;
+      line-height: 1.6;
     }
     .vf-input-wrap {
       position: relative;
     }
     .vf-input-icon {
       position: absolute;
-      left: 14px;
+      left: 16px;
       top: 50%;
-      transform: translateY(-50%);
-      color: #52525b;
       width: 18px;
       height: 18px;
+      transform: translateY(-50%);
+      color: var(--vf-text-muted);
       pointer-events: none;
     }
     .vf-input {
       width: 100%;
-      padding: 13px 14px 13px 44px;
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 12px;
-      font-size: 0.95rem;
-      color: #f1f1f1;
-      background: rgba(255,255,255,0.04);
-      transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
-      font-family: 'Inter', sans-serif;
+      min-height: 52px;
+      padding: 14px 16px 14px 48px;
+      border-radius: 18px;
+      border: 1px solid var(--vf-border-soft);
+      background: var(--vf-surface-strong);
+      color: var(--vf-text);
+      font-size: 0.96rem;
+      font-family: 'Satoshi', 'Inter', sans-serif;
       box-sizing: border-box;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16);
+      transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
     }
-    .vf-input::placeholder { color: #3f3f46; }
+    .vf-input::placeholder {
+      color: var(--vf-text-muted);
+    }
     .vf-input:focus {
       outline: none;
-      border-color: rgba(99,102,241,0.5);
-      box-shadow: 0 0 0 3px rgba(99,102,241,0.12);
-      background: rgba(255,255,255,0.06);
+      border-color: rgba(20, 150, 108, 0.34);
+      box-shadow: 0 0 0 4px rgba(20, 150, 108, 0.12);
+      transform: translateY(-1px);
     }
-    .vf-submit {
+    .vf-otp-input {
+      padding-left: 16px;
+      text-align: center;
+      letter-spacing: 0.42em;
+      font-size: 1.15rem;
+      font-weight: 700;
+    }
+    .vf-submit,
+    .vf-btn-social,
+    .vf-secondary-action {
       width: 100%;
-      background: linear-gradient(135deg, #6366f1, #4f46e5);
-      color: #fff;
-      border: none;
-      padding: 14px;
-      border-radius: 12px;
+      min-height: 52px;
+      border-radius: 18px;
       font-size: 0.95rem;
-      font-weight: 600;
+      font-weight: 700;
       cursor: pointer;
-      display: flex;
+      display: inline-flex;
       align-items: center;
       justify-content: center;
-      gap: 8px;
+      gap: 10px;
+      transition: transform 180ms ease, box-shadow 180ms ease, background 180ms ease, border-color 180ms ease, color 180ms ease;
+      font-family: 'Satoshi', 'Inter', sans-serif;
+    }
+    .vf-submit {
       margin-top: 4px;
-      transition: all 0.2s ease;
-      letter-spacing: 0.01em;
-      font-family: 'Inter', sans-serif;
-      box-shadow: 0 4px 15px rgba(99,102,241,0.3);
+      border: none;
+      color: #fff;
+      background: linear-gradient(135deg, var(--vf-accent), var(--vf-accent-strong));
+      box-shadow: 0 18px 28px rgba(20, 150, 108, 0.2);
+    }
+    .vf-submit:hover:not(:disabled),
+    .vf-btn-social:hover:not(:disabled),
+    .vf-secondary-action:hover:not(:disabled) {
+      transform: translateY(-2px);
     }
     .vf-submit:hover:not(:disabled) {
-      background: linear-gradient(135deg, #7c7ffc, #6366f1);
-      transform: translateY(-1px);
-      box-shadow: 0 6px 20px rgba(99,102,241,0.4);
+      box-shadow: 0 24px 34px rgba(20, 150, 108, 0.24);
     }
-    .vf-submit:active:not(:disabled) {
-      transform: translateY(0);
+    .vf-btn-social,
+    .vf-secondary-action {
+      border: 1px solid var(--vf-border-soft);
+      background: var(--vf-surface-strong);
+      color: var(--vf-text);
+      box-shadow: 0 14px 24px rgba(18, 28, 23, 0.08);
     }
-    .vf-submit:disabled {
-      opacity: 0.6;
+    .vf-secondary-action {
+      margin-top: 10px;
+      background: transparent;
+      box-shadow: none;
+      color: var(--vf-text-soft);
+    }
+    .vf-btn-social:disabled,
+    .vf-submit:disabled,
+    .vf-secondary-action:disabled {
+      opacity: 0.62;
       cursor: not-allowed;
       transform: none;
       box-shadow: none;
@@ -1396,93 +1694,142 @@
       display: flex;
       align-items: center;
       text-align: center;
-      margin: 24px 0;
-      color: #3f3f46;
-      font-size: 0.7rem;
+      margin: 22px 0;
+      color: var(--vf-text-muted);
+      font-size: 0.72rem;
       font-weight: 700;
       letter-spacing: 0.08em;
       text-transform: uppercase;
     }
-    .vf-divider::before, .vf-divider::after {
+    .vf-divider::before,
+    .vf-divider::after {
       content: '';
       flex: 1;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      border-bottom: 1px solid var(--vf-border-soft);
     }
-    .vf-divider::before { margin-right: 14px; }
-    .vf-divider::after { margin-left: 14px; }
-    .vf-btn-social {
-      width: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 12px;
-      padding: 13px 20px;
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      background: rgba(255,255,255,0.04);
-      border-radius: 12px;
-      color: #e4e4e7;
-      font-size: 0.9rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      font-family: 'Inter', sans-serif;
-      letter-spacing: 0.01em;
+    .vf-divider::before {
+      margin-right: 14px;
     }
-    .vf-btn-social:hover:not(:disabled) {
-      background: rgba(255,255,255,0.08);
-      border-color: rgba(255,255,255,0.14);
-      transform: translateY(-1px);
-    }
-    .vf-btn-social:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
+    .vf-divider::after {
+      margin-left: 14px;
     }
     .vf-message {
       margin-top: 16px;
-      padding: 12px 16px;
-      border-radius: 10px;
-      font-size: 0.85rem;
+      padding: 13px 16px;
+      border-radius: 18px;
+      font-size: 0.86rem;
       text-align: center;
-      font-weight: 500;
-      line-height: 1.5;
+      font-weight: 600;
+      line-height: 1.55;
+      border: 1px solid transparent;
     }
     .vf-message.error {
-      background: rgba(239, 68, 68, 0.08);
-      color: #f87171;
-      border: 1px solid rgba(239, 68, 68, 0.15);
+      background: rgba(203, 93, 82, 0.12);
+      color: #cc5b50;
+      border-color: rgba(203, 93, 82, 0.18);
     }
     .vf-message.success {
-      background: rgba(16, 185, 129, 0.08);
-      color: #34d399;
-      border: 1px solid rgba(16, 185, 129, 0.15);
+      background: rgba(20, 150, 108, 0.12);
+      color: var(--vf-accent);
+      border-color: rgba(20, 150, 108, 0.18);
     }
     .vf-message.info {
-      background: rgba(99, 102, 241, 0.08);
-      color: #a5b4fc;
-      border: 1px solid rgba(99, 102, 241, 0.15);
+      background: rgba(50, 127, 182, 0.12);
+      color: #327fb6;
+      border-color: rgba(50, 127, 182, 0.18);
     }
     .vf-footer-text {
-      text-align: center;
-      font-size: 0.75rem;
-      color: #52525b;
-      margin-top: 24px;
-      line-height: 1.6;
+      margin-top: 22px;
+      color: var(--vf-text-muted);
+      font-size: 0.78rem;
+      line-height: 1.7;
     }
     .vf-footer-text a {
-      color: #818cf8;
+      color: var(--vf-link);
       text-decoration: none;
-      font-weight: 500;
+      font-weight: 700;
     }
     .vf-spinner {
       width: 18px;
       height: 18px;
-      border: 2px solid rgba(255,255,255,0.3);
-      border-top-color: #fff;
+      border: 2px solid rgba(255, 255, 255, 0.36);
+      border-top-color: currentColor;
       border-radius: 50%;
       animation: vf-spin 0.7s linear infinite;
       display: inline-block;
     }
-    @keyframes vf-spin { to { transform: rotate(360deg); } }
+    @keyframes vf-spin {
+      to { transform: rotate(360deg); }
+    }
+    @keyframes vf-float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-5px); }
+    }
+    @media (max-width: 980px) {
+      .vf-shell {
+        width: min(760px, calc(100% - 24px));
+        padding-top: 16px;
+      }
+      .vf-theme-toggle {
+        position: static;
+        margin-left: auto;
+        margin-bottom: 14px;
+      }
+      .vf-stage {
+        grid-template-columns: 1fr;
+      }
+      .vf-story,
+      .vf-card {
+        border-radius: 28px;
+      }
+      .vf-story {
+        padding: 28px;
+      }
+      .vf-story-title {
+        max-width: none;
+      }
+      .vf-story-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    @media (max-width: 640px) {
+      .vf-shell {
+        width: calc(100% - 16px);
+        margin: 8px auto;
+      }
+      .vf-theme-toggle span {
+        display: none;
+      }
+      .vf-story,
+      .vf-card {
+        padding: 22px;
+        border-radius: 24px;
+      }
+      .vf-title {
+        font-size: 1.72rem;
+      }
+      .vf-story-title {
+        font-size: clamp(2rem, 10vw, 3rem);
+      }
+      .vf-tabs {
+        margin-bottom: 22px;
+      }
+      .vf-board-row {
+        grid-template-columns: auto 1fr;
+      }
+      .vf-board-amount {
+        grid-column: 2;
+      }
+      .vf-submit,
+      .vf-btn-social,
+      .vf-secondary-action,
+      .vf-input {
+        min-height: 50px;
+      }
+      .vf-otp-input {
+        letter-spacing: 0.3em;
+      }
+    }
   `;
 
   // ---- Icons ----
@@ -1542,14 +1889,52 @@
     const [googleLoading, setGoogleLoading] = useState(false);
     const [message, setMessage] = useState("");
     const [messageTone, setMessageTone] = useState("");
+    const [theme, setTheme] = useState(() =>
+      (localStorage.getItem("billing_theme") || document.body.dataset.theme || "light") === "dark" ? "dark" : "light"
+    );
 
     const normalizedEmail = email.trim().toLowerCase();
     const emailValid = EMAIL_PATTERN.test(normalizedEmail);
     const anyLoading = isLoading || googleLoading;
+    const storyStats = [
+      { label: "Average collection", value: "2.4x faster", note: "Share links and branded PDFs keep payments moving." },
+      { label: "Workspace ready", value: "Live themes", note: "Dark and light modes stay synced across login and dashboard." },
+      { label: "Customer follow-up", value: "One click", note: "Jump from dashboard insights straight into invoice actions." }
+    ];
+    const storyActivity = [
+      { title: "INV-2048 paid", copy: "Studio Obsidian · 12 minutes ago", value: "Rs 48,000", warm: false },
+      { title: "Reminder queued", copy: "Northline Projects · Due tomorrow", value: "2 follow-ups", warm: true },
+      { title: "Branding updated", copy: "Logo, bank profile, and share defaults", value: "Synced", warm: false }
+    ];
+
+    useEffect(() => {
+      const syncTheme = () => {
+        const nextTheme = (localStorage.getItem("billing_theme") || document.body.dataset.theme || "light") === "dark" ? "dark" : "light";
+        setTheme(nextTheme);
+      };
+
+      syncTheme();
+      window.addEventListener("billing-theme-change", syncTheme);
+      return () => window.removeEventListener("billing-theme-change", syncTheme);
+    }, []);
 
     function showMessage(text, tone) {
       setMessage(text);
       setMessageTone(tone || "");
+    }
+
+    function handleThemeToggle() {
+      if (typeof window.toggleBillingTheme === "function") {
+        window.toggleBillingTheme();
+      } else {
+        const nextTheme = theme === "dark" ? "light" : "dark";
+        localStorage.setItem("billing_theme", nextTheme);
+        document.body.dataset.theme = nextTheme;
+        document.documentElement.setAttribute("data-bs-theme", nextTheme);
+        window.dispatchEvent(new CustomEvent("billing-theme-change", { detail: { theme: nextTheme } }));
+      }
+      const nextTheme = (localStorage.getItem("billing_theme") || document.body.dataset.theme || (theme === "dark" ? "light" : "dark")) === "dark" ? "dark" : "light";
+      setTheme(nextTheme);
     }
 
     async function handleSendOtp(event) {
@@ -1592,6 +1977,7 @@
       showMessage("", "");
 
       try {
+        console.log("Sending verification:", { email: normalizedEmail, code: otpValue });
         const response = await requestJson("/api/otp/verify", { email: normalizedEmail, code: otpValue });
         if (!response.token) throw new Error("No token received.");
         
@@ -1650,124 +2036,230 @@
 
       e(
         "div",
-        { className: "vf-card" },
-
-        // Header
-        e("div", { className: "vf-header" },
-          e("div", { className: "vf-logo-box" }, InvoiceIcon),
-          e("h1", { className: "vf-title" }, "InvoiceFlow Pro"),
-          e("p", { className: "vf-subtitle" },
-            tab === "signin"
-              ? "Sign in to access your billing workspace."
-              : "Create your InvoiceFlow account."
-          )
+        { className: "vf-shell" },
+        e(
+          "button",
+          {
+            type: "button",
+            className: "vf-theme-toggle",
+            onClick: handleThemeToggle,
+            "aria-label": theme === "dark" ? "Switch to light theme" : "Switch to dark theme"
+          },
+          e("i", { className: "bx " + (theme === "dark" ? "bx-sun" : "bx-moon") }),
+          e("span", null, theme === "dark" ? "Light mode" : "Dark mode")
         ),
 
-        // Tabs
-        e("div", { className: "vf-tabs" },
-          e("div", {
-            className: "vf-tab " + (tab === "signin" ? "active" : ""),
-            onClick: () => { setTab("signin"); showMessage("", ""); setStep("email"); }
-          }, "Sign In"),
-          e("div", {
-            className: "vf-tab " + (tab === "signup" ? "active" : ""),
-            onClick: () => { setTab("signup"); showMessage("", ""); setStep("email"); }
-          }, "Sign Up")
-        ),
+        e(
+          "div",
+          { className: "vf-stage" },
+          e(
+            "aside",
+            { className: "vf-story" },
+            e("span", { className: "vf-story-badge" }, "Executive Ledger"),
+            e(
+              "h2",
+              { className: "vf-story-title" },
+              tab === "signin"
+                ? "Invoices, collections, and follow-up in one elegant workspace."
+                : "Launch your billing workspace with a client-ready finance system."
+            ),
+            e(
+              "p",
+              { className: "vf-story-copy" },
+              "Create polished invoices, share payment-ready links, and monitor collections from one dashboard designed to feel calm, modern, and fast."
+            ),
+            e(
+              "div",
+              { className: "vf-story-grid" },
+              ...storyStats.map((stat) =>
+                e(
+                  "article",
+                  { key: stat.label, className: "vf-story-stat" },
+                  e("span", { className: "vf-story-label" }, stat.label),
+                  e("strong", { className: "vf-story-value" }, stat.value),
+                  e("p", { className: "vf-story-note" }, stat.note)
+                )
+              )
+            ),
+            e(
+              "div",
+              { className: "vf-story-board" },
+              e(
+                "div",
+                { className: "vf-board-head" },
+                e("span", { className: "vf-board-pill" }, "Live workspace"),
+                e("strong", null, "Collections overview")
+              ),
+              e(
+                "div",
+                { className: "vf-board-list" },
+                ...storyActivity.map((item) =>
+                  e(
+                    "div",
+                    { key: item.title, className: "vf-board-row" },
+                    e("span", { className: "vf-board-dot" + (item.warm ? " is-warm" : "") }),
+                    e(
+                      "div",
+                      { className: "vf-board-copy" },
+                      e("strong", null, item.title),
+                      e("span", null, item.copy)
+                    ),
+                    e("span", { className: "vf-board-amount" }, item.value)
+                  )
+                )
+              )
+            )
+          ),
 
-        // Google Sign-In Button
-        e("button", {
-          type: "button",
-          className: "vf-btn-social",
-          onClick: handleGoogleSignIn,
-          disabled: anyLoading,
-          style: { marginBottom: "0" }
-        },
-          googleLoading ? e("span", { className: "vf-spinner" }) : GoogleIcon,
-          googleLoading ? "Signing in with Google..." : "Continue with Google"
-        ),
-
-        // Divider
-        e("div", { className: "vf-divider" }, "or use email OTP"),
-
-        // Email or OTP form based on state
-        step === "email" ? (
-          e("form", { onSubmit: handleSendOtp },
-            e("div", { className: "vf-form-group" },
-              e("label", { className: "vf-label" }, "Email Address"),
-              e("div", { className: "vf-input-wrap" },
-                EnvelopeIcon,
-                e("input", {
-                  type: "email",
-                  className: "vf-input",
-                  placeholder: "name@company.com",
-                  value: email,
-                  onChange: ev => setEmail(ev.target.value),
-                  disabled: anyLoading,
-                  autoComplete: "email"
-                })
+          e(
+            "div",
+            { className: "vf-card" },
+            e("span", { className: "vf-card-kicker" }, step === "otp" ? "Verification code" : tab === "signin" ? "Welcome back" : "Create workspace"),
+            e(
+              "div",
+              { className: "vf-header" },
+              e(
+                "div",
+                { className: "vf-logo-row" },
+                e("div", { className: "vf-logo-box" }, InvoiceIcon),
+                e(
+                  "div",
+                  null,
+                  e("h1", { className: "vf-title" }, "InvoiceFlow Pro"),
+                  e(
+                    "p",
+                    { className: "vf-subtitle" },
+                    step === "otp"
+                      ? "Use the 6-digit code we sent to finish signing in."
+                      : tab === "signin"
+                        ? "Sign in to access your billing workspace."
+                        : "Create your workspace and start sending polished invoices."
+                  )
+                )
               )
             ),
 
-            e("button", {
-              type: "submit",
-              className: "vf-submit",
-              disabled: anyLoading
-            },
-              isLoading ? e("span", { className: "vf-spinner" }) : null,
-              isLoading ? "Sending OTP..." : tab === "signup" ? "Create account & send OTP" : "Send OTP",
-              !isLoading ? ArrowIcon : null
+            e(
+              "div",
+              { className: "vf-tabs" },
+              e("button", {
+                type: "button",
+                className: "vf-tab " + (tab === "signin" ? "active" : ""),
+                onClick: () => { setTab("signin"); showMessage("", ""); setStep("email"); }
+              }, "Sign In"),
+              e("button", {
+                type: "button",
+                className: "vf-tab " + (tab === "signup" ? "active" : ""),
+                onClick: () => { setTab("signup"); showMessage("", ""); setStep("email"); }
+              }, "Sign Up")
             ),
 
-            // status message
-            message && e("div", { className: "vf-message " + messageTone }, message)
+            e(
+              "button",
+              {
+                type: "button",
+                className: "vf-btn-social",
+                onClick: handleGoogleSignIn,
+                disabled: anyLoading
+              },
+              googleLoading ? e("span", { className: "vf-spinner" }) : GoogleIcon,
+              googleLoading ? "Signing in with Google..." : "Continue with Google"
+            ),
+
+            e("div", { className: "vf-divider" }, "or use email OTP"),
+
+            step === "email"
+              ? e(
+                  "form",
+                  { onSubmit: handleSendOtp },
+                  e(
+                    "div",
+                    { className: "vf-form-group" },
+                    e("label", { className: "vf-label" }, "Email Address"),
+                    e(
+                      "div",
+                      { className: "vf-input-wrap" },
+                      EnvelopeIcon,
+                      e("input", {
+                        type: "email",
+                        className: "vf-input",
+                        placeholder: "name@company.com",
+                        value: email,
+                        onChange: (ev) => setEmail(ev.target.value),
+                        disabled: anyLoading,
+                        autoComplete: "email"
+                      })
+                    )
+                  ),
+                  e(
+                    "button",
+                    {
+                      type: "submit",
+                      className: "vf-submit",
+                      disabled: anyLoading
+                    },
+                    isLoading ? e("span", { className: "vf-spinner" }) : null,
+                    isLoading ? "Sending OTP..." : tab === "signup" ? "Create account and send OTP" : "Send OTP",
+                    !isLoading ? ArrowIcon : null
+                  ),
+                  message && e("div", { className: "vf-message " + messageTone }, message)
+                )
+              : e(
+                  "form",
+                  { onSubmit: handleVerifyOtp },
+                  e(
+                    "div",
+                    { className: "vf-form-group" },
+                    e("label", { className: "vf-label" }, "Enter 6-Digit OTP"),
+                    e("p", { className: "vf-helper" }, "We sent a code to " + normalizedEmail + ". Enter it below to continue."),
+                    e(
+                      "div",
+                      { className: "vf-input-wrap" },
+                      e("input", {
+                        type: "text",
+                        className: "vf-input vf-otp-input",
+                        placeholder: "123456",
+                        value: otp,
+                        onChange: (ev) => setOtp(ev.target.value.replace(/\\D/g, "").slice(0, 6)),
+                        disabled: anyLoading,
+                        autoComplete: "one-time-code"
+                      })
+                    )
+                  ),
+                  e(
+                    "button",
+                    {
+                      type: "submit",
+                      className: "vf-submit",
+                      disabled: anyLoading || otp.length < 6
+                    },
+                    isLoading ? e("span", { className: "vf-spinner" }) : null,
+                    isLoading ? "Verifying..." : "Sign In",
+                    !isLoading ? ArrowIcon : null
+                  ),
+                  e(
+                    "button",
+                    {
+                      type: "button",
+                      className: "vf-secondary-action",
+                      onClick: () => { setStep("email"); setOtp(""); showMessage("", ""); },
+                      disabled: anyLoading
+                    },
+                    "<- Use a different email"
+                  ),
+                  message && e("div", { className: "vf-message " + messageTone }, message)
+                ),
+
+            e(
+              "p",
+              { className: "vf-footer-text" },
+              "By continuing, you agree to InvoiceFlow's ",
+              e("a", { href: "#" }, "Terms of Service"),
+              " and ",
+              e("a", { href: "#" }, "Privacy Policy"),
+              "."
+            )
           )
-        ) : (
-          e("form", { onSubmit: handleVerifyOtp },
-            e("div", { className: "vf-form-group" },
-              e("label", { className: "vf-label" }, "Enter 6-Digit OTP"),
-              e("div", { className: "vf-input-wrap" },
-                e("input", {
-                  type: "text",
-                  className: "vf-input",
-                  placeholder: "123456",
-                  value: otp,
-                  onChange: ev => setOtp(ev.target.value.replace(/\\D/g, "").slice(0, 6)),
-                  disabled: anyLoading,
-                  autoComplete: "one-time-code",
-                  style: { paddingLeft: "14px", textAlign: "center", letterSpacing: "8px", fontSize: "1.2rem", fontWeight: "600" }
-                })
-              )
-            ),
-
-            e("button", {
-              type: "submit",
-              className: "vf-submit",
-              disabled: anyLoading || otp.length < 6
-            },
-              isLoading ? e("span", { className: "vf-spinner" }) : null,
-              isLoading ? "Verifying..." : "Sign In",
-              !isLoading ? ArrowIcon : null
-            ),
-
-            e("button", {
-              type: "button",
-              className: "vf-btn-social",
-              style: { marginTop: "12px", border: "none", background: "transparent", color: "#a1a1aa", padding: "8px" },
-              onClick: () => { setStep("email"); setOtp(""); showMessage("", ""); },
-              disabled: anyLoading
-            }, "<- Use a different email"),
-
-            // status message
-            message && e("div", { className: "vf-message " + messageTone }, message)
-          )
-        ),
-
-        // Footer
-        e("p", { className: "vf-footer-text" },
-          "By continuing, you agree to InvoiceFlow's ",
-          e("a", { href: "#" }, "Terms of Service"), " and ",
-          e("a", { href: "#" }, "Privacy Policy"), "."
         )
       )
     );
