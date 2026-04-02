@@ -36,6 +36,32 @@ async function getTransporter() {
   return transporter;
 }
 
+async function sendResendEmail({ email, otp, expiresInMinutes }) {
+  const apiKey = String(process.env.RESEND_API_KEY || "").trim();
+  const from = String(process.env.RESEND_FROM || "InvoiceFlow Pro <onboarding@resend.dev>").trim();
+
+  const res = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`
+    },
+    body: JSON.stringify({
+      from,
+      to: [email],
+      subject: `Your ${String(process.env.OTP_APP_NAME || "InvoiceFlow Pro")} Login Code`,
+      html: `<h2>${String(process.env.OTP_APP_NAME || "InvoiceFlow Pro")}</h2><p>Your login code is: <strong style="font-size: 24px;">${otp}</strong></p><p>This code expires in ${expiresInMinutes} minutes.</p>`
+    })
+  });
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(`Resend API error ${res.status}: ${body.message || res.statusText}`);
+  }
+
+  return res.json();
+}
+
 function generateOTP() {
   return crypto.randomInt(100000, 999999).toString();
 }
@@ -59,6 +85,10 @@ function toDisplayName(email) {
     .join(" ");
 }
 
+function isProduction() {
+  return String(process.env.NODE_ENV || "development").trim().toLowerCase() === "production";
+}
+
 router.post("/send", async (req, res) => {
   try {
     const rawEmail = req.body?.email;
@@ -73,7 +103,8 @@ router.post("/send", async (req, res) => {
 
     const db = getFirebaseDb();
     const code = generateOTP();
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+    const expiresInMinutes = 10;
+    const expiresAt = new Date(Date.now() + expiresInMinutes * 60 * 1000);
 
     const otpRef = db.collection("otpCodes").doc(email);
     await otpRef.set({
@@ -82,6 +113,14 @@ router.post("/send", async (req, res) => {
       attempts: 0
     });
 
+    // Use Resend HTTP API in production (Render blocks SMTP)
+    if (isProduction() && process.env.RESEND_API_KEY) {
+      await sendResendEmail({ email, otp: code, expiresInMinutes });
+      console.log("OTP email sent via Resend to:", email);
+      return res.json({ message: "OTP sent successfully." });
+    }
+
+    // Use SMTP or dummy transporter for local development
     const mailer = await getTransporter();
     const info = await mailer.sendMail({
       from: `"InvoiceFlow Pro" <${process.env.SMTP_FROM_EMAIL || 'noreply@invoiceflow.com'}>`,
@@ -93,7 +132,6 @@ router.post("/send", async (req, res) => {
 
     console.log("OTP Email sent to:", email);
     if (!process.env.SMTP_USER) {
-      // We bypassed Ethereal. Let's return the devOtp so the user can test without picking through logs.
       return res.json({ message: "OTP generated.", devOtp: code });
     }
 
