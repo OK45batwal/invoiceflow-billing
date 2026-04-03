@@ -144,6 +144,7 @@ router.post("/send", async (req, res) => {
 
 router.post("/verify", async (req, res) => {
   try {
+    console.log("Verify request body:", JSON.stringify(req.body));
     const rawEmail = req.body?.email;
     const code = req.body?.code;
 
@@ -151,6 +152,7 @@ router.post("/verify", async (req, res) => {
       return res.status(400).json({ error: "Email and code are required." });
     }
     const email = normalizeEmail(rawEmail);
+    console.log("Verifying OTP for:", email, "code:", code);
 
     if (!hasFirebaseConfig()) {
       return res.status(500).json({ error: "Firebase not configured on backend." });
@@ -161,10 +163,12 @@ router.post("/verify", async (req, res) => {
     const snapshot = await otpRef.get();
 
     if (!snapshot.exists) {
+      console.log("No OTP found for:", email);
       return res.status(400).json({ error: "No pending OTP request for this email." });
     }
 
     const data = snapshot.data();
+    console.log("OTP data:", { expiresAt: data.expiresAt, attempts: data.attempts });
     if (new Date(data.expiresAt) < new Date()) {
       await otpRef.delete();
       return res.status(400).json({ error: "OTP has expired. Please request a new one." });
@@ -176,6 +180,7 @@ router.post("/verify", async (req, res) => {
     }
 
     if (data.code !== String(code).trim()) {
+      console.log("Code mismatch - stored:", data.code, "received:", String(code).trim());
       await otpRef.update({ attempts: (data.attempts || 0) + 1 });
       return res.status(400).json({ error: "Invalid OTP code." });
     }
@@ -195,6 +200,7 @@ router.post("/verify", async (req, res) => {
     };
 
     const token = createSession(sessionUser);
+    console.log("OTP verified for:", email);
 
     res.json({ message: "OTP verified.", token, user: sessionUser });
   } catch (error) {

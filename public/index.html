@@ -16,9 +16,11 @@
   <!-- Boxicons -->
   <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
-  <link rel="stylesheet" href="./styles.css?v=20260402c" />
-  <link rel="stylesheet" href="./mobile.css?v=20260402c" />
-  <link rel="stylesheet" href="./login.css?v=20260402c" />
+  <!-- Bootstrap 5.3 -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
+  <link rel="stylesheet" href="./styles.css?v=20260403b" />
+  <link rel="stylesheet" href="./mobile.css?v=20260403b" />
+  <link rel="stylesheet" href="./login.css?v=20260403a" />
 </head>
 
 <body data-theme="light">
@@ -34,6 +36,9 @@
           <img src="./logo.png" alt="" class="sidebar-brand-logo" />
           <span class="sidebar-brand-title">InvoiceFlow Pro</span>
         </a>
+        <button type="button" id="sidebar-close" class="sidebar-close-btn" aria-label="Close sidebar">
+          <i class="bx bx-x"></i>
+        </button>
       </div>
       <div class="sidebar-content">
         <ul class="sidebar-menu">
@@ -88,8 +93,8 @@
         </ul>
       </div>
     </nav>
-    <header class="navbar navbar-expand-lg navbar-light bg-white shadow-sm app-topbar">
-      <div class="container-fluid topbar-shell">
+    <header class="app-topbar">
+      <div class="topbar-shell">
         <div class="topbar-left d-flex align-items-center">
           <button type="button" id="sidebar-toggle" class="nav-btn d-lg-none" aria-label="Toggle navigation">
             <i class="bx bx-menu"></i>
@@ -444,7 +449,7 @@
                           <span class="studio-dot" aria-hidden="true"></span>
                           Auto-calc
                         </span>
-                        <span class="studio-chip">Currency: INR (â‚¹)</span>
+                        <span class="studio-chip">Currency: INR (₹)</span>
                       </div>
                     </div>
 
@@ -1459,6 +1464,8 @@
       color: var(--vf-text-soft);
       background: transparent;
       transition: all 180ms ease;
+      overflow: hidden;
+      white-space: nowrap;
     }
     .vf-tab.active {
       color: #fff;
@@ -1632,6 +1639,7 @@
       color: var(--vf-text-muted);
       font-size: 0.78rem;
       line-height: 1.7;
+      text-align: center;
     }
     .vf-footer-text a {
       color: var(--vf-link);
@@ -1688,6 +1696,30 @@
       }
       .vf-otp-input {
         letter-spacing: 0.3em;
+      }
+    }
+    @media (max-width: 480px) {
+      .vf-card {
+        padding: 20px 16px;
+        border-radius: 20px;
+      }
+      .vf-tabs {
+        grid-template-columns: 1fr 1fr;
+        width: 100%;
+        box-sizing: border-box;
+      }
+      .vf-tab {
+        font-size: 0.82rem;
+        min-height: 40px;
+        border-radius: 14px;
+      }
+      .vf-logo-box {
+        width: 48px;
+        height: 48px;
+        flex: 0 0 48px;
+      }
+      .vf-title {
+        font-size: 1.5rem;
       }
     }
   `;
