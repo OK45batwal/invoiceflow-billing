@@ -16,6 +16,9 @@ const tabPanels = [...document.querySelectorAll(".tab-panel")];
 const adminOnlyNodes = [...document.querySelectorAll(".admin-only")];
 const sidebarToggleButton = document.querySelector("#sidebar-toggle");
 const sidebarOverlay = document.querySelector("#sidebar-overlay");
+const sidebarCloseButton = document.querySelector("#sidebar-close");
+const sidebarMenuItems = [...document.querySelectorAll("[data-sidebar-nav]")];
+const mobileBottomNavItems = [...document.querySelectorAll(".mobile-bottom-nav .mobile-nav-item:not(.mobile-nav-fab)")];
 const globalSearchInput = document.querySelector("#global-search");
 const workspaceHomeLink = document.querySelector("#workspace-home-link");
 const topbarNode = document.querySelector(".app-topbar");
@@ -451,6 +454,20 @@ function updateHeaderNavState(activeTab) {
   activeButton?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
 }
 
+function updateMobileBottomNav(activeTab) {
+  mobileBottomNavItems.forEach((button) => {
+    const active = button.dataset.tabOpen === activeTab;
+    button.classList.toggle("active", active);
+  });
+}
+
+function updateSidebarNavState(activeTab) {
+  sidebarMenuItems.forEach((button) => {
+    const active = button.dataset.tabOpen === activeTab;
+    button.classList.toggle("active", active);
+  });
+}
+
 function getActiveTabId() {
   return document.querySelector(".tab-panel.active[data-panel]")?.dataset.panel || "overview";
 }
@@ -532,9 +549,8 @@ function setStatus(message, isError = false) {
     statusToastEl.textContent = text;
   }
   statusToastEl.classList.toggle("bg-danger", isError);
-  statusToastEl.classList.toggle("text-white", isError);
   statusToastEl.classList.toggle("bg-success", !isError);
-  statusToastEl.classList.toggle("text-white", !isError);
+  statusToastEl.classList.toggle("text-white", isError);
   if (statusToast) {
     statusToast.show();
     return;
@@ -637,6 +653,9 @@ function setActiveTab(tabId) {
   closeAccountMenu();
   updateHeaderNavState(tabId);
   updateHeaderActionState();
+  updateMobileBottomNav(tabId);
+  updateSidebarNavState(tabId);
+  syncResponsiveTables();
 }
 
 function applyRoleVisibility() {
@@ -2891,6 +2910,21 @@ sidebarOverlay?.addEventListener("click", () => {
   closeMobileSidebar();
 });
 
+sidebarCloseButton?.addEventListener("click", () => {
+  closeMobileSidebar();
+});
+
+sidebarMenuItems.forEach((button) => {
+  button.addEventListener("click", () => {
+    const tabId = button.dataset.tabOpen;
+    if (!tabId) {
+      return;
+    }
+    setActiveTab(tabId);
+    closeMobileSidebar();
+  });
+});
+
 topMenuButtons.forEach((button) => {
   button.addEventListener("click", () => {
     const tabId = button.dataset.tabOpen;
@@ -2899,6 +2933,28 @@ topMenuButtons.forEach((button) => {
     }
     setActiveTab(tabId);
     button.closest("details")?.removeAttribute("open");
+  });
+});
+
+mobileBottomNavItems.forEach((button) => {
+  button.addEventListener("click", () => {
+    const tabId = button.dataset.tabOpen;
+    if (!tabId) {
+      return;
+    }
+    setActiveTab(tabId);
+  });
+});
+
+document.querySelectorAll(".mobile-bottom-nav .mobile-nav-fab").forEach((button) => {
+  button.addEventListener("click", () => {
+    setActiveTab("invoices");
+    setTimeout(() => {
+      const firstItem = document.querySelector("#line-items .line-item");
+      if (!firstItem) {
+        addLineItemButton?.click();
+      }
+    }, 300);
   });
 });
 
@@ -2928,6 +2984,7 @@ window.addEventListener("resize", () => {
     closeMobileSidebar();
   }
   closeAccountMenu();
+  syncResponsiveTables();
 });
 
 document.addEventListener("keydown", (event) => {
@@ -3057,7 +3114,7 @@ addRecurringItemButton?.addEventListener("click", () => {
   createRecurringItemRow(recurringItemsContainer);
 });
 
-invoiceForm.addEventListener("submit", async (event) => {
+invoiceForm?.addEventListener("submit", async (event) => {
   event.preventDefault();
   try {
     await submitInvoice();
@@ -3066,7 +3123,7 @@ invoiceForm.addEventListener("submit", async (event) => {
   }
 });
 
-invoiceFilterForm.addEventListener("submit", async (event) => {
+invoiceFilterForm?.addEventListener("submit", async (event) => {
   event.preventDefault();
   try {
     await applyInvoiceFilterState(
@@ -3210,7 +3267,7 @@ paymentTableBody.addEventListener("click", async (event) => {
   }
 });
 
-customerForm.addEventListener("submit", async (event) => {
+customerForm?.addEventListener("submit", async (event) => {
   event.preventDefault();
   const formData = new FormData(customerForm);
   const payload = Object.fromEntries(formData.entries());
@@ -3266,7 +3323,7 @@ customerCancelButton?.addEventListener("click", () => {
   resetCustomerForm();
 });
 
-productForm.addEventListener("submit", async (event) => {
+productForm?.addEventListener("submit", async (event) => {
   event.preventDefault();
   const formData = new FormData(productForm);
   const payload = Object.fromEntries(formData.entries());
@@ -3338,7 +3395,7 @@ recurringTableBody?.addEventListener("click", async (event) => {
   }
 });
 
-reportFilterForm.addEventListener("submit", async (event) => {
+reportFilterForm?.addEventListener("submit", async (event) => {
   event.preventDefault();
   state.reportFilters = {
     dateFrom: reportDateFromInput.value,

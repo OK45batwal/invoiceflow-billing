@@ -27,44 +27,83 @@
   </section>
 
   <section id="workspace-view" class="hidden">
+    <div id="sidebar-overlay"></div>
+    <nav id="sidebar-nav" class="sidebar-nav" aria-label="Sidebar navigation">
+      <div class="sidebar-header">
+        <a class="sidebar-brand" href="#" id="sidebar-home-link">
+          <img src="./logo.png" alt="" class="sidebar-brand-logo" />
+          <span class="sidebar-brand-title">InvoiceFlow Pro</span>
+        </a>
+      </div>
+      <div class="sidebar-content">
+        <ul class="sidebar-menu">
+          <li>
+            <button type="button" class="sidebar-menu-item" data-sidebar-nav="true" data-tab-open="overview">
+              <i class="bx bx-home-alt"></i>
+              <span>Dashboard</span>
+            </button>
+          </li>
+          <li>
+            <button type="button" class="sidebar-menu-item" data-sidebar-nav="true" data-tab-open="invoices">
+              <i class="bx bx-file"></i>
+              <span>Invoices</span>
+            </button>
+          </li>
+          <li>
+            <button type="button" class="sidebar-menu-item" data-sidebar-nav="true" data-tab-open="payments">
+              <i class="bx bx-credit-card"></i>
+              <span>Payments</span>
+            </button>
+          </li>
+          <li>
+            <button type="button" class="sidebar-menu-item" data-sidebar-nav="true" data-tab-open="customers">
+              <i class="bx bx-user"></i>
+              <span>Customers</span>
+            </button>
+          </li>
+          <li>
+            <button type="button" class="sidebar-menu-item" data-sidebar-nav="true" data-tab-open="products">
+              <i class="bx bx-package"></i>
+              <span>Products</span>
+            </button>
+          </li>
+          <li class="admin-only">
+            <button type="button" class="sidebar-menu-item" data-sidebar-nav="true" data-tab-open="recurring">
+              <i class="bx bx-revision"></i>
+              <span>Recurring</span>
+            </button>
+          </li>
+          <li>
+            <button type="button" class="sidebar-menu-item" data-sidebar-nav="true" data-tab-open="reports">
+              <i class="bx bx-bar-chart-alt-2"></i>
+              <span>Reports</span>
+            </button>
+          </li>
+          <li class="admin-only">
+            <button type="button" class="sidebar-menu-item" data-sidebar-nav="true" data-tab-open="settings">
+              <i class="bx bx-cog"></i>
+              <span>Settings</span>
+            </button>
+          </li>
+        </ul>
+      </div>
+    </nav>
     <header class="navbar navbar-expand-lg navbar-light bg-white shadow-sm app-topbar">
       <div class="container-fluid topbar-shell">
         <div class="topbar-left d-flex align-items-center">
-          <a class="app-brand d-flex align-items-center" id="workspace-home-link" href="#" aria-label="InvoiceFlow Pro Home">
+          <button type="button" id="sidebar-toggle" class="nav-btn d-lg-none" aria-label="Toggle navigation">
+            <i class="bx bx-menu"></i>
+          </button>
+          <a class="app-brand d-flex align-items-center" id="workspace-home-link" href="#"
+            aria-label="InvoiceFlow Pro Home">
             <span class="app-brand-mark app-brand-logo-wrap" aria-hidden="true">
               <img src="./logo.png" alt="" class="app-brand-logo" />
             </span>
             <span class="app-brand-copy">
-              <span class="app-brand-title">Invoices</span>
+              <span class="app-brand-title">InvoiceFlow Pro</span>
               <span class="app-brand-status">Download, share, and track</span>
             </span>
           </a>
-          <nav class="header-tab-links" aria-label="Primary workspace sections">
-            <button type="button" class="header-tab-link is-active" data-top-nav="true" data-tab-open="overview">
-              Dashboard
-            </button>
-            <button type="button" class="header-tab-link" data-top-nav="true" data-tab-open="invoices">
-              Invoices
-            </button>
-            <button type="button" class="header-tab-link" data-top-nav="true" data-tab-open="payments">
-              Payments
-            </button>
-            <button type="button" class="header-tab-link" data-top-nav="true" data-tab-open="customers">
-              Customers
-            </button>
-            <button type="button" class="header-tab-link" data-top-nav="true" data-tab-open="products">
-              Products
-            </button>
-            <button type="button" class="header-tab-link admin-only" data-top-nav="true" data-tab-open="recurring">
-              Recurring
-            </button>
-            <button type="button" class="header-tab-link" data-top-nav="true" data-tab-open="reports">
-              Reports
-            </button>
-            <button type="button" class="header-tab-link admin-only" data-top-nav="true" data-tab-open="settings">
-              Settings
-            </button>
-          </nav>
         </div>
 
         <div class="topbar-center">
@@ -75,61 +114,62 @@
           </label>
         </div>
 
-          <div class="topbar-right d-flex align-items-center">
-            <button type="button" class="theme-toggle" id="theme-toggle" aria-label="Toggle theme">
-              <i class="bx bx-moon"></i>
+        <div class="topbar-right d-flex align-items-center">
+          <button type="button" class="theme-toggle" id="theme-toggle" aria-label="Toggle theme">
+            <i class="bx bx-moon"></i>
+          </button>
+          <button type="button" class="btn btn-light header-customize-btn admin-only" data-tab-open="settings">
+            <i class="bx bx-slider-alt"></i>
+            <span>Customize</span>
+          </button>
+          <div class="header-action-group" aria-label="Invoice quick actions">
+            <button id="header-download-invoice" type="button" class="btn btn-light header-action-btn">
+              <i class="bx bx-download"></i>
+              <span>PDF</span>
             </button>
-            <button type="button" class="btn btn-light header-customize-btn admin-only" data-tab-open="settings">
-              <i class="bx bx-slider-alt"></i>
-              <span>Customize</span>
+            <button id="header-email-invoice" type="button" class="btn btn-light header-action-btn">
+              <i class="bx bx-share-alt"></i>
+              <span>Share</span>
             </button>
-            <div class="header-action-group" aria-label="Invoice quick actions">
-              <button id="header-download-invoice" type="button" class="btn btn-light header-action-btn">
-                <i class="bx bx-download"></i>
-                <span>PDF</span>
-              </button>
-              <button id="header-email-invoice" type="button" class="btn btn-light header-action-btn">
-                <i class="bx bx-share-alt"></i>
-                <span>Share</span>
-              </button>
-              <button id="header-save-invoice" type="button" class="btn btn-light header-action-btn">
-                <i class="bx bx-save"></i>
-                <span>Save Draft</span>
-              </button>
-            </div>
-            <button id="header-create-invoice" type="button" class="btn btn-primary header-create-btn">
-              <i class="bx bx-plus"></i>
-              <span>Create Invoice</span>
+            <button id="header-save-invoice" type="button" class="btn btn-light header-action-btn">
+              <i class="bx bx-save"></i>
+              <span>Save Draft</span>
             </button>
-            <div class="header-account-shell" id="account-menu-shell">
-              <button type="button" class="header-account-card" id="account-menu-toggle" aria-haspopup="menu"
-                aria-expanded="false" aria-controls="account-menu">
-                <span class="header-account-avatar" aria-hidden="true">
-                  <img id="header-profile-pic" src="" alt="" class="hidden" />
-                  <i class="bx bx-user" id="header-profile-icon"></i>
-                </span>
-                <span class="header-account-copy">
-                  <span id="current-user" class="header-account-name">Workspace User</span>
-                  <span id="current-user-role" class="header-account-role">Finance</span>
-                </span>
-                <i class="bx bx-chevron-down header-account-chevron" aria-hidden="true"></i>
-              </button>
-              <div class="header-account-dropdown" id="account-menu" role="menu" aria-labelledby="account-menu-toggle"
-                aria-hidden="true">
-                <button type="button" class="header-account-menu-item" id="account-change-photo-btn" role="menuitem">
-                  <i class="bx bx-image-add"></i>
-                  <span>Change photo</span>
-                </button>
-                <button id="account-logout-btn" type="button" class="header-account-menu-item is-danger"
-                  data-logout-trigger="true" role="menuitem">
-                  <i class="bx bx-log-out"></i>
-                  <span>Logout</span>
-                </button>
-              </div>
-            </div>
-
-            <button id="logout-btn" type="button" class="btn btn-outline-danger" data-logout-trigger="true"><i class="bx bx-log-out"></i><span>Logout</span></button>
           </div>
+          <button id="header-create-invoice" type="button" class="btn btn-primary header-create-btn">
+            <i class="bx bx-plus"></i>
+            <span>Create Invoice</span>
+          </button>
+          <div class="header-account-shell" id="account-menu-shell">
+            <button type="button" class="header-account-card" id="account-menu-toggle" aria-haspopup="menu"
+              aria-expanded="false" aria-controls="account-menu">
+              <span class="header-account-avatar" aria-hidden="true">
+                <img id="header-profile-pic" src="" alt="" class="hidden" />
+                <i class="bx bx-user" id="header-profile-icon"></i>
+              </span>
+              <span class="header-account-copy">
+                <span id="current-user" class="header-account-name">Workspace User</span>
+                <span id="current-user-role" class="header-account-role">Finance</span>
+              </span>
+              <i class="bx bx-chevron-down header-account-chevron" aria-hidden="true"></i>
+            </button>
+            <div class="header-account-dropdown" id="account-menu" role="menu" aria-labelledby="account-menu-toggle"
+              aria-hidden="true">
+              <button type="button" class="header-account-menu-item" id="account-change-photo-btn" role="menuitem">
+                <i class="bx bx-image-add"></i>
+                <span>Change photo</span>
+              </button>
+              <button id="account-logout-btn" type="button" class="header-account-menu-item is-danger"
+                data-logout-trigger="true" role="menuitem">
+                <i class="bx bx-log-out"></i>
+                <span>Logout</span>
+              </button>
+            </div>
+          </div>
+
+          <button id="logout-btn" type="button" class="btn btn-outline-danger" data-logout-trigger="true"><i
+              class="bx bx-log-out"></i><span>Logout</span></button>
+        </div>
       </div>
     </header>
 
@@ -1161,6 +1201,29 @@
     </div>
   </div>
 
+  <nav id="mobile-bottom-nav" class="mobile-bottom-nav" aria-label="Mobile navigation">
+    <button type="button" class="mobile-nav-item active" data-tab-open="overview">
+      <i class="bx bx-home-alt"></i>
+      <span>Dashboard</span>
+    </button>
+    <button type="button" class="mobile-nav-item" data-tab-open="invoices">
+      <i class="bx bx-file"></i>
+      <span>Invoices</span>
+    </button>
+    <button type="button" class="mobile-nav-item mobile-nav-fab" data-tab-open="invoices">
+      <i class="bx bx-plus"></i>
+      <span>New</span>
+    </button>
+    <button type="button" class="mobile-nav-item" data-tab-open="payments">
+      <i class="bx bx-credit-card"></i>
+      <span>Payments</span>
+    </button>
+    <button type="button" class="mobile-nav-item" data-tab-open="customers">
+      <i class="bx bx-user"></i>
+      <span>Customers</span>
+    </button>
+  </nav>
+
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
     integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
     crossorigin="anonymous"></script>
@@ -1176,7 +1239,7 @@
       authDomain: "project-c4492f83-8ec7-42fe-89b.firebaseapp.com",
       projectId: "project-c4492f83-8ec7-42fe-89b"
     };
-    window.firebaseApp  = firebase.initializeApp(_firebaseConfig);
+    window.firebaseApp = firebase.initializeApp(_firebaseConfig);
     window.firebaseAuth = firebase.auth();
 
     // Expose the auth functions Login.js needs
@@ -1190,15 +1253,15 @@
     };
   </script>
   <script>
-(function () {
-  const { useState, useEffect } = React;
-  const e = React.createElement;
-  const mountedRoots = new WeakMap();
-  const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  const EMAIL_LINK_KEY = "invoiceflow_signin_email";
+    (function () {
+      const { useState, useEffect } = React;
+      const e = React.createElement;
+      const mountedRoots = new WeakMap();
+      const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      const EMAIL_LINK_KEY = "invoiceflow_signin_email";
 
-  // ---- InvoiceFlow Login Styles ----
-  const VF_STYLES = `
+      // ---- InvoiceFlow Login Styles ----
+      const VF_STYLES = `
     .vf-wrapper {
       --vf-bg: #f5efe5;
       --vf-bg-deep: #ece1d0;
@@ -1629,380 +1692,380 @@
     }
   `;
 
-  // ---- Icons ----
-  const InvoiceIcon = e("svg", { width: "28", height: "28", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "1.8", strokeLinecap: "round", strokeLinejoin: "round" },
-    e("path", { d: "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" }),
-    e("polyline", { points: "14 2 14 8 20 8" }),
-    e("line", { x1: "16", y1: "13", x2: "8", y2: "13" }),
-    e("line", { x1: "16", y1: "17", x2: "8", y2: "17" }),
-    e("polyline", { points: "10 9 9 9 8 9" })
-  );
+      // ---- Icons ----
+      const InvoiceIcon = e("svg", { width: "28", height: "28", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "1.8", strokeLinecap: "round", strokeLinejoin: "round" },
+        e("path", { d: "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" }),
+        e("polyline", { points: "14 2 14 8 20 8" }),
+        e("line", { x1: "16", y1: "13", x2: "8", y2: "13" }),
+        e("line", { x1: "16", y1: "17", x2: "8", y2: "17" }),
+        e("polyline", { points: "10 9 9 9 8 9" })
+      );
 
-  const EnvelopeIcon = e("svg", { className: "vf-input-icon", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" },
-    e("path", { d: "M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" }),
-    e("polyline", { points: "22,6 12,13 2,6" })
-  );
+      const EnvelopeIcon = e("svg", { className: "vf-input-icon", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" },
+        e("path", { d: "M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" }),
+        e("polyline", { points: "22,6 12,13 2,6" })
+      );
 
-  const ArrowIcon = e("svg", { width: "16", height: "16", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2.5", strokeLinecap: "round", strokeLinejoin: "round" },
-    e("line", { x1: "5", y1: "12", x2: "19", y2: "12" }),
-    e("polyline", { points: "12 5 19 12 12 19" })
-  );
+      const ArrowIcon = e("svg", { width: "16", height: "16", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2.5", strokeLinecap: "round", strokeLinejoin: "round" },
+        e("line", { x1: "5", y1: "12", x2: "19", y2: "12" }),
+        e("polyline", { points: "12 5 19 12 12 19" })
+      );
 
-  // Google G logo SVG
-  const GoogleIcon = e("svg", { width: "18", height: "18", viewBox: "0 0 18 18", fill: "none" },
-    e("path", { d: "M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z", fill: "#4285F4" }),
-    e("path", { d: "M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z", fill: "#34A853" }),
-    e("path", { d: "M3.964 10.707A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.707V4.961H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.039l3.007-2.332z", fill: "#FBBC05" }),
-    e("path", { d: "M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.961L3.964 6.293C4.672 4.166 6.656 3.58 9 3.58z", fill: "#EA4335" })
-  );
+      // Google G logo SVG
+      const GoogleIcon = e("svg", { width: "18", height: "18", viewBox: "0 0 18 18", fill: "none" },
+        e("path", { d: "M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z", fill: "#4285F4" }),
+        e("path", { d: "M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z", fill: "#34A853" }),
+        e("path", { d: "M3.964 10.707A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.707V4.961H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.039l3.007-2.332z", fill: "#FBBC05" }),
+        e("path", { d: "M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.961L3.964 6.293C4.672 4.166 6.656 3.58 9 3.58z", fill: "#EA4335" })
+      );
 
-  function getAuth() {
-    return window.firebaseAuth;
-  }
-
-  async function requestJson(url, payload) {
-    const response = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
-    const text = await response.text();
-    let body = {};
-    if (text) {
-      try { body = JSON.parse(text); } catch (_) { body = {}; }
-    }
-    if (!response.ok) {
-      throw new Error(body.error || "Request failed.");
-    }
-    return body;
-  }
-
-  function BillingLogin(props) {
-    const [email, setEmail] = useState("");
-    const [otp, setOtp] = useState("");
-    const [tab, setTab] = useState("signin");
-    const [step, setStep] = useState("email");
-    const [isLoading, setIsLoading] = useState(false);
-    const [googleLoading, setGoogleLoading] = useState(false);
-    const [message, setMessage] = useState("");
-    const [messageTone, setMessageTone] = useState("");
-    const [theme, setTheme] = useState(() =>
-      (localStorage.getItem("billing_theme") || document.body.dataset.theme || "light") === "dark" ? "dark" : "light"
-    );
-
-    const normalizedEmail = email.trim().toLowerCase();
-    const emailValid = EMAIL_PATTERN.test(normalizedEmail);
-    const anyLoading = isLoading || googleLoading;
-
-    useEffect(() => {
-      const syncTheme = () => {
-        const nextTheme = (localStorage.getItem("billing_theme") || document.body.dataset.theme || "light") === "dark" ? "dark" : "light";
-        setTheme(nextTheme);
-      };
-
-      syncTheme();
-      window.addEventListener("billing-theme-change", syncTheme);
-      return () => window.removeEventListener("billing-theme-change", syncTheme);
-    }, []);
-
-    function showMessage(text, tone) {
-      setMessage(text);
-      setMessageTone(tone || "");
-    }
-
-    function handleThemeToggle() {
-      if (typeof window.toggleBillingTheme === "function") {
-        window.toggleBillingTheme();
-      } else {
-        const nextTheme = theme === "dark" ? "light" : "dark";
-        localStorage.setItem("billing_theme", nextTheme);
-        document.body.dataset.theme = nextTheme;
-        document.documentElement.setAttribute("data-bs-theme", nextTheme);
-        window.dispatchEvent(new CustomEvent("billing-theme-change", { detail: { theme: nextTheme } }));
-      }
-      const nextTheme = (localStorage.getItem("billing_theme") || document.body.dataset.theme || (theme === "dark" ? "light" : "dark")) === "dark" ? "dark" : "light";
-      setTheme(nextTheme);
-    }
-
-    async function handleSendOtp(event) {
-      event.preventDefault();
-
-      if (!emailValid) {
-        showMessage("Enter a valid email address.", "error");
-        return;
+      function getAuth() {
+        return window.firebaseAuth;
       }
 
-      setIsLoading(true);
-      showMessage("", "");
-
-      try {
-        const resp = await requestJson("/api/otp/send", { email: normalizedEmail });
-        setStep("otp");
-        if (resp.devOtp) {
-          console.log("DEV OTP:", resp.devOtp);
-          showMessage("Development Mode: Your OTP is " + resp.devOtp + " (Check console)", "success");
-        } else {
-          showMessage("OTP sent to " + normalizedEmail + ". Check your inbox and spam folder.", "success");
+      async function requestJson(url, payload) {
+        const response = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const text = await response.text();
+        let body = {};
+        if (text) {
+          try { body = JSON.parse(text); } catch (_) { body = {}; }
         }
-      } catch (err) {
-        showMessage(err.message || "Failed to send OTP. Try again.", "error");
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    async function handleVerifyOtp(event) {
-      event.preventDefault();
-
-      const otpValue = otp.trim();
-      if (otpValue.length !== 6) {
-        showMessage("Enter a valid 6-digit OTP.", "error");
-        return;
-      }
-
-      setIsLoading(true);
-      showMessage("", "");
-
-      try {
-        console.log("Sending verification:", { email: normalizedEmail, code: otpValue });
-        const response = await requestJson("/api/otp/verify", { email: normalizedEmail, code: otpValue });
-        if (!response.token) throw new Error("No token received.");
-        
-        showMessage("Signed in successfully! Loading...", "success");
-        if (typeof props.onAuthenticated === "function") {
-          props.onAuthenticated(response);
+        if (!response.ok) {
+          throw new Error(body.error || "Request failed.");
         }
-      } catch (err) {
-        console.error("OTP Verification Error:", err);
-        showMessage(err.message || "Invalid OTP or verification failed.", "error");
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    async function handleGoogleSignIn() {
-      const auth = getAuth();
-      if (!auth) {
-        showMessage("Firebase is not connected. Please refresh.", "error");
-        return;
+        return body;
       }
 
-      setGoogleLoading(true);
-      showMessage("", "");
+      function BillingLogin(props) {
+        const [email, setEmail] = useState("");
+        const [otp, setOtp] = useState("");
+        const [tab, setTab] = useState("signin");
+        const [step, setStep] = useState("email");
+        const [isLoading, setIsLoading] = useState(false);
+        const [googleLoading, setGoogleLoading] = useState(false);
+        const [message, setMessage] = useState("");
+        const [messageTone, setMessageTone] = useState("");
+        const [theme, setTheme] = useState(() =>
+          (localStorage.getItem("billing_theme") || document.body.dataset.theme || "light") === "dark" ? "dark" : "light"
+        );
 
-      try {
-        const provider = new firebase.auth.GoogleAuthProvider();
-        provider.setCustomParameters({ prompt: "select_account" });
+        const normalizedEmail = email.trim().toLowerCase();
+        const emailValid = EMAIL_PATTERN.test(normalizedEmail);
+        const anyLoading = isLoading || googleLoading;
 
-        const result = await auth.signInWithPopup(provider);
-        const idToken = await result.user.getIdToken();
+        useEffect(() => {
+          const syncTheme = () => {
+            const nextTheme = (localStorage.getItem("billing_theme") || document.body.dataset.theme || "light") === "dark" ? "dark" : "light";
+            setTheme(nextTheme);
+          };
 
-        const response = await requestJson("/api/auth/firebase-verify", { idToken });
-        showMessage("Signed in successfully! Loading...", "success");
+          syncTheme();
+          window.addEventListener("billing-theme-change", syncTheme);
+          return () => window.removeEventListener("billing-theme-change", syncTheme);
+        }, []);
 
-        if (typeof props.onAuthenticated === "function") {
-          props.onAuthenticated(response);
+        function showMessage(text, tone) {
+          setMessage(text);
+          setMessageTone(tone || "");
         }
-      } catch (err) {
-        if (err.code === "auth/popup-closed-by-user" || err.code === "auth/cancelled-popup-request") {
-          showMessage("Sign-in was cancelled.", "");
-        } else if (err.code === "auth/popup-blocked") {
-          showMessage("Popup was blocked. Please allow popups for this site and try again.", "error");
-        } else {
-          showMessage(err.message || "Google sign-in failed. Please try again.", "error");
+
+        function handleThemeToggle() {
+          if (typeof window.toggleBillingTheme === "function") {
+            window.toggleBillingTheme();
+          } else {
+            const nextTheme = theme === "dark" ? "light" : "dark";
+            localStorage.setItem("billing_theme", nextTheme);
+            document.body.dataset.theme = nextTheme;
+            document.documentElement.setAttribute("data-bs-theme", nextTheme);
+            window.dispatchEvent(new CustomEvent("billing-theme-change", { detail: { theme: nextTheme } }));
+          }
+          const nextTheme = (localStorage.getItem("billing_theme") || document.body.dataset.theme || (theme === "dark" ? "light" : "dark")) === "dark" ? "dark" : "light";
+          setTheme(nextTheme);
         }
-      } finally {
-        setGoogleLoading(false);
-      }
-    }
 
-    return e(
-      "div",
-      { className: "vf-wrapper" },
-      e("style", null, VF_STYLES),
+        async function handleSendOtp(event) {
+          event.preventDefault();
 
-      e(
-        "div",
-        { className: "vf-shell" },
-        e(
-          "button",
-          {
-            type: "button",
-            className: "vf-theme-toggle",
-            onClick: handleThemeToggle,
-            "aria-label": theme === "dark" ? "Switch to light theme" : "Switch to dark theme"
-          },
-          e("i", { className: "bx " + (theme === "dark" ? "bx-sun" : "bx-moon") }),
-          e("span", null, theme === "dark" ? "Light mode" : "Dark mode")
-        ),
+          if (!emailValid) {
+            showMessage("Enter a valid email address.", "error");
+            return;
+          }
 
-        e(
+          setIsLoading(true);
+          showMessage("", "");
+
+          try {
+            const resp = await requestJson("/api/otp/send", { email: normalizedEmail });
+            setStep("otp");
+            if (resp.devOtp) {
+              console.log("DEV OTP:", resp.devOtp);
+              showMessage("Development Mode: Your OTP is " + resp.devOtp + " (Check console)", "success");
+            } else {
+              showMessage("OTP sent to " + normalizedEmail + ". Check your inbox and spam folder.", "success");
+            }
+          } catch (err) {
+            showMessage(err.message || "Failed to send OTP. Try again.", "error");
+          } finally {
+            setIsLoading(false);
+          }
+        }
+
+        async function handleVerifyOtp(event) {
+          event.preventDefault();
+
+          const otpValue = otp.trim();
+          if (otpValue.length !== 6) {
+            showMessage("Enter a valid 6-digit OTP.", "error");
+            return;
+          }
+
+          setIsLoading(true);
+          showMessage("", "");
+
+          try {
+            console.log("Sending verification:", { email: normalizedEmail, code: otpValue });
+            const response = await requestJson("/api/otp/verify", { email: normalizedEmail, code: otpValue });
+            if (!response.token) throw new Error("No token received.");
+
+            showMessage("Signed in successfully! Loading...", "success");
+            if (typeof props.onAuthenticated === "function") {
+              props.onAuthenticated(response);
+            }
+          } catch (err) {
+            console.error("OTP Verification Error:", err);
+            showMessage(err.message || "Invalid OTP or verification failed.", "error");
+          } finally {
+            setIsLoading(false);
+          }
+        }
+
+        async function handleGoogleSignIn() {
+          const auth = getAuth();
+          if (!auth) {
+            showMessage("Firebase is not connected. Please refresh.", "error");
+            return;
+          }
+
+          setGoogleLoading(true);
+          showMessage("", "");
+
+          try {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            provider.setCustomParameters({ prompt: "select_account" });
+
+            const result = await auth.signInWithPopup(provider);
+            const idToken = await result.user.getIdToken();
+
+            const response = await requestJson("/api/auth/firebase-verify", { idToken });
+            showMessage("Signed in successfully! Loading...", "success");
+
+            if (typeof props.onAuthenticated === "function") {
+              props.onAuthenticated(response);
+            }
+          } catch (err) {
+            if (err.code === "auth/popup-closed-by-user" || err.code === "auth/cancelled-popup-request") {
+              showMessage("Sign-in was cancelled.", "");
+            } else if (err.code === "auth/popup-blocked") {
+              showMessage("Popup was blocked. Please allow popups for this site and try again.", "error");
+            } else {
+              showMessage(err.message || "Google sign-in failed. Please try again.", "error");
+            }
+          } finally {
+            setGoogleLoading(false);
+          }
+        }
+
+        return e(
           "div",
-          { className: "vf-stage" },
+          { className: "vf-wrapper" },
+          e("style", null, VF_STYLES),
+
           e(
             "div",
-            { className: "vf-card" },
-            e("span", { className: "vf-card-kicker" }, step === "otp" ? "Verification code" : tab === "signin" ? "Welcome back" : "Create workspace"),
-            e(
-              "div",
-              { className: "vf-header" },
-              e(
-                "div",
-                { className: "vf-logo-row" },
-                e("div", { className: "vf-logo-box" }, InvoiceIcon),
-                e(
-                  "div",
-                  null,
-                  e("h1", { className: "vf-title" }, "InvoiceFlow Pro"),
-                  e(
-                    "p",
-                    { className: "vf-subtitle" },
-                    step === "otp"
-                      ? "Use the 6-digit code we sent to finish signing in."
-                      : tab === "signin"
-                        ? "Sign in to access your billing workspace."
-                        : "Create your workspace and start sending polished invoices."
-                  )
-                )
-              )
-            ),
-
-            e(
-              "div",
-              { className: "vf-tabs" },
-              e("button", {
-                type: "button",
-                className: "vf-tab " + (tab === "signin" ? "active" : ""),
-                onClick: () => { setTab("signin"); showMessage("", ""); setStep("email"); }
-              }, "Sign In"),
-              e("button", {
-                type: "button",
-                className: "vf-tab " + (tab === "signup" ? "active" : ""),
-                onClick: () => { setTab("signup"); showMessage("", ""); setStep("email"); }
-              }, "Sign Up")
-            ),
-
+            { className: "vf-shell" },
             e(
               "button",
               {
                 type: "button",
-                className: "vf-btn-social",
-                onClick: handleGoogleSignIn,
-                disabled: anyLoading
+                className: "vf-theme-toggle",
+                onClick: handleThemeToggle,
+                "aria-label": theme === "dark" ? "Switch to light theme" : "Switch to dark theme"
               },
-              googleLoading ? e("span", { className: "vf-spinner" }) : GoogleIcon,
-              googleLoading ? "Signing in with Google..." : "Continue with Google"
+              e("i", { className: "bx " + (theme === "dark" ? "bx-sun" : "bx-moon") }),
+              e("span", null, theme === "dark" ? "Light mode" : "Dark mode")
             ),
 
-            e("div", { className: "vf-divider" }, "or use email OTP"),
-
-            step === "email"
-              ? e(
-                  "form",
-                  { onSubmit: handleSendOtp },
+            e(
+              "div",
+              { className: "vf-stage" },
+              e(
+                "div",
+                { className: "vf-card" },
+                e("span", { className: "vf-card-kicker" }, step === "otp" ? "Verification code" : tab === "signin" ? "Welcome back" : "Create workspace"),
+                e(
+                  "div",
+                  { className: "vf-header" },
                   e(
                     "div",
-                    { className: "vf-form-group" },
-                    e("label", { className: "vf-label" }, "Email Address"),
+                    { className: "vf-logo-row" },
+                    e("div", { className: "vf-logo-box" }, InvoiceIcon),
                     e(
                       "div",
-                      { className: "vf-input-wrap" },
-                      EnvelopeIcon,
-                      e("input", {
-                        type: "email",
-                        className: "vf-input",
-                        placeholder: "name@company.com",
-                        value: email,
-                        onChange: (ev) => setEmail(ev.target.value),
-                        disabled: anyLoading,
-                        autoComplete: "email"
-                      })
+                      null,
+                      e("h1", { className: "vf-title" }, "InvoiceFlow Pro"),
+                      e(
+                        "p",
+                        { className: "vf-subtitle" },
+                        step === "otp"
+                          ? "Use the 6-digit code we sent to finish signing in."
+                          : tab === "signin"
+                            ? "Sign in to access your billing workspace."
+                            : "Create your workspace and start sending polished invoices."
+                      )
                     )
-                  ),
-                  e(
-                    "button",
-                    {
-                      type: "submit",
-                      className: "vf-submit",
-                      disabled: anyLoading
-                    },
-                    isLoading ? e("span", { className: "vf-spinner" }) : null,
-                    isLoading ? "Sending OTP..." : tab === "signup" ? "Create account and send OTP" : "Send OTP",
-                    !isLoading ? ArrowIcon : null
-                  ),
-                  message && e("div", { className: "vf-message " + messageTone }, message)
-                )
-              : e(
-                  "form",
-                  { onSubmit: handleVerifyOtp },
-                  e(
-                    "div",
-                    { className: "vf-form-group" },
-                    e("label", { className: "vf-label" }, "Enter 6-Digit OTP"),
-                    e("p", { className: "vf-helper" }, "We sent a code to " + normalizedEmail + ". Enter it below to continue."),
-                    e(
-                      "div",
-                      { className: "vf-input-wrap" },
-                      e("input", {
-                        type: "text",
-                        className: "vf-input vf-otp-input",
-                        placeholder: "123456",
-                        value: otp,
-                        onChange: (ev) => setOtp(ev.target.value.replace(/\\D/g, "").slice(0, 6)),
-                        disabled: anyLoading,
-                        autoComplete: "one-time-code"
-                      })
-                    )
-                  ),
-                  e(
-                    "button",
-                    {
-                      type: "submit",
-                      className: "vf-submit",
-                      disabled: anyLoading || otp.length < 6
-                    },
-                    isLoading ? e("span", { className: "vf-spinner" }) : null,
-                    isLoading ? "Verifying..." : "Sign In",
-                    !isLoading ? ArrowIcon : null
-                  ),
-                  e(
-                    "button",
-                    {
-                      type: "button",
-                      className: "vf-secondary-action",
-                      onClick: () => { setStep("email"); setOtp(""); showMessage("", ""); },
-                      disabled: anyLoading
-                    },
-                    "<- Use a different email"
-                  ),
-                  message && e("div", { className: "vf-message " + messageTone }, message)
+                  )
                 ),
 
-            e(
-              "p",
-              { className: "vf-footer-text" },
-              "By continuing, you agree to InvoiceFlow's ",
-              e("a", { href: "#" }, "Terms of Service"),
-              " and ",
-              e("a", { href: "#" }, "Privacy Policy"),
-              "."
+                e(
+                  "div",
+                  { className: "vf-tabs" },
+                  e("button", {
+                    type: "button",
+                    className: "vf-tab " + (tab === "signin" ? "active" : ""),
+                    onClick: () => { setTab("signin"); showMessage("", ""); setStep("email"); }
+                  }, "Sign In"),
+                  e("button", {
+                    type: "button",
+                    className: "vf-tab " + (tab === "signup" ? "active" : ""),
+                    onClick: () => { setTab("signup"); showMessage("", ""); setStep("email"); }
+                  }, "Sign Up")
+                ),
+
+                e(
+                  "button",
+                  {
+                    type: "button",
+                    className: "vf-btn-social",
+                    onClick: handleGoogleSignIn,
+                    disabled: anyLoading
+                  },
+                  googleLoading ? e("span", { className: "vf-spinner" }) : GoogleIcon,
+                  googleLoading ? "Signing in with Google..." : "Continue with Google"
+                ),
+
+                e("div", { className: "vf-divider" }, "or use email OTP"),
+
+                step === "email"
+                  ? e(
+                    "form",
+                    { onSubmit: handleSendOtp },
+                    e(
+                      "div",
+                      { className: "vf-form-group" },
+                      e("label", { className: "vf-label" }, "Email Address"),
+                      e(
+                        "div",
+                        { className: "vf-input-wrap" },
+                        EnvelopeIcon,
+                        e("input", {
+                          type: "email",
+                          className: "vf-input",
+                          placeholder: "name@company.com",
+                          value: email,
+                          onChange: (ev) => setEmail(ev.target.value),
+                          disabled: anyLoading,
+                          autoComplete: "email"
+                        })
+                      )
+                    ),
+                    e(
+                      "button",
+                      {
+                        type: "submit",
+                        className: "vf-submit",
+                        disabled: anyLoading
+                      },
+                      isLoading ? e("span", { className: "vf-spinner" }) : null,
+                      isLoading ? "Sending OTP..." : tab === "signup" ? "Create account and send OTP" : "Send OTP",
+                      !isLoading ? ArrowIcon : null
+                    ),
+                    message && e("div", { className: "vf-message " + messageTone }, message)
+                  )
+                  : e(
+                    "form",
+                    { onSubmit: handleVerifyOtp },
+                    e(
+                      "div",
+                      { className: "vf-form-group" },
+                      e("label", { className: "vf-label" }, "Enter 6-Digit OTP"),
+                      e("p", { className: "vf-helper" }, "We sent a code to " + normalizedEmail + ". Enter it below to continue."),
+                      e(
+                        "div",
+                        { className: "vf-input-wrap" },
+                        e("input", {
+                          type: "text",
+                          className: "vf-input vf-otp-input",
+                          placeholder: "123456",
+                          value: otp,
+                          onChange: (ev) => setOtp(ev.target.value.replace(/\\D/g, "").slice(0, 6)),
+                          disabled: anyLoading,
+                          autoComplete: "one-time-code"
+                        })
+                      )
+                    ),
+                    e(
+                      "button",
+                      {
+                        type: "submit",
+                        className: "vf-submit",
+                        disabled: anyLoading || otp.length < 6
+                      },
+                      isLoading ? e("span", { className: "vf-spinner" }) : null,
+                      isLoading ? "Verifying..." : "Sign In",
+                      !isLoading ? ArrowIcon : null
+                    ),
+                    e(
+                      "button",
+                      {
+                        type: "button",
+                        className: "vf-secondary-action",
+                        onClick: () => { setStep("email"); setOtp(""); showMessage("", ""); },
+                        disabled: anyLoading
+                      },
+                      "<- Use a different email"
+                    ),
+                    message && e("div", { className: "vf-message " + messageTone }, message)
+                  ),
+
+                e(
+                  "p",
+                  { className: "vf-footer-text" },
+                  "By continuing, you agree to InvoiceFlow's ",
+                  e("a", { href: "#" }, "Terms of Service"),
+                  " and ",
+                  e("a", { href: "#" }, "Privacy Policy"),
+                  "."
+                )
+              )
             )
           )
-        )
-      )
-    );
-  }
+        );
+      }
 
-  window.renderBillingLogin = function renderBillingLogin(container, props) {
-    if (!container) return;
-    let root = mountedRoots.get(container);
-    if (!root) {
-      root = ReactDOM.createRoot(container);
-      mountedRoots.set(container, root);
-    }
-    root.render(e(BillingLogin, props || {}));
-  };
-})();
+      window.renderBillingLogin = function renderBillingLogin(container, props) {
+        if (!container) return;
+        let root = mountedRoots.get(container);
+        if (!root) {
+          root = ReactDOM.createRoot(container);
+          mountedRoots.set(container, root);
+        }
+        root.render(e(BillingLogin, props || {}));
+      };
+    })();
 
   </script>
   <script type="module" src="./app.js?v=20260402c"></script>
