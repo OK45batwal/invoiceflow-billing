@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: invoiceflow-pro
+    env: node
+    buildCommand: npm install
+    startCommand: node src/server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: RESEND_API_KEY
+        sync: false
+      - key: RESEND_FROM
+        sync: false
+      - key: GCP_PROJECT_ID
+        sync: false
+      - key: GCP_CLIENT_EMAIL
+        sync: false
+      - key: GCP_PRIVATE_KEY
+        sync: false
+      - key: OTP_APP_NAME
+        value: InvoiceFlow Pro
+      - key: DEFAULT_OTP_ROLE
+        value: admin

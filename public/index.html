@@ -1,0 +1,2106 @@
+<!doctype html>
+<html lang="en" data-bs-theme="light">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>InvoiceFlow Pro</title>
+
+  <!-- Display: Cabinet Grotesk + Body: Satoshi -->
+  <link rel="stylesheet"
+    href="https://api.fontshare.com/v2/css?f[]=cabinet-grotesk@500,600,700&f[]=satoshi@400,500,700&display=swap" />
+  <!-- Outfit + Inter fallback -->
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@500;600;700&display=swap"
+    rel="stylesheet">
+  <!-- Boxicons -->
+  <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+  <!-- Bootstrap 5.3 -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
+  <link rel="stylesheet" href="./styles.css?v=20260403b" />
+  <link rel="stylesheet" href="./mobile.css?v=20260403b" />
+  <link rel="stylesheet" href="./login.css?v=20260403a" />
+</head>
+
+<body data-theme="light">
+  <section id="login-view">
+    <div id="login-root"></div>
+  </section>
+
+  <section id="workspace-view" class="hidden">
+    <div id="sidebar-overlay"></div>
+    <nav id="sidebar-nav" class="sidebar-nav" aria-label="Sidebar navigation">
+      <div class="sidebar-header">
+        <a class="sidebar-brand" href="#" id="sidebar-home-link">
+          <img src="./logo.png" alt="" class="sidebar-brand-logo" />
+          <span class="sidebar-brand-title">InvoiceFlow Pro</span>
+        </a>
+        <button type="button" id="sidebar-close" class="sidebar-close-btn" aria-label="Close sidebar">
+          <i class="bx bx-x"></i>
+        </button>
+      </div>
+      <div class="sidebar-content">
+        <ul class="sidebar-menu">
+          <li>
+            <button type="button" class="sidebar-menu-item" data-sidebar-nav="true" data-tab-open="overview">
+              <i class="bx bx-home-alt"></i>
+              <span>Dashboard</span>
+            </button>
+          </li>
+          <li>
+            <button type="button" class="sidebar-menu-item" data-sidebar-nav="true" data-tab-open="invoices">
+              <i class="bx bx-file"></i>
+              <span>Invoices</span>
+            </button>
+          </li>
+          <li>
+            <button type="button" class="sidebar-menu-item" data-sidebar-nav="true" data-tab-open="payments">
+              <i class="bx bx-credit-card"></i>
+              <span>Payments</span>
+            </button>
+          </li>
+          <li>
+            <button type="button" class="sidebar-menu-item" data-sidebar-nav="true" data-tab-open="customers">
+              <i class="bx bx-user"></i>
+              <span>Customers</span>
+            </button>
+          </li>
+          <li>
+            <button type="button" class="sidebar-menu-item" data-sidebar-nav="true" data-tab-open="products">
+              <i class="bx bx-package"></i>
+              <span>Products</span>
+            </button>
+          </li>
+          <li class="admin-only">
+            <button type="button" class="sidebar-menu-item" data-sidebar-nav="true" data-tab-open="recurring">
+              <i class="bx bx-revision"></i>
+              <span>Recurring</span>
+            </button>
+          </li>
+          <li>
+            <button type="button" class="sidebar-menu-item" data-sidebar-nav="true" data-tab-open="reports">
+              <i class="bx bx-bar-chart-alt-2"></i>
+              <span>Reports</span>
+            </button>
+          </li>
+          <li class="admin-only">
+            <button type="button" class="sidebar-menu-item" data-sidebar-nav="true" data-tab-open="settings">
+              <i class="bx bx-cog"></i>
+              <span>Settings</span>
+            </button>
+          </li>
+        </ul>
+      </div>
+    </nav>
+    <header class="app-topbar">
+      <div class="topbar-shell">
+        <div class="topbar-left d-flex align-items-center">
+          <button type="button" id="sidebar-toggle" class="nav-btn d-lg-none" aria-label="Toggle navigation">
+            <i class="bx bx-menu"></i>
+          </button>
+          <a class="app-brand d-flex align-items-center" id="workspace-home-link" href="#"
+            aria-label="InvoiceFlow Pro Home">
+            <span class="app-brand-mark app-brand-logo-wrap" aria-hidden="true">
+              <img src="./logo.png" alt="" class="app-brand-logo" />
+            </span>
+            <span class="app-brand-copy">
+              <span class="app-brand-title">InvoiceFlow Pro</span>
+              <span class="app-brand-status">Download, share, and track</span>
+            </span>
+          </a>
+        </div>
+
+        <div class="topbar-center">
+          <label class="top-search-wrap" for="global-search">
+            <i class="bx bx-search"></i>
+            <input id="global-search" type="search" class="top-search-input"
+              placeholder="Search invoices and customers..." />
+          </label>
+        </div>
+
+        <div class="topbar-right d-flex align-items-center">
+          <button type="button" class="theme-toggle" id="theme-toggle" aria-label="Toggle theme">
+            <i class="bx bx-moon"></i>
+          </button>
+          <button type="button" class="btn btn-light header-customize-btn admin-only" data-tab-open="settings">
+            <i class="bx bx-slider-alt"></i>
+            <span>Customize</span>
+          </button>
+          <div class="header-action-group" aria-label="Invoice quick actions">
+            <button id="header-download-invoice" type="button" class="btn btn-light header-action-btn">
+              <i class="bx bx-download"></i>
+              <span>PDF</span>
+            </button>
+            <button id="header-email-invoice" type="button" class="btn btn-light header-action-btn">
+              <i class="bx bx-share-alt"></i>
+              <span>Share</span>
+            </button>
+            <button id="header-save-invoice" type="button" class="btn btn-light header-action-btn">
+              <i class="bx bx-save"></i>
+              <span>Save Draft</span>
+            </button>
+          </div>
+          <button id="header-create-invoice" type="button" class="btn btn-primary header-create-btn">
+            <i class="bx bx-plus"></i>
+            <span>Create Invoice</span>
+          </button>
+          <div class="header-account-shell" id="account-menu-shell">
+            <button type="button" class="header-account-card" id="account-menu-toggle" aria-haspopup="menu"
+              aria-expanded="false" aria-controls="account-menu">
+              <span class="header-account-avatar" aria-hidden="true">
+                <img id="header-profile-pic" src="" alt="" class="hidden" />
+                <i class="bx bx-user" id="header-profile-icon"></i>
+              </span>
+              <span class="header-account-copy">
+                <span id="current-user" class="header-account-name">Workspace User</span>
+                <span id="current-user-role" class="header-account-role">Finance</span>
+              </span>
+              <i class="bx bx-chevron-down header-account-chevron" aria-hidden="true"></i>
+            </button>
+            <div class="header-account-dropdown" id="account-menu" role="menu" aria-labelledby="account-menu-toggle"
+              aria-hidden="true">
+              <button type="button" class="header-account-menu-item" id="account-change-photo-btn" role="menuitem">
+                <i class="bx bx-image-add"></i>
+                <span>Change photo</span>
+              </button>
+              <button id="account-logout-btn" type="button" class="header-account-menu-item is-danger"
+                data-logout-trigger="true" role="menuitem">
+                <i class="bx bx-log-out"></i>
+                <span>Logout</span>
+              </button>
+            </div>
+          </div>
+
+          <button id="logout-btn" type="button" class="btn btn-outline-danger" data-logout-trigger="true"><i
+              class="bx bx-log-out"></i><span>Logout</span></button>
+        </div>
+      </div>
+    </header>
+
+    <div class="workspace-body">
+      <main class="workspace-main">
+        <div class="tab-content" id="tab-panels">
+          <section class="tab-panel tab-pane fade show active" data-panel="overview" role="tabpanel">
+            <div class="invoice-dashboard-shell">
+              <div class="invoice-dashboard-grid">
+                <div class="invoice-dashboard-main">
+                  <section class="dashboard-hero-card">
+                    <div class="dashboard-hero-head">
+                      <div>
+                        <p class="dashboard-eyebrow">Invoice workspace</p>
+                        <h1 class="dashboard-title">Invoice dashboard</h1>
+                        <p class="dashboard-subtitle">Find invoices fast, share links, and export clean PDFs.</p>
+                      </div>
+                      <div class="dashboard-hero-actions">
+                        <button id="overview-export-btn" type="button" class="btn btn-light dashboard-inline-btn">
+                          <i class="bx bx-download"></i>
+                          <span>Export</span>
+                        </button>
+                        <button id="overview-share-workspace-btn" type="button"
+                          class="btn btn-light dashboard-inline-btn">
+                          <i class="bx bx-share-alt"></i>
+                          <span>Share</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <div class="dashboard-kpi-grid">
+                      <article class="dashboard-stat-card stat-card-outstanding">
+                        <div class="dashboard-stat-head">
+                          <div class="dashboard-stat-label">Outstanding</div>
+                          <span id="overview-outstanding-badge" class="dashboard-stat-badge badge-danger">0
+                            invoices</span>
+                        </div>
+                        <div id="metric-outstanding" class="dashboard-stat-value">Rs 0.00</div>
+                        <p id="overview-outstanding-note" class="dashboard-stat-note">Due within the next 30 days</p>
+                      </article>
+
+                      <article class="dashboard-stat-card stat-card-revenue">
+                        <div class="dashboard-stat-head">
+                          <div class="dashboard-stat-label">Collected Revenue</div>
+                          <span id="overview-revenue-badge" class="dashboard-stat-badge badge-success">0
+                            invoices</span>
+                        </div>
+                        <div id="metric-revenue" class="dashboard-stat-value">Rs 0.00</div>
+                        <p id="overview-revenue-note" class="dashboard-stat-note">Total revenue processed in the
+                          current report view</p>
+                      </article>
+
+                      <article class="dashboard-stat-card stat-card-overdue">
+                        <div class="dashboard-stat-head">
+                          <div class="dashboard-stat-label">Overdue</div>
+                          <span id="overview-overdue-badge" class="dashboard-stat-badge badge-warning">0
+                            flagged</span>
+                        </div>
+                        <div id="metric-overdue" class="dashboard-stat-value">0</div>
+                        <p id="overview-overdue-note" class="dashboard-stat-note">Invoices that need attention right
+                          now</p>
+                      </article>
+
+                      <article class="dashboard-stat-card stat-card-base">
+                        <div class="dashboard-stat-head">
+                          <div class="dashboard-stat-label">Client Base</div>
+                          <span id="overview-base-badge" class="dashboard-stat-badge badge-neutral">0 records</span>
+                        </div>
+                        <div id="metric-base" class="dashboard-stat-value">0 / 0</div>
+                        <p id="overview-base-note" class="dashboard-stat-note">Customers and products ready to invoice
+                        </p>
+                      </article>
+                    </div>
+                  </section>
+
+                  <section class="dashboard-filter-card">
+                    <form id="overview-filter-form" class="dashboard-filter-form">
+                      <label class="dashboard-search-field" for="overview-filter-query">
+                        <i class="bx bx-search"></i>
+                        <input id="overview-filter-query" type="search" class="dashboard-search-input"
+                          placeholder="Search invoice #, customer, note..." />
+                      </label>
+                      <select id="overview-filter-status" class="form-select dashboard-filter-select">
+                        <option value="all">All Statuses</option>
+                        <option value="unpaid">Unpaid</option>
+                        <option value="partial">Partial</option>
+                        <option value="paid">Paid</option>
+                        <option value="overdue">Overdue</option>
+                      </select>
+                      <select id="overview-filter-customer" class="form-select dashboard-filter-select">
+                        <option value="">All Customers</option>
+                      </select>
+                      <input id="overview-filter-date-from" type="date" class="form-control dashboard-filter-select" />
+                      <input id="overview-filter-date-to" type="date" class="form-control dashboard-filter-select" />
+                      <button type="submit" class="btn btn-primary dashboard-filter-apply">Apply</button>
+                      <button id="overview-clear-filters" type="button"
+                        class="btn btn-light dashboard-filter-clear">Clear</button>
+                    </form>
+                    <div id="overview-active-filters" class="dashboard-active-filters"></div>
+                  </section>
+
+                  <section class="dashboard-list-card">
+                    <div class="dashboard-section-head">
+                      <div>
+                        <p class="dashboard-section-kicker">Invoice feed</p>
+                        <h2 class="dashboard-section-title">All invoices</h2>
+                        <p id="overview-list-caption" class="dashboard-section-copy">Sorted by updated time.</p>
+                      </div>
+                      <div class="dashboard-section-actions">
+                        <button id="overview-open-invoices" type="button" class="btn btn-light dashboard-inline-btn">
+                          <i class="bx bx-link-external"></i>
+                          <span>Open studio</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <div id="overview-invoice-list" class="dashboard-invoice-list"></div>
+
+                    <div class="dashboard-list-footer">
+                      <span id="overview-list-count" class="dashboard-list-count">Showing 0 invoices</span>
+                      <button type="button" class="btn btn-light dashboard-inline-btn" data-tab-open="invoices">
+                        <i class="bx bx-grid-alt"></i>
+                        <span>Full list</span>
+                      </button>
+                    </div>
+                  </section>
+                </div>
+
+                <aside class="invoice-dashboard-side">
+                  <section class="dashboard-side-card dashboard-activity-card">
+                    <div class="dashboard-section-head">
+                      <div>
+                        <p class="dashboard-section-kicker">Recent activity</p>
+                        <h2 class="dashboard-section-title">Latest invoices</h2>
+                        <p class="dashboard-section-copy">Quick access to the invoices most likely to be shared.</p>
+                      </div>
+                      <button type="button" class="dashboard-link-btn" data-tab-open="invoices">View all</button>
+                    </div>
+                    <div id="overview-activity-list" class="dashboard-activity-list"></div>
+                  </section>
+
+                  <section class="dashboard-side-card dashboard-quick-card">
+                    <div class="dashboard-section-head">
+                      <div>
+                        <p class="dashboard-section-kicker">Quick actions</p>
+                        <h2 class="dashboard-section-title">One-click tasks</h2>
+                        <p class="dashboard-section-copy">Use the latest invoice or jump straight to the studio.</p>
+                      </div>
+                    </div>
+
+                    <div class="dashboard-quick-actions">
+                      <button id="overview-quick-share" type="button" class="dashboard-quick-action">
+                        <span class="dashboard-quick-icon"><i class="bx bx-link"></i></span>
+                        <span class="dashboard-quick-copy">
+                          <strong>Create share link</strong>
+                          <span>Share the most recent invoice</span>
+                        </span>
+                        <i class="bx bx-arrow-right"></i>
+                      </button>
+
+                      <button id="overview-quick-download" type="button" class="dashboard-quick-action">
+                        <span class="dashboard-quick-icon"><i class="bx bx-file-blank"></i></span>
+                        <span class="dashboard-quick-copy">
+                          <strong>Download latest PDF</strong>
+                          <span>Export the newest invoice instantly</span>
+                        </span>
+                        <i class="bx bx-arrow-right"></i>
+                      </button>
+
+                      <button id="overview-quick-create" type="button" class="dashboard-quick-action">
+                        <span class="dashboard-quick-icon"><i class="bx bx-edit"></i></span>
+                        <span class="dashboard-quick-copy">
+                          <strong>Open invoice studio</strong>
+                          <span>Create or update an invoice draft</span>
+                        </span>
+                        <i class="bx bx-arrow-right"></i>
+                      </button>
+
+                      <button id="overview-quick-settings" type="button" class="dashboard-quick-action admin-only">
+                        <span class="dashboard-quick-icon"><i class="bx bx-palette"></i></span>
+                        <span class="dashboard-quick-copy">
+                          <strong>Brand settings</strong>
+                          <span>Logo, bank details, UPI, and company profile</span>
+                        </span>
+                        <i class="bx bx-arrow-right"></i>
+                      </button>
+                    </div>
+                  </section>
+
+                  <section class="dashboard-side-card dashboard-sharing-card">
+                    <div class="dashboard-section-head">
+                      <div>
+                        <p class="dashboard-section-kicker">Sharing defaults</p>
+                        <h2 class="dashboard-section-title">Workspace defaults</h2>
+                        <p class="dashboard-section-copy">Current delivery and collection settings from your
+                          workspace.</p>
+                      </div>
+                    </div>
+                    <div id="overview-sharing-defaults" class="dashboard-sharing-list"></div>
+                  </section>
+                </aside>
+              </div>
+
+              <div class="card shadow-sm dashboard-security-card">
+                <div class="card-header py-3">
+                  <h6 class="m-0 font-weight-bold text-primary">Account Security</h6>
+                </div>
+                <div class="card-body">
+                  <div class="row">
+                    <div id="otp-auth-note" class="col-12 hidden">
+                      <div class="alert alert-info mb-4">
+                        This workspace now uses email OTP login. Password management is hidden for OTP-authenticated
+                        users.
+                      </div>
+                    </div>
+                    <div class="col-lg-6" data-password-auth-only="true">
+                      <form id="change-password-form">
+                        <h5>Change My Password</h5>
+                        <div class="mb-3">
+                          <label class="form-label">Current Password</label>
+                          <input name="currentPassword" type="password" class="form-control" required />
+                        </div>
+                        <div class="mb-3">
+                          <label class="form-label">New Password</label>
+                          <input name="newPassword" type="password" minlength="6" class="form-control" required />
+                        </div>
+                        <div class="mb-3">
+                          <label class="form-label">Confirm New Password</label>
+                          <input name="confirmPassword" type="password" minlength="6" class="form-control" required />
+                        </div>
+                        <button type="submit" class="btn btn-primary">Update Password</button>
+                      </form>
+                    </div>
+                    <div class="col-lg-6 admin-only" data-password-auth-only="true">
+                      <form id="admin-reset-password-form">
+                        <h5>Admin Reset User Password</h5>
+                        <div class="mb-3">
+                          <label class="form-label">User</label>
+                          <select id="password-user-id" name="userId" class="form-select"></select>
+                        </div>
+                        <div class="mb-3">
+                          <label class="form-label">New Password</label>
+                          <input name="newPassword" type="password" minlength="6" class="form-control" required />
+                        </div>
+                        <div class="mb-3">
+                          <label class="form-label">Confirm New Password</label>
+                          <input name="confirmPassword" type="password" minlength="6" class="form-control" required />
+                        </div>
+                        <button type="submit" class="btn btn-secondary">Reset Password</button>
+                      </form>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="tab-panel tab-pane fade" data-panel="invoices" role="tabpanel">
+            <div class="invoice-studio-shell mb-4">
+              <form id="invoice-form" class="invoice-studio-grid">
+                <div class="invoice-editor-panel">
+                  <div class="studio-panel editor-surface">
+                    <div class="editor-shell-header fade-up-section">
+                      <div>
+                        <p class="section-kicker">Workspace</p>
+                        <h2 class="studio-title">Invoice editor</h2>
+                        <p class="studio-subtitle">Shape the invoice on the left and watch the production preview
+                          update live on the right.</p>
+                      </div>
+                      <div class="editor-header-chips">
+                        <span class="studio-chip studio-chip-success">
+                          <span class="studio-dot" aria-hidden="true"></span>
+                          Auto-calc
+                        </span>
+                        <span class="studio-chip">Currency: INR (₹)</span>
+                      </div>
+                    </div>
+
+                    <section class="editor-section fade-up-section">
+                      <div class="section-heading">
+                        <div>
+                          <p class="section-kicker">Customer</p>
+                          <h3>Billing profile</h3>
+                        </div>
+                      </div>
+                      <div class="customer-select-card">
+                        <div class="customer-card-icon" aria-hidden="true">
+                          <i class="bx bx-buildings"></i>
+                        </div>
+                        <label class="premium-field premium-field-span-2">
+                          <span class="field-label">Customer</span>
+                          <select id="invoice-customer" class="form-select" required></select>
+                        </label>
+                        <label class="premium-field">
+                          <span class="field-label">GST Type</span>
+                          <select id="invoice-gst-type" class="form-select">
+                            <option value="intra">Intra State (CGST + SGST)</option>
+                            <option value="inter">Inter State (IGST)</option>
+                            <option value="none">Without GST</option>
+                          </select>
+                        </label>
+                      </div>
+                      <div id="invoice-company-banner" class="editor-banner-slot"></div>
+                    </section>
+
+                    <section class="editor-section fade-up-section">
+                      <div class="section-heading">
+                        <div>
+                          <p class="section-kicker">Details</p>
+                          <h3>Schedule and adjustments</h3>
+                        </div>
+                      </div>
+                      <div class="invoice-detail-grid">
+                        <label class="premium-field">
+                          <span class="field-label">Due Days</span>
+                          <input id="invoice-due-days" type="number" min="0" value="15" class="form-control" />
+                        </label>
+                        <label class="premium-field premium-field-readonly">
+                          <span class="field-label">Issue Date</span>
+                          <input value="Auto today" class="form-control" readonly />
+                        </label>
+                        <label class="premium-field">
+                          <span class="field-label">Invoice Discount</span>
+                          <input id="invoice-discount" type="number" min="0" step="0.01" value="0"
+                            class="form-control" />
+                        </label>
+                        <label class="premium-field premium-field-readonly">
+                          <span class="field-label">Currency</span>
+                          <input value="Indian Rupee (â‚¹)" class="form-control" readonly />
+                        </label>
+                        <label class="premium-field">
+                          <span class="field-label">Shipping</span>
+                          <input id="invoice-shipping" type="number" step="0.01" value="0" class="form-control" />
+                        </label>
+                        <label class="premium-field">
+                          <span class="field-label">Round Off</span>
+                          <input id="invoice-roundoff" type="number" step="0.01" value="0" class="form-control" />
+                        </label>
+                      </div>
+                    </section>
+
+                    <section class="editor-section fade-up-section">
+                      <div class="section-heading">
+                        <div>
+                          <p class="section-kicker">Notes</p>
+                          <h3>Terms and delivery notes</h3>
+                        </div>
+                      </div>
+                      <label class="premium-field premium-field-stack">
+                        <span class="field-label">Notes</span>
+                        <textarea id="invoice-notes" rows="3"
+                          placeholder="Optional notes for delivery, payment terms, or thank-you text"
+                          class="form-control"></textarea>
+                      </label>
+                    </section>
+
+                    <section class="editor-section fade-up-section">
+                      <div class="section-heading section-heading-spread">
+                        <div>
+                          <p class="section-kicker">Items</p>
+                          <h3>Line items</h3>
+                        </div>
+                        <button id="add-line-item" class="btn btn-secondary editor-add-btn" type="button">
+                          Add item
+                        </button>
+                      </div>
+                      <div id="line-items" class="line-item-stack"></div>
+                    </section>
+
+                    <section class="editor-section fade-up-section">
+                      <div class="section-heading">
+                        <div>
+                          <p class="section-kicker">Summary</p>
+                          <h3>Total block</h3>
+                        </div>
+                      </div>
+                      <div id="invoice-editor-summary" class="summary-total-block"></div>
+                    </section>
+
+                    <div class="editor-footer fade-up-section">
+                      <button id="invoice-submit" type="submit" class="btn btn-primary btn-lg">
+                        Generate Invoice
+                      </button>
+                      <p class="editor-footnote">Save the invoice to unlock PDF, sharing, and payment tracking.</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="invoice-preview-panel">
+                  <div class="studio-panel preview-surface">
+                    <div class="preview-toolbar fade-up-section">
+                      <div class="preview-brand">
+                        <div class="preview-brand-logo">
+                          <img src="./logo.png" alt="InvoiceFlow Pro logo" class="preview-brand-wordmark" />
+                        </div>
+                        <div class="preview-brand-copy">
+                          <p>InvoiceFlow Pro</p>
+                          <span>High-fidelity preview</span>
+                        </div>
+                      </div>
+                      <div class="preview-toggle-group" aria-label="Preview modes">
+                        <button type="button" class="preview-toggle is-active" data-preview-mode="preview">
+                          Preview
+                        </button>
+                        <button type="button" class="preview-toggle" data-preview-action="print">
+                          Print
+                        </button>
+                        <button type="button" class="preview-toggle" data-preview-mode="notes">
+                          Notes
+                        </button>
+                      </div>
+                    </div>
+                    <div id="invoice-preview" class="invoice-preview-stage fade-up-section"></div>
+                  </div>
+                </div>
+              </form>
+            </div>
+
+            <div class="card shadow-sm invoice-finder-panel">
+              <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Invoice Finder</h6>
+              </div>
+              <div class="card-body">
+                <form id="invoice-filter-form" class="row g-3">
+                  <div class="col-md-3">
+                    <label class="form-label">Search</label>
+                    <input id="filter-query" placeholder="Invoice no, customer, note" class="form-control" />
+                  </div>
+                  <div class="col-md-2">
+                    <label class="form-label">Status</label>
+                    <select id="filter-status" class="form-select">
+                      <option value="all">All</option>
+                      <option value="unpaid">Unpaid</option>
+                      <option value="partial">Partial</option>
+                      <option value="paid">Paid</option>
+                      <option value="overdue">Overdue</option>
+                    </select>
+                  </div>
+                  <div class="col-md-2">
+                    <label class="form-label">Customer</label>
+                    <select id="filter-customer" class="form-select">
+                      <option value="">All Customers</option>
+                    </select>
+                  </div>
+                  <div class="col-md-2">
+                    <label class="form-label">Date From</label>
+                    <input id="filter-date-from" type="date" class="form-control" />
+                  </div>
+                  <div class="col-md-2">
+                    <label class="form-label">Date To</label>
+                    <input id="filter-date-to" type="date" class="form-control" />
+                  </div>
+                  <div class="col-md-1 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary">Apply</button>
+                  </div>
+                  <div class="col-md-1 d-flex align-items-end">
+                    <button id="clear-invoice-filters" type="button" class="btn btn-light">Clear</button>
+                  </div>
+                </form>
+                <div class="table-responsive mt-3">
+                  <table class="table table-bordered" width="100%" cellspacing="0">
+                    <thead>
+                      <tr>
+                        <th>No.</th>
+                        <th>Date</th>
+                        <th>Customer</th>
+                        <th>Status</th>
+                        <th>Total</th>
+                        <th>Paid</th>
+                        <th>Due</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody id="invoice-table-body"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="tab-panel tab-pane fade" data-panel="payments" role="tabpanel">
+            <div class="card shadow-sm">
+              <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Payment Tracker</h6>
+              </div>
+              <div class="card-body">
+                <div class="table-responsive">
+                  <table class="table table-bordered" width="100%" cellspacing="0">
+                    <thead>
+                      <tr>
+                        <th>Invoice</th>
+                        <th>Customer</th>
+                        <th>Total</th>
+                        <th>Paid</th>
+                        <th>Due</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                      </tr>
+                    </thead>
+                    <tbody id="payment-table-body"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="tab-panel tab-pane fade" data-panel="customers" role="tabpanel">
+            <div class="row">
+              <div class="col-lg-6">
+                <div class="card shadow-sm mb-4">
+                  <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Add Customer</h6>
+                  </div>
+                  <div class="card-body">
+                    <form id="customer-form" class="row g-3">
+                      <input type="hidden" name="customerId" id="customer-id" />
+                      <div class="col-md-6">
+                        <label class="form-label">Name</label>
+                        <input name="name" class="form-control" required />
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label">Email</label>
+                        <input name="email" type="email" class="form-control" />
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label">Phone</label>
+                        <input name="phone" class="form-control" />
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label">GSTIN</label>
+                        <input name="gstin" class="form-control" />
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label">State Code</label>
+                        <input name="stateCode" class="form-control" />
+                      </div>
+                      <div class="col-12">
+                        <label class="form-label">Address</label>
+                        <textarea name="address" rows="2" class="form-control"></textarea>
+                      </div>
+                      <div class="col-12">
+                        <button id="customer-submit-btn" type="submit" class="btn btn-primary">Save Customer</button>
+                        <button id="customer-cancel-btn" type="button" class="btn btn-secondary hidden">Cancel
+                          Edit</button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              </div>
+              <div class="col-lg-6">
+                <div class="card shadow-sm mb-4">
+                  <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Customer Statement</h6>
+                  </div>
+                  <div class="card-body">
+                    <div class="table-responsive">
+                      <table class="table table-bordered" width="100%" cellspacing="0">
+                        <thead>
+                          <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>GSTIN</th>
+                            <th>Action</th>
+                          </tr>
+                        </thead>
+                        <tbody id="customer-table-body"></tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="tab-panel tab-pane fade" data-panel="products" role="tabpanel">
+            <div class="row">
+              <div class="col-lg-6">
+                <div class="card shadow-sm mb-4">
+                  <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Add Product / Service</h6>
+                  </div>
+                  <div class="card-body">
+                    <form id="product-form" class="row g-3">
+                      <div class="col-md-6">
+                        <label class="form-label">Name</label>
+                        <input name="name" class="form-control" required />
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label">HSN / SAC</label>
+                        <input name="hsnSac" class="form-control" />
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label">Unit Price</label>
+                        <input name="price" type="number" min="0" step="0.01" class="form-control" required />
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label">GST Rate (%)</label>
+                        <input name="taxRate" type="number" min="0" step="0.01" value="18" class="form-control" />
+                      </div>
+                      <div class="col-12">
+                        <label class="form-label">Pricing Model</label>
+                        <select name="pricingModel" class="form-select">
+                          <option value="exclusive">Tax Exclusive</option>
+                          <option value="inclusive">Tax Inclusive</option>
+                        </select>
+                      </div>
+                      <div class="col-12">
+                        <button type="submit" class="btn btn-primary">Save Product</button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              </div>
+              <div class="col-lg-6">
+                <div class="card shadow-sm mb-4">
+                  <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Product Catalog</h6>
+                  </div>
+                  <div class="card-body">
+                    <div id="product-list"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="tab-panel tab-pane fade admin-only" data-panel="recurring" role="tabpanel">
+            <div class="row">
+              <div class="col-lg-6">
+                <div class="card shadow-sm mb-4">
+                  <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Recurring Invoice Setup</h6>
+                  </div>
+                  <div class="card-body">
+                    <form id="recurring-form" class="row g-3">
+                      <div class="col-md-6">
+                        <label class="form-label">Template Name</label>
+                        <input id="rec-name" class="form-control" required />
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label">Customer</label>
+                        <select id="rec-customer" class="form-select" required></select>
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label">Frequency</label>
+                        <select id="rec-frequency" class="form-select">
+                          <option value="monthly">Monthly</option>
+                          <option value="weekly">Weekly</option>
+                        </select>
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label">Start Date</label>
+                        <input id="rec-start-date" type="date" class="form-control" />
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label">GST Type</label>
+                        <select id="rec-gst-type" class="form-select">
+                          <option value="intra">Intra State</option>
+                          <option value="inter">Inter State</option>
+                          <option value="none">Without GST</option>
+                        </select>
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label">Due Days</label>
+                        <input id="rec-due-days" type="number" min="0" value="15" class="form-control" />
+                      </div>
+                      <div class="col-md-4">
+                        <label class="form-label">Invoice Discount</label>
+                        <input id="rec-discount" type="number" min="0" step="0.01" value="0" class="form-control" />
+                      </div>
+                      <div class="col-md-4">
+                        <label class="form-label">Shipping</label>
+                        <input id="rec-shipping" type="number" step="0.01" value="0" class="form-control" />
+                      </div>
+                      <div class="col-md-4">
+                        <label class="form-label">Round Off</label>
+                        <input id="rec-roundoff" type="number" step="0.01" value="0" class="form-control" />
+                      </div>
+                      <div class="col-12">
+                        <label class="form-label">Notes</label>
+                        <textarea id="rec-notes" rows="2" class="form-control"></textarea>
+                      </div>
+                      <div class="col-12 d-flex justify-content-between align-items-center">
+                        <h5>Template Items</h5>
+                        <button id="add-rec-item" class="btn btn-secondary" type="button">Add Item</button>
+                      </div>
+                      <div id="rec-items" class="col-12"></div>
+                      <div class="col-12">
+                        <button type="submit" class="btn btn-primary">Save Template</button>
+                        <button id="run-recurring-now" type="button" class="btn btn-secondary">Run Due Now</button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              </div>
+              <div class="col-lg-6">
+                <div class="card shadow-sm mb-4">
+                  <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Recurring Templates</h6>
+                  </div>
+                  <div class="card-body">
+                    <div class="table-responsive">
+                      <table class="table table-bordered" width="100%" cellspacing="0">
+                        <thead>
+                          <tr>
+                            <th>Name</th>
+                            <th>Customer</th>
+                            <th>Frequency</th>
+                            <th>Next Run</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                          </tr>
+                        </thead>
+                        <tbody id="recurring-table-body"></tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="tab-panel tab-pane fade" data-panel="reports" role="tabpanel">
+            <div class="card shadow-sm mb-4">
+              <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Reports Dashboard</h6>
+              </div>
+              <div class="card-body">
+                <form id="report-filter-form" class="row g-3">
+                  <div class="col-md-4">
+                    <label class="form-label">Date From</label>
+                    <input id="report-date-from" type="date" class="form-control" />
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label">Date To</label>
+                    <input id="report-date-to" type="date" class="form-control" />
+                  </div>
+                  <div class="col-md-4 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary">Refresh Report</button>
+                  </div>
+                </form>
+
+                <div class="row mt-4">
+                  <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card border-left-primary shadow-sm h-100 py-2">
+                      <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                          <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Invoices</div>
+                            <div id="rep-invoice-count" class="h5 mb-0 font-weight-bold text-gray-800">0</div>
+                          </div>
+                          <div class="col-auto">
+                            <i class="bx bx-receipt fs-2 text-gray-300"></i>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card border-left-success shadow-sm h-100 py-2">
+                      <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                          <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Revenue</div>
+                            <div id="rep-revenue" class="h5 mb-0 font-weight-bold text-gray-800">Rs 0.00</div>
+                          </div>
+                          <div class="col-auto">
+                            <i class="bx bx-currency-rupee fs-2 text-gray-300"></i>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card border-left-info shadow-sm h-100 py-2">
+                      <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                          <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Tax Collected</div>
+                            <div id="rep-tax" class="h5 mb-0 font-weight-bold text-gray-800">Rs 0.00</div>
+                          </div>
+                          <div class="col-auto">
+                            <i class="bx bx-file-earmark-spreadsheet-fill fs-2 text-gray-300"></i>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card border-left-warning shadow-sm h-100 py-2">
+                      <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                          <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Outstanding</div>
+                            <div id="rep-outstanding" class="h5 mb-0 font-weight-bold text-gray-800">Rs 0.00</div>
+                          </div>
+                          <div class="col-auto">
+                            <i class="bx bx-exclamation-circle-fill fs-2 text-gray-300"></i>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="row">
+                  <div class="col-lg-6">
+                    <div class="card shadow-sm mb-4">
+                      <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">Top Customers</h6>
+                      </div>
+                      <div class="card-body">
+                        <div class="table-responsive">
+                          <table class="table table-bordered" width="100%" cellspacing="0">
+                            <thead>
+                              <tr>
+                                <th>Name</th>
+                                <th>Revenue</th>
+                                <th>Due</th>
+                              </tr>
+                            </thead>
+                            <tbody id="top-customers-body"></tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-lg-6">
+                    <div class="card shadow-sm mb-4">
+                      <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">Top Products</h6>
+                      </div>
+                      <div class="card-body">
+                        <div class="table-responsive">
+                          <table class="table table-bordered" width="100%" cellspacing="0">
+                            <thead>
+                              <tr>
+                                <th>Name</th>
+                                <th>Qty</th>
+                                <th>Revenue</th>
+                              </tr>
+                            </thead>
+                            <tbody id="top-products-body"></tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="tab-panel tab-pane fade admin-only" data-panel="settings" role="tabpanel">
+            <div class="row">
+              <div class="col-lg-8">
+                <div class="card shadow-sm mb-4">
+                  <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Business Settings</h6>
+                  </div>
+                  <div class="card-body">
+                    <form id="settings-form" class="row g-3">
+                      <div class="col-md-6">
+                        <label class="form-label">Invoice Prefix</label>
+                        <input name="invoicePrefix" class="form-control" />
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label">FY Start Month (1-12)</label>
+                        <input name="financialYearStartMonth" type="number" min="1" max="12" class="form-control" />
+                      </div>
+
+                      <div class="col-12">
+                        <div class="card">
+                          <div class="card-body">
+                            <h5 class="card-title">GST Company Profile</h5>
+                            <p class="card-text">Used for Intra/Inter GST invoices.</p>
+                            <div class="row">
+                              <div class="col-md-6 mb-3">
+                                <label class="form-label">Company Name</label>
+                                <input name="gstCompanyName" class="form-control" />
+                              </div>
+                              <div class="col-md-6 mb-3">
+                                <label class="form-label">Company Email</label>
+                                <input name="gstCompanyEmail" type="email" class="form-control" />
+                              </div>
+                              <div class="col-md-6 mb-3">
+                                <label class="form-label">Company Phone</label>
+                                <input name="gstCompanyPhone" class="form-control" />
+                              </div>
+                              <div class="col-md-6 mb-3">
+                                <label class="form-label">Company GSTIN</label>
+                                <input name="gstCompanyGstin" class="form-control" />
+                              </div>
+                              <div class="col-md-6 mb-3">
+                                <label class="form-label">Company PAN</label>
+                                <input name="gstCompanyPan" class="form-control" />
+                              </div>
+                              <div class="col-md-6 mb-3">
+                                <label class="form-label">State</label>
+                                <input name="gstCompanyState" class="form-control" />
+                              </div>
+                              <div class="col-md-6 mb-3">
+                                <label class="form-label">State Code</label>
+                                <input name="gstCompanyStateCode" class="form-control" />
+                              </div>
+                              <div class="col-12">
+                                <label class="form-label">Company Address</label>
+                                <textarea name="gstCompanyAddress" rows="2" class="form-control"></textarea>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="col-12">
+                        <div class="card">
+                          <div class="card-body">
+                            <h5 class="card-title">Without GST Company Profile</h5>
+                            <p class="card-text">Used automatically when invoice type is Without GST.</p>
+                            <div class="row">
+                              <div class="col-md-6 mb-3">
+                                <label class="form-label">Company Name</label>
+                                <input name="nonGstCompanyName" class="form-control" />
+                              </div>
+                              <div class="col-md-6 mb-3">
+                                <label class="form-label">Company Email</label>
+                                <input name="nonGstCompanyEmail" type="email" class="form-control" />
+                              </div>
+                              <div class="col-md-6 mb-3">
+                                <label class="form-label">Company Phone</label>
+                                <input name="nonGstCompanyPhone" class="form-control" />
+                              </div>
+                              <div class="col-md-6 mb-3">
+                                <label class="form-label">Company GSTIN (optional)</label>
+                                <input name="nonGstCompanyGstin" class="form-control" />
+                              </div>
+                              <div class="col-12">
+                                <label class="form-label">Company Address</label>
+                                <textarea name="nonGstCompanyAddress" rows="2" class="form-control"></textarea>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="col-md-6">
+                        <label class="form-label">UPI ID</label>
+                        <input name="upiId" placeholder="name@bank" class="form-control" />
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label">UPI Payee Name</label>
+                        <input name="upiPayeeName" class="form-control" />
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label">Bank Name</label>
+                        <input name="bankName" class="form-control" />
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label">Account Name</label>
+                        <input name="bankAccountName" class="form-control" />
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label">Account Number</label>
+                        <input name="bankAccountNumber" class="form-control" />
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label">IFSC</label>
+                        <input name="bankIfsc" class="form-control" />
+                      </div>
+                      <div class="col-12">
+                        <button type="submit" class="btn btn-primary">Save Settings</button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              </div>
+
+              <div class="col-lg-4">
+                <div class="card shadow-sm mb-4">
+                  <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Backup & Restore</h6>
+                  </div>
+                  <div class="card-body">
+                    <h5>Backup</h5>
+                    <p>Exports customers, products, invoices, recurring templates, users, and settings.</p>
+                    <button id="download-backup-btn" type="button" class="btn btn-secondary">Download Backup
+                      JSON</button>
+
+                    <hr />
+
+                    <form id="restore-backup-form">
+                      <h5>Restore</h5>
+                      <p>This will overwrite current app data with the selected backup.</p>
+                      <div class="mb-3">
+                        <label class="form-label">Backup File (.json)</label>
+                        <input id="restore-backup-file" type="file" accept="application/json,.json" class="form-control"
+                          required />
+                      </div>
+                      <button type="submit" class="btn btn-danger">Restore Backup</button>
+                    </form>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+    </div>
+  </section>
+
+  <div class="modal fade" id="drawer" tabindex="-1" aria-labelledby="drawerTitle" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="drawer-title">Details</h5>
+          <button id="drawer-close" type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body" id="drawer-body"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="status" class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+    <div class="toast align-items-center" role="alert" aria-live="assertive" aria-atomic="true">
+      <div class="d-flex">
+        <div class="toast-body"></div>
+        <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" data-status-close="true"
+          aria-label="Close"></button>
+      </div>
+    </div>
+  </div>
+
+  <nav id="mobile-bottom-nav" class="mobile-bottom-nav" aria-label="Mobile navigation">
+    <button type="button" class="mobile-nav-item active" data-tab-open="overview">
+      <i class="bx bx-home-alt"></i>
+      <span>Dashboard</span>
+    </button>
+    <button type="button" class="mobile-nav-item" data-tab-open="invoices">
+      <i class="bx bx-file"></i>
+      <span>Invoices</span>
+    </button>
+    <button type="button" class="mobile-nav-item mobile-nav-fab" data-tab-open="invoices">
+      <i class="bx bx-plus"></i>
+      <span>New</span>
+    </button>
+    <button type="button" class="mobile-nav-item" data-tab-open="payments">
+      <i class="bx bx-credit-card"></i>
+      <span>Payments</span>
+    </button>
+    <button type="button" class="mobile-nav-item" data-tab-open="customers">
+      <i class="bx bx-user"></i>
+      <span>Customers</span>
+    </button>
+  </nav>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+    crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin="anonymous"></script>
+  <!-- Firebase client SDK (compat build â€” no bundler required) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script>
+    // Firebase client configuration â€” public values, safe to include in HTML
+    const _firebaseConfig = {
+      apiKey: "AIzaSyBUvS8mZS_iw-HcVNIZBcrTrRWneclA0fs",
+      authDomain: "project-c4492f83-8ec7-42fe-89b.firebaseapp.com",
+      projectId: "project-c4492f83-8ec7-42fe-89b"
+    };
+    window.firebaseApp = firebase.initializeApp(_firebaseConfig);
+    window.firebaseAuth = firebase.auth();
+
+    // Expose the auth functions Login.js needs
+    window.firebaseAuthFns = {
+      sendSignInLinkToEmail: (auth, email, settings) =>
+        auth.sendSignInLinkToEmail(email, settings),
+      isSignInWithEmailLink: (auth, href) =>
+        auth.isSignInWithEmailLink(href),
+      signInWithEmailLink: (auth, email, href) =>
+        auth.signInWithEmailLink(email, href)
+    };
+  </script>
+  <script>
+    (function () {
+      const { useState, useEffect } = React;
+      const e = React.createElement;
+      const mountedRoots = new WeakMap();
+      const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      const EMAIL_LINK_KEY = "invoiceflow_signin_email";
+
+      // ---- InvoiceFlow Login Styles ----
+      const VF_STYLES = `
+    .vf-wrapper {
+      --vf-bg: #f5efe5;
+      --vf-bg-deep: #ece1d0;
+      --vf-surface: rgba(255, 251, 245, 0.74);
+      --vf-surface-strong: rgba(255, 252, 248, 0.92);
+      --vf-rail: rgba(245, 238, 228, 0.84);
+      --vf-text: #171d19;
+      --vf-text-soft: #5d6761;
+      --vf-text-muted: #88918b;
+      --vf-border: rgba(54, 69, 60, 0.14);
+      --vf-border-soft: rgba(54, 69, 60, 0.08);
+      --vf-accent: #14966c;
+      --vf-accent-strong: #0f7a57;
+      --vf-warm: #cc7b2f;
+      --vf-link: #0f7a57;
+      --vf-mesh-1: rgba(20, 150, 108, 0.18);
+      --vf-mesh-2: rgba(204, 123, 47, 0.16);
+      --vf-shadow: 0 32px 72px rgba(24, 34, 29, 0.14), 0 12px 28px rgba(24, 34, 29, 0.08);
+      position: fixed;
+      inset: 0;
+      z-index: 99999;
+      overflow: auto;
+      color: var(--vf-text);
+      font-family: 'Satoshi', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background:
+        radial-gradient(circle at 14% 18%, var(--vf-mesh-1), transparent 32%),
+        radial-gradient(circle at 84% 12%, var(--vf-mesh-2), transparent 28%),
+        linear-gradient(135deg, var(--vf-bg), var(--vf-bg-deep));
+    }
+    body[data-theme="dark"] .vf-wrapper {
+      --vf-bg: #0d1311;
+      --vf-bg-deep: #101816;
+      --vf-surface: rgba(18, 25, 22, 0.76);
+      --vf-surface-strong: rgba(20, 28, 25, 0.92);
+      --vf-rail: rgba(16, 24, 21, 0.82);
+      --vf-text: #f5efe4;
+      --vf-text-soft: #b8c2bc;
+      --vf-text-muted: #75817b;
+      --vf-border: rgba(206, 218, 210, 0.12);
+      --vf-border-soft: rgba(206, 218, 210, 0.08);
+      --vf-accent: #35be8a;
+      --vf-accent-strong: #22a274;
+      --vf-warm: #f0a24a;
+      --vf-link: #67d7a8;
+      --vf-mesh-1: rgba(53, 190, 138, 0.18);
+      --vf-mesh-2: rgba(240, 162, 74, 0.16);
+      --vf-shadow: 0 36px 84px rgba(0, 0, 0, 0.34), 0 16px 34px rgba(0, 0, 0, 0.18);
+    }
+    .vf-wrapper::before,
+    .vf-wrapper::after {
+      content: '';
+      position: absolute;
+      pointer-events: none;
+      border-radius: 50%;
+      filter: blur(12px);
+      opacity: 0.8;
+    }
+    .vf-wrapper::before {
+      width: 420px;
+      height: 420px;
+      top: -160px;
+      right: -120px;
+      background: radial-gradient(circle, rgba(255, 255, 255, 0.28), transparent 68%);
+    }
+    .vf-wrapper::after {
+      width: 300px;
+      height: 300px;
+      bottom: -120px;
+      left: -120px;
+      background: radial-gradient(circle, rgba(20, 150, 108, 0.1), transparent 68%);
+    }
+    .vf-shell {
+      position: relative;
+      z-index: 1;
+      width: min(460px, calc(100% - 32px));
+      margin: 20px auto;
+      padding: 24px 0 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .vf-theme-toggle {
+      position: static;
+      align-self: flex-end;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      min-height: 42px;
+      padding: 0 16px;
+      border-radius: 999px;
+      border: 1px solid var(--vf-border);
+      background: var(--vf-surface-strong);
+      color: var(--vf-text-soft);
+      cursor: pointer;
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      box-shadow: 0 14px 28px rgba(18, 28, 23, 0.08);
+      transition: transform 180ms ease, box-shadow 180ms ease, color 180ms ease, border-color 180ms ease;
+      backdrop-filter: blur(18px);
+    }
+    .vf-theme-toggle:hover {
+      transform: translateY(-2px);
+      color: var(--vf-accent);
+      border-color: rgba(20, 150, 108, 0.32);
+      box-shadow: 0 18px 34px rgba(18, 28, 23, 0.12);
+    }
+    .vf-theme-toggle i {
+      font-size: 1rem;
+    }
+    .vf-stage {
+      display: block;
+      width: 100%;
+    }
+    .vf-card {
+      border: 1px solid var(--vf-border);
+      border-radius: 32px;
+      background: var(--vf-surface);
+      backdrop-filter: blur(24px);
+      box-shadow: var(--vf-shadow);
+    }
+    .vf-card {
+      padding: 34px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .vf-card-kicker {
+      display: inline-flex;
+      margin-bottom: 14px;
+      color: var(--vf-accent);
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .vf-header {
+      margin-bottom: 28px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      text-align: left;
+    }
+    .vf-logo-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+    .vf-logo-box {
+      width: 60px;
+      height: 60px;
+      flex: 0 0 60px;
+      border-radius: 20px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, rgba(20, 150, 108, 0.16), rgba(204, 123, 47, 0.16));
+      color: var(--vf-accent);
+      border: 1px solid rgba(20, 150, 108, 0.16);
+      box-shadow: 0 16px 28px rgba(18, 28, 23, 0.12);
+    }
+    .vf-title {
+      margin: 0 0 8px;
+      font-family: 'Cabinet Grotesk', 'Outfit', sans-serif;
+      font-size: 2rem;
+      line-height: 1;
+      letter-spacing: -0.04em;
+      color: var(--vf-text);
+    }
+    .vf-subtitle {
+      margin: 0;
+      max-width: 34ch;
+      color: var(--vf-text-soft);
+      font-size: 0.95rem;
+      line-height: 1.7;
+    }
+    .vf-tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      margin-bottom: 26px;
+      padding: 5px;
+      border-radius: 20px;
+      background: var(--vf-rail);
+      border: 1px solid var(--vf-border-soft);
+    }
+    .vf-tab {
+      min-height: 44px;
+      border: none;
+      border-radius: 16px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      cursor: pointer;
+      color: var(--vf-text-soft);
+      background: transparent;
+      transition: all 180ms ease;
+      overflow: hidden;
+      white-space: nowrap;
+    }
+    .vf-tab.active {
+      color: #fff;
+      background: linear-gradient(135deg, var(--vf-accent), var(--vf-accent-strong));
+      box-shadow: 0 16px 26px rgba(20, 150, 108, 0.18);
+    }
+    .vf-form-group {
+      margin-bottom: 16px;
+      text-align: left;
+    }
+    .vf-label {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--vf-text-muted);
+      font-size: 0.74rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .vf-helper {
+      margin: 0 0 14px;
+      color: var(--vf-text-soft);
+      font-size: 0.85rem;
+      line-height: 1.6;
+    }
+    .vf-input-wrap {
+      position: relative;
+    }
+    .vf-input-icon {
+      position: absolute;
+      left: 16px;
+      top: 50%;
+      width: 18px;
+      height: 18px;
+      transform: translateY(-50%);
+      color: var(--vf-text-muted);
+      pointer-events: none;
+    }
+    .vf-input {
+      width: 100%;
+      min-height: 52px;
+      padding: 14px 16px 14px 48px;
+      border-radius: 18px;
+      border: 1px solid var(--vf-border-soft);
+      background: var(--vf-surface-strong);
+      color: var(--vf-text);
+      font-size: 0.96rem;
+      font-family: 'Satoshi', 'Inter', sans-serif;
+      box-sizing: border-box;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16);
+      transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+    }
+    .vf-input::placeholder {
+      color: var(--vf-text-muted);
+    }
+    .vf-input:focus {
+      outline: none;
+      border-color: rgba(20, 150, 108, 0.34);
+      box-shadow: 0 0 0 4px rgba(20, 150, 108, 0.12);
+      transform: translateY(-1px);
+    }
+    .vf-otp-input {
+      padding-left: 16px;
+      text-align: center;
+      letter-spacing: 0.42em;
+      font-size: 1.15rem;
+      font-weight: 700;
+    }
+    .vf-submit,
+    .vf-btn-social,
+    .vf-secondary-action {
+      width: 100%;
+      min-height: 52px;
+      border-radius: 18px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      transition: transform 180ms ease, box-shadow 180ms ease, background 180ms ease, border-color 180ms ease, color 180ms ease;
+      font-family: 'Satoshi', 'Inter', sans-serif;
+    }
+    .vf-submit {
+      margin-top: 4px;
+      border: none;
+      color: #fff;
+      background: linear-gradient(135deg, var(--vf-accent), var(--vf-accent-strong));
+      box-shadow: 0 18px 28px rgba(20, 150, 108, 0.2);
+    }
+    .vf-submit:hover:not(:disabled),
+    .vf-btn-social:hover:not(:disabled),
+    .vf-secondary-action:hover:not(:disabled) {
+      transform: translateY(-2px);
+    }
+    .vf-submit:hover:not(:disabled) {
+      box-shadow: 0 24px 34px rgba(20, 150, 108, 0.24);
+    }
+    .vf-btn-social,
+    .vf-secondary-action {
+      border: 1px solid var(--vf-border-soft);
+      background: var(--vf-surface-strong);
+      color: var(--vf-text);
+      box-shadow: 0 14px 24px rgba(18, 28, 23, 0.08);
+    }
+    .vf-secondary-action {
+      margin-top: 10px;
+      background: transparent;
+      box-shadow: none;
+      color: var(--vf-text-soft);
+    }
+    .vf-btn-social:disabled,
+    .vf-submit:disabled,
+    .vf-secondary-action:disabled {
+      opacity: 0.62;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+    .vf-divider {
+      display: flex;
+      align-items: center;
+      text-align: center;
+      margin: 22px 0;
+      color: var(--vf-text-muted);
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .vf-divider::before,
+    .vf-divider::after {
+      content: '';
+      flex: 1;
+      border-bottom: 1px solid var(--vf-border-soft);
+    }
+    .vf-divider::before {
+      margin-right: 14px;
+    }
+    .vf-divider::after {
+      margin-left: 14px;
+    }
+    .vf-message {
+      margin-top: 16px;
+      padding: 13px 16px;
+      border-radius: 18px;
+      font-size: 0.86rem;
+      text-align: center;
+      font-weight: 600;
+      line-height: 1.55;
+      border: 1px solid transparent;
+    }
+    .vf-message.error {
+      background: rgba(203, 93, 82, 0.12);
+      color: #cc5b50;
+      border-color: rgba(203, 93, 82, 0.18);
+    }
+    .vf-message.success {
+      background: rgba(20, 150, 108, 0.12);
+      color: var(--vf-accent);
+      border-color: rgba(20, 150, 108, 0.18);
+    }
+    .vf-message.info {
+      background: rgba(50, 127, 182, 0.12);
+      color: #327fb6;
+      border-color: rgba(50, 127, 182, 0.18);
+    }
+    .vf-footer-text {
+      margin-top: 22px;
+      color: var(--vf-text-muted);
+      font-size: 0.78rem;
+      line-height: 1.7;
+      text-align: center;
+    }
+    .vf-footer-text a {
+      color: var(--vf-link);
+      text-decoration: none;
+      font-weight: 700;
+    }
+    .vf-spinner {
+      width: 18px;
+      height: 18px;
+      border: 2px solid rgba(255, 255, 255, 0.36);
+      border-top-color: currentColor;
+      border-radius: 50%;
+      animation: vf-spin 0.7s linear infinite;
+      display: inline-block;
+    }
+    @keyframes vf-spin {
+      to { transform: rotate(360deg); }
+    }
+    @media (max-width: 980px) {
+      .vf-shell {
+        width: min(460px, calc(100% - 24px));
+        padding-top: 16px;
+      }
+      .vf-theme-toggle {
+        margin-left: auto;
+      }
+      .vf-card {
+        border-radius: 28px;
+      }
+    }
+    @media (max-width: 640px) {
+      .vf-shell {
+        width: calc(100% - 16px);
+        margin: 8px auto;
+      }
+      .vf-theme-toggle span {
+        display: none;
+      }
+      .vf-card {
+        padding: 22px;
+        border-radius: 24px;
+      }
+      .vf-title {
+        font-size: 1.72rem;
+      }
+      .vf-tabs {
+        margin-bottom: 22px;
+      }
+      .vf-submit,
+      .vf-btn-social,
+      .vf-secondary-action,
+      .vf-input {
+        min-height: 50px;
+      }
+      .vf-otp-input {
+        letter-spacing: 0.3em;
+      }
+    }
+    @media (max-width: 480px) {
+      .vf-card {
+        padding: 20px 16px;
+        border-radius: 20px;
+      }
+      .vf-tabs {
+        grid-template-columns: 1fr 1fr;
+        width: 100%;
+        box-sizing: border-box;
+      }
+      .vf-tab {
+        font-size: 0.82rem;
+        min-height: 40px;
+        border-radius: 14px;
+      }
+      .vf-logo-box {
+        width: 48px;
+        height: 48px;
+        flex: 0 0 48px;
+      }
+      .vf-title {
+        font-size: 1.5rem;
+      }
+    }
+  `;
+
+      // ---- Icons ----
+      const InvoiceIcon = e("svg", { width: "28", height: "28", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "1.8", strokeLinecap: "round", strokeLinejoin: "round" },
+        e("path", { d: "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" }),
+        e("polyline", { points: "14 2 14 8 20 8" }),
+        e("line", { x1: "16", y1: "13", x2: "8", y2: "13" }),
+        e("line", { x1: "16", y1: "17", x2: "8", y2: "17" }),
+        e("polyline", { points: "10 9 9 9 8 9" })
+      );
+
+      const EnvelopeIcon = e("svg", { className: "vf-input-icon", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" },
+        e("path", { d: "M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" }),
+        e("polyline", { points: "22,6 12,13 2,6" })
+      );
+
+      const ArrowIcon = e("svg", { width: "16", height: "16", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2.5", strokeLinecap: "round", strokeLinejoin: "round" },
+        e("line", { x1: "5", y1: "12", x2: "19", y2: "12" }),
+        e("polyline", { points: "12 5 19 12 12 19" })
+      );
+
+      // Google G logo SVG
+      const GoogleIcon = e("svg", { width: "18", height: "18", viewBox: "0 0 18 18", fill: "none" },
+        e("path", { d: "M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z", fill: "#4285F4" }),
+        e("path", { d: "M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z", fill: "#34A853" }),
+        e("path", { d: "M3.964 10.707A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.707V4.961H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.039l3.007-2.332z", fill: "#FBBC05" }),
+        e("path", { d: "M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.961L3.964 6.293C4.672 4.166 6.656 3.58 9 3.58z", fill: "#EA4335" })
+      );
+
+      function getAuth() {
+        return window.firebaseAuth;
+      }
+
+      async function requestJson(url, payload) {
+        const response = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const text = await response.text();
+        let body = {};
+        if (text) {
+          try { body = JSON.parse(text); } catch (_) { body = {}; }
+        }
+        if (!response.ok) {
+          throw new Error(body.error || "Request failed.");
+        }
+        return body;
+      }
+
+      function BillingLogin(props) {
+        const [email, setEmail] = useState("");
+        const [otp, setOtp] = useState("");
+        const [tab, setTab] = useState("signin");
+        const [step, setStep] = useState("email");
+        const [isLoading, setIsLoading] = useState(false);
+        const [googleLoading, setGoogleLoading] = useState(false);
+        const [message, setMessage] = useState("");
+        const [messageTone, setMessageTone] = useState("");
+        const [theme, setTheme] = useState(() =>
+          (localStorage.getItem("billing_theme") || document.body.dataset.theme || "light") === "dark" ? "dark" : "light"
+        );
+
+        const normalizedEmail = email.trim().toLowerCase();
+        const emailValid = EMAIL_PATTERN.test(normalizedEmail);
+        const anyLoading = isLoading || googleLoading;
+
+        useEffect(() => {
+          const syncTheme = () => {
+            const nextTheme = (localStorage.getItem("billing_theme") || document.body.dataset.theme || "light") === "dark" ? "dark" : "light";
+            setTheme(nextTheme);
+          };
+
+          syncTheme();
+          window.addEventListener("billing-theme-change", syncTheme);
+          return () => window.removeEventListener("billing-theme-change", syncTheme);
+        }, []);
+
+        function showMessage(text, tone) {
+          setMessage(text);
+          setMessageTone(tone || "");
+        }
+
+        function handleThemeToggle() {
+          if (typeof window.toggleBillingTheme === "function") {
+            window.toggleBillingTheme();
+          } else {
+            const nextTheme = theme === "dark" ? "light" : "dark";
+            localStorage.setItem("billing_theme", nextTheme);
+            document.body.dataset.theme = nextTheme;
+            document.documentElement.setAttribute("data-bs-theme", nextTheme);
+            window.dispatchEvent(new CustomEvent("billing-theme-change", { detail: { theme: nextTheme } }));
+          }
+          const nextTheme = (localStorage.getItem("billing_theme") || document.body.dataset.theme || (theme === "dark" ? "light" : "dark")) === "dark" ? "dark" : "light";
+          setTheme(nextTheme);
+        }
+
+        async function handleSendOtp(event) {
+          event.preventDefault();
+
+          if (!emailValid) {
+            showMessage("Enter a valid email address.", "error");
+            return;
+          }
+
+          setIsLoading(true);
+          showMessage("", "");
+
+          try {
+            const resp = await requestJson("/api/otp/send", { email: normalizedEmail });
+            setStep("otp");
+            if (resp.devOtp) {
+              console.log("DEV OTP:", resp.devOtp);
+              showMessage("Development Mode: Your OTP is " + resp.devOtp + " (Check console)", "success");
+            } else {
+              showMessage("OTP sent to " + normalizedEmail + ". Check your inbox and spam folder.", "success");
+            }
+          } catch (err) {
+            showMessage(err.message || "Failed to send OTP. Try again.", "error");
+          } finally {
+            setIsLoading(false);
+          }
+        }
+
+        async function handleVerifyOtp(event) {
+          event.preventDefault();
+
+          const otpValue = otp.trim();
+          if (otpValue.length !== 6) {
+            showMessage("Enter a valid 6-digit OTP.", "error");
+            return;
+          }
+
+          setIsLoading(true);
+          showMessage("", "");
+
+          try {
+            console.log("Sending verification:", { email: normalizedEmail, code: otpValue });
+            const response = await requestJson("/api/otp/verify", { email: normalizedEmail, code: otpValue });
+            if (!response.token) throw new Error("No token received.");
+
+            showMessage("Signed in successfully! Loading...", "success");
+            if (typeof props.onAuthenticated === "function") {
+              props.onAuthenticated(response);
+            }
+          } catch (err) {
+            console.error("OTP Verification Error:", err);
+            showMessage(err.message || "Invalid OTP or verification failed.", "error");
+          } finally {
+            setIsLoading(false);
+          }
+        }
+
+        async function handleGoogleSignIn() {
+          const auth = getAuth();
+          if (!auth) {
+            showMessage("Firebase is not connected. Please refresh.", "error");
+            return;
+          }
+
+          setGoogleLoading(true);
+          showMessage("", "");
+
+          try {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            provider.setCustomParameters({ prompt: "select_account" });
+
+            const result = await auth.signInWithPopup(provider);
+            const idToken = await result.user.getIdToken();
+
+            const response = await requestJson("/api/auth/firebase-verify", { idToken });
+            showMessage("Signed in successfully! Loading...", "success");
+
+            if (typeof props.onAuthenticated === "function") {
+              props.onAuthenticated(response);
+            }
+          } catch (err) {
+            if (err.code === "auth/popup-closed-by-user" || err.code === "auth/cancelled-popup-request") {
+              showMessage("Sign-in was cancelled.", "");
+            } else if (err.code === "auth/popup-blocked") {
+              showMessage("Popup was blocked. Please allow popups for this site and try again.", "error");
+            } else {
+              showMessage(err.message || "Google sign-in failed. Please try again.", "error");
+            }
+          } finally {
+            setGoogleLoading(false);
+          }
+        }
+
+        return e(
+          "div",
+          { className: "vf-wrapper" },
+          e("style", null, VF_STYLES),
+
+          e(
+            "div",
+            { className: "vf-shell" },
+            e(
+              "button",
+              {
+                type: "button",
+                className: "vf-theme-toggle",
+                onClick: handleThemeToggle,
+                "aria-label": theme === "dark" ? "Switch to light theme" : "Switch to dark theme"
+              },
+              e("i", { className: "bx " + (theme === "dark" ? "bx-sun" : "bx-moon") }),
+              e("span", null, theme === "dark" ? "Light mode" : "Dark mode")
+            ),
+
+            e(
+              "div",
+              { className: "vf-stage" },
+              e(
+                "div",
+                { className: "vf-card" },
+                e("span", { className: "vf-card-kicker" }, step === "otp" ? "Verification code" : tab === "signin" ? "Welcome back" : "Create workspace"),
+                e(
+                  "div",
+                  { className: "vf-header" },
+                  e(
+                    "div",
+                    { className: "vf-logo-row" },
+                    e("div", { className: "vf-logo-box" }, InvoiceIcon),
+                    e(
+                      "div",
+                      null,
+                      e("h1", { className: "vf-title" }, "InvoiceFlow Pro"),
+                      e(
+                        "p",
+                        { className: "vf-subtitle" },
+                        step === "otp"
+                          ? "Use the 6-digit code we sent to finish signing in."
+                          : tab === "signin"
+                            ? "Sign in to access your billing workspace."
+                            : "Create your workspace and start sending polished invoices."
+                      )
+                    )
+                  )
+                ),
+
+                e(
+                  "div",
+                  { className: "vf-tabs" },
+                  e("button", {
+                    type: "button",
+                    className: "vf-tab " + (tab === "signin" ? "active" : ""),
+                    onClick: () => { setTab("signin"); showMessage("", ""); setStep("email"); }
+                  }, "Sign In"),
+                  e("button", {
+                    type: "button",
+                    className: "vf-tab " + (tab === "signup" ? "active" : ""),
+                    onClick: () => { setTab("signup"); showMessage("", ""); setStep("email"); }
+                  }, "Sign Up")
+                ),
+
+                e(
+                  "button",
+                  {
+                    type: "button",
+                    className: "vf-btn-social",
+                    onClick: handleGoogleSignIn,
+                    disabled: anyLoading
+                  },
+                  googleLoading ? e("span", { className: "vf-spinner" }) : GoogleIcon,
+                  googleLoading ? "Signing in with Google..." : "Continue with Google"
+                ),
+
+                e("div", { className: "vf-divider" }, "or use email OTP"),
+
+                step === "email"
+                  ? e(
+                    "form",
+                    { onSubmit: handleSendOtp },
+                    e(
+                      "div",
+                      { className: "vf-form-group" },
+                      e("label", { className: "vf-label" }, "Email Address"),
+                      e(
+                        "div",
+                        { className: "vf-input-wrap" },
+                        EnvelopeIcon,
+                        e("input", {
+                          type: "email",
+                          className: "vf-input",
+                          placeholder: "name@company.com",
+                          value: email,
+                          onChange: (ev) => setEmail(ev.target.value),
+                          disabled: anyLoading,
+                          autoComplete: "email"
+                        })
+                      )
+                    ),
+                    e(
+                      "button",
+                      {
+                        type: "submit",
+                        className: "vf-submit",
+                        disabled: anyLoading
+                      },
+                      isLoading ? e("span", { className: "vf-spinner" }) : null,
+                      isLoading ? "Sending OTP..." : tab === "signup" ? "Create account and send OTP" : "Send OTP",
+                      !isLoading ? ArrowIcon : null
+                    ),
+                    message && e("div", { className: "vf-message " + messageTone }, message)
+                  )
+                  : e(
+                    "form",
+                    { onSubmit: handleVerifyOtp },
+                    e(
+                      "div",
+                      { className: "vf-form-group" },
+                      e("label", { className: "vf-label" }, "Enter 6-Digit OTP"),
+                      e("p", { className: "vf-helper" }, "We sent a code to " + normalizedEmail + ". Enter it below to continue."),
+                      e(
+                        "div",
+                        { className: "vf-input-wrap" },
+                        e("input", {
+                          type: "text",
+                          className: "vf-input vf-otp-input",
+                          placeholder: "123456",
+                          value: otp,
+                          onChange: (ev) => setOtp(ev.target.value.replace(/\\D/g, "").slice(0, 6)),
+                          disabled: anyLoading,
+                          autoComplete: "one-time-code"
+                        })
+                      )
+                    ),
+                    e(
+                      "button",
+                      {
+                        type: "submit",
+                        className: "vf-submit",
+                        disabled: anyLoading || otp.length < 6
+                      },
+                      isLoading ? e("span", { className: "vf-spinner" }) : null,
+                      isLoading ? "Verifying..." : "Sign In",
+                      !isLoading ? ArrowIcon : null
+                    ),
+                    e(
+                      "button",
+                      {
+                        type: "button",
+                        className: "vf-secondary-action",
+                        onClick: () => { setStep("email"); setOtp(""); showMessage("", ""); },
+                        disabled: anyLoading
+                      },
+                      "<- Use a different email"
+                    ),
+                    message && e("div", { className: "vf-message " + messageTone }, message)
+                  ),
+
+                e(
+                  "p",
+                  { className: "vf-footer-text" },
+                  "By continuing, you agree to InvoiceFlow's ",
+                  e("a", { href: "#" }, "Terms of Service"),
+                  " and ",
+                  e("a", { href: "#" }, "Privacy Policy"),
+                  "."
+                )
+              )
+            )
+          )
+        );
+      }
+
+      window.renderBillingLogin = function renderBillingLogin(container, props) {
+        if (!container) return;
+        let root = mountedRoots.get(container);
+        if (!root) {
+          root = ReactDOM.createRoot(container);
+          mountedRoots.set(container, root);
+        }
+        root.render(e(BillingLogin, props || {}));
+      };
+    })();
+
+  </script>
+  <script type="module" src="./app.js?v=20260402c"></script>
+</body>
+
+</html>
