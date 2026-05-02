@@ -188,7 +188,8 @@ const state = {
     dateTo: ""
   },
   invoicePreviewMode: "preview",
-  statusTimer: null
+  statusTimer: null,
+  pendingRequests: 0
 };
 
 function isAdmin() {
@@ -528,6 +529,25 @@ function escapeHtml(value) {
     .replaceAll("'", "&#39;");
 }
 
+function setAppBusy(isBusy) {
+  state.pendingRequests = Math.max(0, state.pendingRequests + (isBusy ? 1 : -1));
+  document.body.classList.toggle("app-is-loading", state.pendingRequests > 0);
+}
+
+function emptyState({ icon = "bx bx-receipt", title, copy, actionLabel = "", actionTab = "" }) {
+  const action = actionLabel && actionTab
+    ? `<button type="button" class="btn btn-primary btn-sm" data-tab-open="${escapeHtml(actionTab)}">${escapeHtml(actionLabel)}</button>`
+    : "";
+  return `
+    <div class="empty-state">
+      <span class="empty-state-icon"><i class="${escapeHtml(icon)}"></i></span>
+      <strong>${escapeHtml(title)}</strong>
+      <span>${escapeHtml(copy)}</span>
+      ${action}
+    </div>
+  `;
+}
+
 function setStatus(message, isError = false) {
   if (!statusToastEl) {
     return;
@@ -548,6 +568,7 @@ function setStatus(message, isError = false) {
   } else {
     statusToastEl.textContent = text;
   }
+  statusToastEl.dataset.status = isError ? "error" : "success";
   statusToastEl.classList.toggle("bg-danger", isError);
   statusToastEl.classList.toggle("bg-success", !isError);
   statusToastEl.classList.toggle("text-white", isError);
@@ -584,29 +605,34 @@ async function requestJson(url, options = {}) {
     headers.Authorization = `Bearer ${state.token}`;
   }
 
-  const response = await fetch(url, {
-    ...options,
-    headers
-  });
+  setAppBusy(true);
+  try {
+    const response = await fetch(url, {
+      ...options,
+      headers
+    });
 
-  const text = await response.text();
-  let body = {};
-  if (text) {
-    try {
-      body = JSON.parse(text);
-    } catch (_error) {
-      body = {};
+    const text = await response.text();
+    let body = {};
+    if (text) {
+      try {
+        body = JSON.parse(text);
+      } catch (_error) {
+        body = {};
+      }
     }
-  }
 
-  if (!response.ok) {
-    if (response.status === 401) {
-      resetAuthState();
+    if (!response.ok) {
+      if (response.status === 401) {
+        resetAuthState();
+      }
+      throw new Error(body.error || "Request failed.");
     }
-    throw new Error(body.error || "Request failed.");
-  }
 
-  return body;
+    return body;
+  } finally {
+    setAppBusy(false);
+  }
 }
 
 function openDrawer(title, html) {
@@ -630,6 +656,43 @@ function closeDrawer() {
   drawerEl?.classList.add("hidden");
 }
 
+function runUiMotion(root) {
+  if (!(root instanceof HTMLElement) || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    return;
+  }
+
+  root.animate(
+    [
+      { opacity: 0, transform: "translateY(10px)" },
+      { opacity: 1, transform: "translateY(0)" }
+    ],
+    {
+      duration: 260,
+      easing: "cubic-bezier(0.16, 1, 0.3, 1)",
+      fill: "both"
+    }
+  );
+
+  root.querySelectorAll(".dashboard-stat-card, .card, .studio-panel, .dashboard-side-card").forEach((node, index) => {
+    if (!(node instanceof HTMLElement) || index > 10) {
+      return;
+    }
+
+    node.animate(
+      [
+        { opacity: 0, transform: "translateY(8px) scale(0.99)" },
+        { opacity: 1, transform: "translateY(0) scale(1)" }
+      ],
+      {
+        duration: 280,
+        delay: 35 + index * 28,
+        easing: "cubic-bezier(0.16, 1, 0.3, 1)",
+        fill: "both"
+      }
+    );
+  });
+}
+
 function setActiveTab(tabId) {
   const panel = document.querySelector(`.tab-panel[data-panel="${tabId}"]`);
   if (!panel) {
@@ -647,6 +710,7 @@ function setActiveTab(tabId) {
   }
 
   requestAnimationFrame(() => {
+    runUiMotion(panel);
     panel.classList.remove("is-entering");
   });
 
@@ -1907,7 +1971,17 @@ function renderOverview() {
 
 function renderCustomers() {
   if (state.customers.length === 0) {
-    customerTableBody.innerHTML = `<tr><td colspan="4">No customers yet.</td></tr>`;
+    customerTableBody.innerHTML = `
+      <tr>
+        <td colspan="4">
+          ${emptyState({
+            icon: "bx bx-user-plus",
+            title: "No customers yet",
+            copy: "Add a customer profile to start creating invoices."
+          })}
+        </td>
+      </tr>
+    `;
     syncResponsiveTables();
     return;
   }
@@ -1920,16 +1994,22 @@ function renderCustomers() {
         <td>${escapeHtml(customer.email || "-")}</td>
         <td>${escapeHtml(customer.gstin || "-")}</td>
         <td>
-          <div class="btn-group">
-            <button class="btn btn-sm btn-secondary" data-action="statement" data-customer-id="${customer.id}">Statement</button>
+          <div class="btn-group action-group">
+            <button class="btn btn-sm btn-secondary" data-action="statement" data-customer-id="${customer.id}">
+              <i class="bx bx-file"></i><span>Statement</span>
+            </button>
             ${
               isAdmin()
-                ? `<button class="btn btn-sm btn-light" data-action="edit-customer" data-customer-id="${customer.id}">Edit</button>`
+                ? `<button class="btn btn-sm btn-light" data-action="edit-customer" data-customer-id="${customer.id}">
+                    <i class="bx bx-edit"></i><span>Edit</span>
+                  </button>`
                 : ""
             }
             ${
               isAdmin()
-                ? `<button class="btn btn-sm btn-danger" data-action="remove-customer" data-customer-id="${customer.id}">Delete</button>`
+                ? `<button class="btn btn-sm btn-danger" data-action="remove-customer" data-customer-id="${customer.id}">
+                    <i class="bx bx-trash"></i><span>Delete</span>
+                  </button>`
                 : ""
             }
           </div>
@@ -1976,22 +2056,32 @@ function startCustomerEdit(customerId) {
 
 function renderProducts() {
   if (state.products.length === 0) {
-    productListNode.innerHTML = `<p class="text-muted">No products yet.</p>`;
+    productListNode.innerHTML = emptyState({
+      icon: "bx bx-package",
+      title: "No products yet",
+      copy: "Save products or services once, then reuse them in invoice line items."
+    });
     return;
   }
 
   productListNode.innerHTML = state.products
     .map(
       (product) => `
-      <div class="card mb-2">
-        <div class="card-body d-flex justify-content-between align-items-center">
-          <div>
-            <h6 class="card-title mb-0">${escapeHtml(product.name)}</h6>
-            <p class="card-text small text-muted">${escapeHtml(product.hsnSac || "-")} | ${escapeHtml(product.pricingModel)} | ${formatCurrency(product.price)} | GST ${Number(product.taxRate)}%</p>
+      <div class="product-card">
+        <div class="product-card-main">
+          <span class="product-card-icon"><i class="bx bx-package"></i></span>
+          <div class="product-card-copy">
+            <h6>${escapeHtml(product.name)}</h6>
+            <p>${escapeHtml(product.hsnSac || "-")} · ${escapeHtml(product.pricingModel)} · GST ${Number(product.taxRate)}%</p>
           </div>
+        </div>
+        <div class="product-card-side">
+          <strong>${formatCurrency(product.price)}</strong>
           ${
             isAdmin()
-              ? `<button class="btn btn-sm btn-outline-danger" data-action="remove-product" data-product-id="${product.id}">Remove</button>`
+              ? `<button class="btn btn-sm btn-outline-danger" data-action="remove-product" data-product-id="${product.id}">
+                  <i class="bx bx-trash"></i><span>Remove</span>
+                </button>`
               : ""
           }
         </div>
@@ -2003,7 +2093,19 @@ function renderProducts() {
 
 function renderInvoices() {
   if (state.invoices.length === 0) {
-    invoiceTableBody.innerHTML = `<tr><td colspan="8">No invoices found.</td></tr>`;
+    invoiceTableBody.innerHTML = `
+      <tr>
+        <td colspan="8">
+          ${emptyState({
+            icon: "bx bx-receipt",
+            title: "No invoices found",
+            copy: "Create an invoice or adjust filters to see records here.",
+            actionLabel: "Create invoice",
+            actionTab: "invoices"
+          })}
+        </td>
+      </tr>
+    `;
     syncResponsiveTables();
     updateHeaderActionState();
     return;
@@ -2021,13 +2123,21 @@ function renderInvoices() {
         <td>${formatCurrency(invoice.paidAmount)}</td>
         <td>${formatCurrency(invoice.dueAmount)}</td>
         <td>
-          <div class="btn-group">
-            <button class="btn btn-sm btn-success" data-action="share-invoice" data-invoice-id="${invoice.id}">Share</button>
-            <button class="btn btn-sm btn-info" data-action="download-invoice" data-invoice-id="${invoice.id}">PDF</button>
-            <button class="btn btn-sm btn-secondary" data-action="pay-invoice" data-invoice-id="${invoice.id}">Pay</button>
+          <div class="btn-group action-group">
+            <button class="btn btn-sm btn-success" data-action="share-invoice" data-invoice-id="${invoice.id}">
+              <i class="bx bx-share-alt"></i><span>Share</span>
+            </button>
+            <button class="btn btn-sm btn-info" data-action="download-invoice" data-invoice-id="${invoice.id}">
+              <i class="bx bx-download"></i><span>PDF</span>
+            </button>
+            <button class="btn btn-sm btn-secondary" data-action="pay-invoice" data-invoice-id="${invoice.id}">
+              <i class="bx bx-credit-card"></i><span>Pay</span>
+            </button>
             ${
               isAdmin()
-                ? `<button class="btn btn-sm btn-danger" data-action="remove-invoice" data-invoice-id="${invoice.id}">Delete</button>`
+                ? `<button class="btn btn-sm btn-danger" data-action="remove-invoice" data-invoice-id="${invoice.id}">
+                    <i class="bx bx-trash"></i><span>Delete</span>
+                  </button>`
                 : ""
             }
           </div>
@@ -2043,7 +2153,17 @@ function renderInvoices() {
 function renderPayments() {
   const payable = state.invoices.filter((invoice) => Number(invoice.dueAmount || 0) > 0.009);
   if (payable.length === 0) {
-    paymentTableBody.innerHTML = `<tr><td colspan="7">No pending payments.</td></tr>`;
+    paymentTableBody.innerHTML = `
+      <tr>
+        <td colspan="7">
+          ${emptyState({
+            icon: "bx bx-check-shield",
+            title: "No pending payments",
+            copy: "Every visible invoice is paid or has no outstanding amount."
+          })}
+        </td>
+      </tr>
+    `;
     syncResponsiveTables();
     return;
   }
@@ -2058,7 +2178,11 @@ function renderPayments() {
         <td>${formatCurrency(invoice.paidAmount)}</td>
         <td>${formatCurrency(invoice.dueAmount)}</td>
         <td>${statusPill(invoice.status)}</td>
-        <td><button class="btn btn-sm btn-secondary" data-action="pay-invoice" data-invoice-id="${invoice.id}">Add Payment</button></td>
+        <td>
+          <button class="btn btn-sm btn-secondary" data-action="pay-invoice" data-invoice-id="${invoice.id}">
+            <i class="bx bx-plus-circle"></i><span>Add Payment</span>
+          </button>
+        </td>
       </tr>
     `
     )
