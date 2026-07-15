@@ -1,6 +1,14 @@
 import { BusinessProfile, Customer, Product, Invoice, DashboardStats, ReportData } from '../types';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+const getApiBase = () => {
+  let url = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+  if (url.endsWith('/')) {
+    url = url.slice(0, -1);
+  }
+  return url.endsWith('/api') ? url : `${url}/api`;
+};
+
+const API_BASE = getApiBase();
 
 // Helper to determine if we should fallback to offline mode
 let isOfflineMode = false;
