@@ -4,6 +4,7 @@
 -- Create business_profile table
 CREATE TABLE IF NOT EXISTS business_profile (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    profile_type VARCHAR(50) NOT NULL DEFAULT 'GST',
     business_name VARCHAR(255) NOT NULL,
     logo_url TEXT,
     address TEXT NOT NULL,
