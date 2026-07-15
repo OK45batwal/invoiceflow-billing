@@ -8,10 +8,8 @@ import {
   Edit, 
   Trash2, 
   Package, 
-  Tag, 
-  Barcode, 
-  Layers, 
-  AlertTriangle 
+  AlertTriangle,
+  IndianRupee
 } from 'lucide-react';
 
 export const Products: React.FC = () => {
@@ -24,6 +22,8 @@ export const Products: React.FC = () => {
   } = useApp();
 
   const [searchQuery, setSearchQuery] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('ALL');
+  const [stockFilter, setStockFilter] = useState<'ALL' | 'IN_STOCK' | 'LOW_STOCK' | 'OUT_OF_STOCK'>('ALL');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
@@ -129,12 +129,25 @@ export const Products: React.FC = () => {
   };
 
   // Filtered product list
-  const filteredProducts = products.filter(p => 
-    p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (p.category && p.category.toLowerCase().includes(searchQuery.toLowerCase())) ||
-    (p.sku && p.sku.toLowerCase().includes(searchQuery.toLowerCase())) ||
-    (p.hsn_code && p.hsn_code.includes(searchQuery))
-  );
+  const filteredProducts = products.filter(p => {
+    const matchesSearch = 
+      p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (p.category && p.category.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (p.sku && p.sku.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (p.hsn_code && p.hsn_code.includes(searchQuery));
+      
+    const matchesCategory = 
+      categoryFilter === 'ALL' ? true : p.category === categoryFilter;
+      
+    const stockNum = Number(p.stock) || 0;
+    const matchesStock = 
+      stockFilter === 'ALL' ? true :
+      stockFilter === 'IN_STOCK' ? stockNum > 10 :
+      stockFilter === 'LOW_STOCK' ? (stockNum > 0 && stockNum <= 10) :
+      stockNum === 0; // OUT_OF_STOCK
+      
+    return matchesSearch && matchesCategory && matchesStock;
+  });
 
   const formatRupee = (value: number) => {
     return new Intl.NumberFormat('en-IN', {
@@ -148,119 +161,250 @@ export const Products: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-12">
-      {/* Search and Action Bar */}
-      <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
-        <div className="relative w-full sm:w-80">
-          <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-            <Search className="h-4.5 w-4.5 text-text-light dark:text-slate-500" />
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-5 shadow-soft flex items-center justify-between">
+          <div className="space-y-1">
+            <span className="text-[10px] font-extrabold text-text-secondary dark:text-slate-400 uppercase tracking-wider">Total Catalog Items</span>
+            <h2 className="text-2xl font-black text-text-primary dark:text-slate-100">{products.length}</h2>
           </div>
-          <input
-            type="text"
-            placeholder="Search catalog by name, sku, HSN..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full h-10 pl-10 pr-4 text-sm bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-text-primary dark:text-slate-200"
-          />
+          <div className="p-3 rounded-xl bg-primary/10 text-primary dark:bg-primary-dark/20 dark:text-primary-light">
+            <Package className="h-5 w-5" />
+          </div>
         </div>
+
+        <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-5 shadow-soft flex items-center justify-between">
+          <div className="space-y-1">
+            <span className="text-[10px] font-extrabold text-text-secondary dark:text-slate-400 uppercase tracking-wider">Total Inventory Value</span>
+            <h2 className="text-2xl font-black text-success">
+              {formatRupee(products.reduce((sum, p) => sum + (Number(p.selling_price) || 0) * (Number(p.stock) || 0), 0))}
+            </h2>
+          </div>
+          <div className="p-3 rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/20 dark:text-emerald-400">
+            <IndianRupee className="h-5 w-5" />
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-5 shadow-soft flex items-center justify-between">
+          <div className="space-y-1">
+            <span className="text-[10px] font-extrabold text-text-secondary dark:text-slate-400 uppercase tracking-wider">Low / Out of Stock</span>
+            <h2 className="text-2xl font-black text-rose-500">
+              {products.filter(p => Number(p.stock) <= 10).length}
+            </h2>
+          </div>
+          <div className="p-3 rounded-xl bg-rose-50 text-rose-600 dark:bg-rose-950/20 dark:text-rose-400">
+            <AlertTriangle className="h-5 w-5" />
+          </div>
+        </div>
+      </div>
+
+      {/* Search, Action, and Advanced Filters Bar */}
+      <div className="flex flex-col xl:flex-row gap-4 justify-between items-stretch xl:items-center">
+        <div className="flex flex-col md:flex-row gap-3 flex-grow xl:max-w-4xl">
+          {/* Search bar */}
+          <div className="relative flex-grow max-w-md">
+            <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+              <Search className="h-4.5 w-4.5 text-text-light dark:text-slate-500" />
+            </div>
+            <input
+              type="text"
+              placeholder="Search catalog by name, sku, HSN..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full h-10 pl-10 pr-4 text-sm bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-text-primary dark:text-slate-200"
+            />
+          </div>
+
+          <div className="flex flex-wrap gap-2 items-center">
+            {/* Category Filter Dropdown */}
+            <select
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+              className="h-10 px-3 py-1.5 text-xs font-bold bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl focus:outline-none text-text-secondary dark:text-slate-400"
+            >
+              <option value="ALL">All Categories</option>
+              {categories.map(cat => (
+                <option key={cat} value={cat}>{cat}</option>
+              ))}
+            </select>
+
+            {/* Stock Filter Pills */}
+            <div className="flex bg-slate-50 dark:bg-slate-800 p-1 rounded-xl border border-slate-100 dark:border-slate-800/80">
+              <button
+                type="button"
+                onClick={() => setStockFilter('ALL')}
+                className={`px-3 py-1 text-[11px] font-bold rounded-lg transition-all
+                  ${stockFilter === 'ALL'
+                    ? 'bg-white dark:bg-slate-700 text-primary dark:text-slate-200 shadow-soft'
+                    : 'text-text-secondary dark:text-slate-400 hover:text-text-primary'
+                  }
+                `}
+              >
+                All Stock
+              </button>
+              <button
+                type="button"
+                onClick={() => setStockFilter('IN_STOCK')}
+                className={`px-3 py-1 text-[11px] font-bold rounded-lg transition-all
+                  ${stockFilter === 'IN_STOCK'
+                    ? 'bg-white dark:bg-slate-700 text-emerald-600 dark:text-emerald-450 shadow-soft'
+                    : 'text-text-secondary dark:text-slate-400 hover:text-text-primary'
+                  }
+                `}
+              >
+                In Stock
+              </button>
+              <button
+                type="button"
+                onClick={() => setStockFilter('LOW_STOCK')}
+                className={`px-3 py-1 text-[11px] font-bold rounded-lg transition-all
+                  ${stockFilter === 'LOW_STOCK'
+                    ? 'bg-white dark:bg-slate-700 text-amber-600 dark:text-amber-450 shadow-soft'
+                    : 'text-text-secondary dark:text-slate-400 hover:text-text-primary'
+                  }
+                `}
+              >
+                Low
+              </button>
+              <button
+                type="button"
+                onClick={() => setStockFilter('OUT_OF_STOCK')}
+                className={`px-3 py-1 text-[11px] font-bold rounded-lg transition-all
+                  ${stockFilter === 'OUT_OF_STOCK'
+                    ? 'bg-white dark:bg-slate-700 text-rose-600 dark:text-rose-450 shadow-soft'
+                    : 'text-text-secondary dark:text-slate-400 hover:text-text-primary'
+                  }
+                `}
+              >
+                Out
+              </button>
+            </div>
+          </div>
+        </div>
+
         <button
           onClick={handleOpenCreate}
-          className="w-full sm:w-auto h-10 px-4 flex items-center justify-center gap-2 rounded-xl bg-primary hover:bg-primary-dark text-white font-semibold text-sm shadow-soft hover:shadow-premium transition-all duration-200"
+          className="h-10 px-4 flex items-center justify-center gap-2 rounded-xl bg-primary hover:bg-primary-dark text-white font-semibold text-sm shadow-soft hover:shadow-premium transition-all duration-200"
         >
           <PlusCircle className="h-4.5 w-4.5" />
           <span>Add Product Item</span>
         </button>
       </div>
 
-      {/* Product Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredProducts.length > 0 ? (
-          filteredProducts.map(prod => (
-            <div 
-              key={prod.id} 
-              className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800/80 rounded-2xl p-6 shadow-soft hover:shadow-premium flex flex-col justify-between transition-all duration-200 group"
-            >
-              <div className="space-y-4">
-                {/* Product Header */}
-                <div className="flex items-start justify-between">
-                  <div className="space-y-1">
-                    <h3 className="text-base font-extrabold text-text-primary dark:text-slate-200">{prod.name}</h3>
-                    <div className="flex items-center gap-1 text-[10px] text-text-secondary dark:text-slate-400 font-bold uppercase tracking-wider">
-                      <Tag className="h-3.5 w-3.5" />
-                      <span>{prod.category}</span>
-                    </div>
-                  </div>
-                  <span className={`px-2.5 py-1 text-[10px] font-bold rounded-full border
-                    ${Number(prod.stock) > 10 
-                      ? 'bg-emerald-50 border-emerald-200 text-emerald-600 dark:bg-emerald-950/20' 
-                      : Number(prod.stock) > 0 
-                      ? 'bg-amber-50 border-amber-200 text-amber-600 dark:bg-amber-950/20'
-                      : 'bg-rose-50 border-rose-200 text-rose-600 dark:bg-rose-950/20'
-                    }
-                  `}>
-                    {prod.stock} {prod.unit}
-                  </span>
-                </div>
-
-                {/* Pricing / GST Info */}
-                <div className="grid grid-cols-2 gap-4 py-2 border-y border-slate-50 dark:border-slate-850">
-                  <div>
-                    <span className="text-[10px] uppercase font-bold text-text-light dark:text-slate-500">Selling Price</span>
-                    <p className="text-sm font-extrabold text-text-primary dark:text-slate-100">{formatRupee(prod.selling_price)}</p>
-                  </div>
-                  <div>
-                    <span className="text-[10px] uppercase font-bold text-text-light dark:text-slate-500">GST Rate</span>
-                    <p className="text-sm font-extrabold text-blue-600 dark:text-blue-400">{prod.gst_rate}% GST</p>
-                  </div>
-                </div>
-
-                {/* Additional Info */}
-                <div className="space-y-2 text-xs font-semibold text-text-secondary dark:text-slate-400">
-                  {prod.hsn_code && (
-                    <div className="flex items-center gap-1.5">
-                      <Layers className="h-3.5 w-3.5 text-text-light dark:text-slate-500" />
-                      <span>HSN Code: <strong className="text-text-primary dark:text-slate-300">{prod.hsn_code}</strong></span>
-                    </div>
-                  )}
-                  {prod.sku && (
-                    <div className="flex items-center gap-1.5">
-                      <Barcode className="h-3.5 w-3.5 text-text-light dark:text-slate-500" />
-                      <span>SKU: <strong className="text-text-primary dark:text-slate-300">{prod.sku}</strong></span>
-                    </div>
-                  )}
-                  {prod.description && (
-                    <p className="text-[11px] text-text-secondary dark:text-slate-400 line-clamp-2 mt-1 bg-slate-50 dark:bg-slate-800/40 p-2 rounded-lg font-medium">
-                      {prod.description}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              {/* Actions footer */}
-              <div className="mt-6 pt-4 border-t border-slate-50 dark:border-slate-850 flex justify-end gap-1">
-                <button
-                  onClick={() => handleOpenEdit(prod)}
-                  className="p-1.5 rounded-lg text-text-secondary hover:bg-slate-50 hover:text-text-primary dark:text-slate-400 dark:hover:bg-slate-800 transition-colors"
-                  title="Edit Product"
-                >
-                  <Edit className="h-4.5 w-4.5" />
-                </button>
-                <button
-                  onClick={() => setDeleteConfirmId(prod.id)}
-                  className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-950/20 transition-colors"
-                  title="Delete Product"
-                >
-                  <Trash2 className="h-4.5 w-4.5" />
-                </button>
-              </div>
-            </div>
-          ))
-        ) : (
-          <div className="col-span-full text-center py-16 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl">
-            <Package className="h-10 w-10 text-text-light dark:text-slate-600 mx-auto mb-3" />
-            <h3 className="text-sm font-bold text-text-primary dark:text-slate-200">No Inventory Items</h3>
-            <p className="text-xs text-text-secondary dark:text-slate-400 mt-1">Populate your product catalog to start billing instantly.</p>
-          </div>
-        )}
+      {/* Product Data Table */}
+      <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl shadow-soft overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="border-b border-slate-100 dark:border-slate-800 text-[10px] font-extrabold uppercase tracking-wider text-text-secondary dark:text-slate-500 bg-slate-50/50 dark:bg-slate-900/50">
+                <th className="py-4 pl-6">Product details</th>
+                <th className="py-4">Category / Unit</th>
+                <th className="py-4">Stock level</th>
+                <th className="py-4">Pricing (Selling / Purchase)</th>
+                <th className="py-4">Tax / GST Details</th>
+                <th className="py-4">HSN Code</th>
+                <th className="py-4 text-right pr-6">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-50 dark:divide-slate-850">
+              {filteredProducts.length > 0 ? (
+                filteredProducts.map(prod => {
+                  const stockNum = Number(prod.stock) || 0;
+                  return (
+                    <tr key={prod.id} className="hover:bg-slate-50/40 dark:hover:bg-slate-800/20 transition-colors">
+                      <td className="py-4 pl-6">
+                        <div className="font-extrabold text-sm text-text-primary dark:text-slate-200">{prod.name}</div>
+                        {prod.sku && (
+                          <div className="text-[10px] font-mono text-text-secondary dark:text-slate-400 mt-0.5">SKU: {prod.sku}</div>
+                        )}
+                      </td>
+                      <td className="py-4">
+                        <div className="flex items-center gap-1.5">
+                          <span className="inline-flex px-2 py-0.5 text-[9px] font-bold bg-slate-100 dark:bg-slate-800 text-text-secondary dark:text-slate-400 rounded-md">
+                            {prod.category}
+                          </span>
+                          <span className="text-[10px] font-semibold text-text-light dark:text-slate-500">({prod.unit})</span>
+                        </div>
+                      </td>
+                      <td className="py-4">
+                        <div className="flex items-center gap-2">
+                          <span className={`inline-flex px-2.5 py-0.5 rounded-full text-[10px] font-bold border
+                            ${stockNum > 10 
+                              ? 'bg-emerald-50 border-emerald-200 text-emerald-600 dark:bg-emerald-950/20 dark:border-emerald-800/30 dark:text-emerald-400' 
+                              : stockNum > 0 
+                              ? 'bg-amber-50 border-amber-200 text-amber-600 dark:bg-amber-950/20 dark:border-amber-800/30 dark:text-amber-400'
+                              : 'bg-rose-50 border-rose-200 text-rose-600 dark:bg-rose-950/20 dark:border-rose-800/30 dark:text-rose-400'
+                            }
+                          `}>
+                            {stockNum} {prod.unit}
+                          </span>
+                          {stockNum <= 10 && (
+                            <span className="text-[10px] font-bold text-rose-500 uppercase tracking-wide">
+                              {stockNum === 0 ? 'Out of stock' : 'Low stock'}
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="py-4">
+                        <div className="text-xs font-extrabold text-text-primary dark:text-slate-200">
+                          {formatRupee(prod.selling_price)}
+                        </div>
+                        {prod.purchase_price !== undefined && prod.purchase_price > 0 && (
+                          <div className="text-[10px] text-text-secondary dark:text-slate-500 mt-0.5">
+                            Cost: {formatRupee(prod.purchase_price || 0)}
+                          </div>
+                        )}
+                      </td>
+                      <td className="py-4">
+                        <div className="text-xs font-bold text-blue-600 dark:text-blue-400">
+                          {prod.gst_rate}% GST
+                        </div>
+                        <div className="text-[9px] text-text-secondary dark:text-slate-500 mt-0.5">
+                          CGST: {prod.cgst_rate}% | SGST: {prod.sgst_rate}%
+                        </div>
+                      </td>
+                      <td className="py-4">
+                        {prod.hsn_code ? (
+                          <span className="font-mono text-xs font-bold bg-slate-50 dark:bg-slate-800 px-2 py-0.5 rounded border border-slate-100 dark:border-slate-800 text-text-primary dark:text-slate-300">
+                            {prod.hsn_code}
+                          </span>
+                        ) : (
+                          <span className="text-[10px] text-text-light dark:text-slate-500 italic">None</span>
+                        )}
+                      </td>
+                      <td className="py-4 text-right pr-6">
+                        <div className="inline-flex items-center gap-1.5">
+                          <button
+                            onClick={() => handleOpenEdit(prod)}
+                            className="p-1.5 rounded-lg text-text-secondary hover:bg-slate-100 hover:text-text-primary dark:text-slate-400 dark:hover:bg-slate-800 transition-colors"
+                            title="Edit Product"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => setDeleteConfirmId(prod.id)}
+                            className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-100 dark:text-rose-400 dark:hover:bg-rose-950/20 transition-colors"
+                            title="Delete Product"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              ) : (
+                <tr>
+                  <td colSpan={7} className="text-center py-16">
+                    <Package className="h-10 w-10 text-text-light dark:text-slate-650 mx-auto mb-3" />
+                    <h3 className="text-sm font-bold text-text-primary dark:text-slate-200">No Inventory Items</h3>
+                    <p className="text-xs text-text-secondary dark:text-slate-500 mt-1">Try matching another query or change the filter status.</p>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Product Form Dialog */}

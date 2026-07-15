@@ -5,7 +5,6 @@ import {
   IndianRupee, 
   Users, 
   Package, 
-  Receipt, 
   Percent, 
   ArrowUpRight, 
   TrendingUp, 
@@ -64,51 +63,7 @@ export const Dashboard: React.FC = () => {
     );
   }
 
-  // Visual metrics configuration
-  const cards = [
-    {
-      title: "Today's Sales",
-      value: formatRupee(stats?.todaySales),
-      icon: IndianRupee,
-      color: "text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-950/30",
-      desc: "Total invoiced value today"
-    },
-    {
-      title: "Today's Invoices",
-      value: stats?.todayInvoices || 0,
-      icon: Receipt,
-      color: "text-indigo-600 bg-indigo-50 dark:text-indigo-400 dark:bg-indigo-950/30",
-      desc: "Invoices generated today"
-    },
-    {
-      title: "Monthly Sales",
-      value: formatRupee(stats?.monthlySales),
-      icon: TrendingUp,
-      color: "text-emerald-600 bg-emerald-50 dark:text-emerald-400 dark:bg-emerald-950/30",
-      desc: "Sales in current calendar month"
-    },
-    {
-      title: "Total Customers",
-      value: stats?.totalCustomers || 0,
-      icon: Users,
-      color: "text-violet-600 bg-violet-50 dark:text-violet-400 dark:bg-violet-950/30",
-      desc: "Registered customer records"
-    },
-    {
-      title: "Active Products",
-      value: stats?.totalProducts || 0,
-      icon: Package,
-      color: "text-amber-600 bg-amber-50 dark:text-amber-400 dark:bg-amber-950/30",
-      desc: "Items in product catalog"
-    },
-    {
-      title: "GST Collected",
-      value: formatRupee(stats?.totalGstCollected),
-      icon: Percent,
-      color: "text-rose-600 bg-rose-50 dark:text-rose-400 dark:bg-rose-950/30",
-      desc: "Total tax collected (CGST+SGST+IGST)"
-    }
-  ];
+
 
   // Dummy monthly points for custom SVG line chart
   const graphPoints = [12, 19, 32, 26, 45, 60, 52, 78, 65, 88, 92, 105];
@@ -130,54 +85,95 @@ export const Dashboard: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-12">
-      {/* Metrics Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {cards.map((card, idx) => {
-          const Icon = card.icon;
-          return (
-            <motion.div
-              key={card.title}
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.05 }}
-              whileHover={{ y: -4, scale: 1.01 }}
-              className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800/80 rounded-2xl p-6 shadow-soft flex items-center justify-between"
-            >
-              <div className="space-y-1">
-                <span className="text-xs font-semibold text-text-secondary dark:text-slate-400 uppercase tracking-wider">{card.title}</span>
-                <h2 className="text-2xl font-extrabold text-text-primary dark:text-slate-100">{card.value}</h2>
-                <p className="text-[10px] text-text-light dark:text-slate-500 font-medium">{card.desc}</p>
-              </div>
-              <div className={`p-4 rounded-2xl ${card.color} flex-shrink-0`}>
-                <Icon className="h-6 w-6" />
-              </div>
-            </motion.div>
-          );
-        })}
-      </div>
+      {/* Bento Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {/* Bento Box 1: Primary Large Stat (Monthly Sales) */}
+        <motion.div
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          whileHover={{ y: -4, scale: 1.01 }}
+          className="lg:col-span-2 bg-gradient-to-br from-primary/10 via-primary-dark/5 to-transparent dark:from-primary/20 dark:via-transparent dark:to-transparent border border-slate-100 dark:border-slate-800/80 rounded-3xl p-6 shadow-soft flex flex-col justify-between hover-premium min-h-[160px]"
+        >
+          <div className="flex justify-between items-start">
+            <div className="space-y-1">
+              <span className="text-[10px] font-extrabold text-primary dark:text-primary-light uppercase tracking-wider">Performance</span>
+              <h3 className="text-sm font-bold text-text-secondary dark:text-slate-400">Monthly Sales Volume</h3>
+            </div>
+            <div className="p-3.5 rounded-2xl bg-primary text-white shadow-soft">
+              <TrendingUp className="h-5 w-5" />
+            </div>
+          </div>
+          <div className="mt-4">
+            <h2 className="text-3xl font-black text-text-primary dark:text-slate-100">{formatRupee(stats?.monthlySales)}</h2>
+            <p className="text-[10px] text-text-secondary dark:text-slate-400 mt-1 font-semibold">Sales in the current calendar month</p>
+          </div>
+        </motion.div>
 
-      {/* Charts & Actions Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Sales Chart (SVG Premium Design) */}
-        <div className="lg:col-span-2 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-6 shadow-soft space-y-4">
+        {/* Bento Box 2: Today's Revenue */}
+        <motion.div
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05 }}
+          whileHover={{ y: -4, scale: 1.01 }}
+          className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800/80 rounded-3xl p-6 shadow-soft flex flex-col justify-between hover-premium min-h-[160px]"
+        >
+          <div className="flex justify-between items-start">
+            <h3 className="text-sm font-bold text-text-secondary dark:text-slate-400">Today's Sales</h3>
+            <div className="p-3 rounded-2xl bg-blue-50 text-blue-600 dark:bg-blue-950/30 dark:text-blue-400">
+              <IndianRupee className="h-5 w-5" />
+            </div>
+          </div>
+          <div className="mt-4">
+            <h2 className="text-2xl font-black text-text-primary dark:text-slate-100">{formatRupee(stats?.todaySales)}</h2>
+            <p className="text-[10px] text-text-light dark:text-slate-500 font-semibold">{stats?.todayInvoices || 0} invoices generated today</p>
+          </div>
+        </motion.div>
+
+        {/* Bento Box 3: GST Collected */}
+        <motion.div
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          whileHover={{ y: -4, scale: 1.01 }}
+          className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800/80 rounded-3xl p-6 shadow-soft flex flex-col justify-between hover-premium min-h-[160px]"
+        >
+          <div className="flex justify-between items-start">
+            <h3 className="text-sm font-bold text-text-secondary dark:text-slate-400">GST Collected</h3>
+            <div className="p-3 rounded-2xl bg-rose-50 text-rose-600 dark:bg-rose-950/30 dark:text-rose-400">
+              <Percent className="h-5 w-5" />
+            </div>
+          </div>
+          <div className="mt-4">
+            <h2 className="text-2xl font-black text-text-primary dark:text-slate-100">{formatRupee(stats?.totalGstCollected)}</h2>
+            <p className="text-[10px] text-text-light dark:text-slate-500 font-semibold">Total tax collected (CGST+SGST+IGST)</p>
+          </div>
+        </motion.div>
+
+        {/* Bento Box 4: Sales Graph (Large Bento Box) */}
+        <motion.div
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+          className="lg:col-span-3 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl p-6 shadow-soft flex flex-col justify-between min-h-[300px]"
+        >
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-sm uppercase font-bold tracking-wider text-text-secondary dark:text-slate-400">Sales Trend</h3>
-              <p className="text-xs text-text-light dark:text-slate-500">Monthly invoice turnover growth</p>
+              <span className="text-[10px] font-extrabold text-primary dark:text-primary-light uppercase tracking-wider">Analytics</span>
+              <h3 className="text-base font-bold text-text-primary dark:text-slate-200">Revenue Turnover Growth</h3>
             </div>
-            <div className="flex items-center gap-1.5 text-xs text-primary font-semibold">
+            <div className="flex items-center gap-1.5 text-xs text-success font-bold">
               <span>+34% vs last year</span>
               <ArrowUpRight className="h-4 w-4" />
             </div>
           </div>
           
           {/* Custom SVG Line Chart */}
-          <div className="relative pt-4 w-full">
-            <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-48 overflow-visible">
+          <div className="relative pt-4 w-full flex-grow flex flex-col justify-end">
+            <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-44 overflow-visible">
               <defs>
                 <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#2563EB" stopOpacity="0.25" />
-                  <stop offset="100%" stopColor="#2563EB" stopOpacity="0.0" />
+                  <stop offset="0%" stopColor="var(--color-primary)" stopOpacity="0.25" />
+                  <stop offset="100%" stopColor="var(--color-primary)" stopOpacity="0.0" />
                 </linearGradient>
               </defs>
               
@@ -191,7 +187,7 @@ export const Dashboard: React.FC = () => {
                     y1={y} 
                     x2={width - padding} 
                     y2={y} 
-                    className="stroke-slate-100 dark:stroke-slate-800" 
+                    className="stroke-slate-100 dark:stroke-slate-800/80" 
                     strokeWidth="1" 
                     strokeDasharray="4 4" 
                   />
@@ -202,7 +198,7 @@ export const Dashboard: React.FC = () => {
               <path d={areaD} fill="url(#chartGradient)" />
               
               {/* Chart Line */}
-              <path d={pathD} fill="none" stroke="#2563EB" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" />
+              <path d={pathD} fill="none" stroke="var(--color-primary)" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" />
               
               {/* Interaction Dots */}
               {points.map((pt, idx) => {
@@ -215,78 +211,74 @@ export const Dashboard: React.FC = () => {
                 );
               })}
             </svg>
-            <div className="flex justify-between px-4 text-[10px] text-text-secondary dark:text-slate-400 font-semibold mt-2">
+            <div className="flex justify-between px-4 text-[10px] text-text-secondary dark:text-slate-400 font-semibold mt-2 border-t border-slate-50 dark:border-slate-850 pt-2">
               {months.map((m) => (
                 <span key={m}>{m}</span>
               ))}
             </div>
           </div>
-        </div>
+        </motion.div>
 
-        {/* Quick Actions Panel */}
-        <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-6 shadow-soft space-y-4">
-          <div>
-            <h3 className="text-sm uppercase font-bold tracking-wider text-text-secondary dark:text-slate-400">Quick Actions</h3>
-            <p className="text-xs text-text-light dark:text-slate-500">Shortcuts to speed up workflows</p>
+        {/* Bento Box 5: Directory Stats & Quick Shortcuts */}
+        <motion.div
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl p-6 shadow-soft flex flex-col justify-between min-h-[300px]"
+        >
+          <div className="space-y-4">
+            <div>
+              <span className="text-[10px] font-extrabold text-primary dark:text-primary-light uppercase tracking-wider">Quick Actions</span>
+              <h3 className="text-sm font-bold text-text-secondary dark:text-slate-400">Shortcuts</h3>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={() => handleQuickAction('gst-invoice')}
+                className="flex flex-col gap-1.5 p-3 rounded-2xl border border-slate-100 dark:border-slate-800 hover:bg-primary/5 hover:border-primary/20 hover:text-primary transition-all text-left"
+              >
+                <PlusCircle className="h-5 w-5 text-primary" />
+                <span className="text-[10px] font-extrabold text-text-primary dark:text-slate-200">GST Bill</span>
+              </button>
+              <button
+                onClick={() => handleQuickAction('nongst-invoice')}
+                className="flex flex-col gap-1.5 p-3 rounded-2xl border border-slate-100 dark:border-slate-800 hover:bg-primary/5 hover:border-primary/20 hover:text-primary transition-all text-left"
+              >
+                <PlusCircle className="h-5 w-5 text-indigo-500" />
+                <span className="text-[10px] font-extrabold text-text-primary dark:text-slate-200">Non-GST</span>
+              </button>
+              <button
+                onClick={() => handleQuickAction('customers')}
+                className="flex flex-col gap-1.5 p-3 rounded-2xl border border-slate-100 dark:border-slate-800 hover:bg-primary/5 hover:border-primary/20 hover:text-primary transition-all text-left"
+              >
+                <Users className="h-5 w-5 text-emerald-500" />
+                <span className="text-[10px] font-extrabold text-text-primary dark:text-slate-200">Customer</span>
+              </button>
+              <button
+                onClick={() => handleQuickAction('products')}
+                className="flex flex-col gap-1.5 p-3 rounded-2xl border border-slate-100 dark:border-slate-800 hover:bg-primary/5 hover:border-primary/20 hover:text-primary transition-all text-left"
+              >
+                <Package className="h-5 w-5 text-amber-500" />
+                <span className="text-[10px] font-extrabold text-text-primary dark:text-slate-200">Inventory</span>
+              </button>
+            </div>
           </div>
-          <div className="grid grid-cols-1 gap-3">
-            <button
-              onClick={() => handleQuickAction('gst-invoice')}
-              className="flex items-center gap-3.5 p-4 rounded-xl border border-slate-100 dark:border-slate-850 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:border-primary/20 hover:shadow-soft text-left group transition-all duration-200"
-            >
-              <div className="h-10 w-10 rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-950/20 dark:text-blue-400 flex items-center justify-center flex-shrink-0">
-                <PlusCircle className="h-5 w-5" />
-              </div>
-              <div>
-                <h4 className="text-sm font-bold text-text-primary dark:text-slate-200">New GST Invoice</h4>
-                <p className="text-[10px] text-text-secondary dark:text-slate-400">Create inter/intra state tax bills</p>
-              </div>
-            </button>
-
-            <button
-              onClick={() => handleQuickAction('nongst-invoice')}
-              className="flex items-center gap-3.5 p-4 rounded-xl border border-slate-100 dark:border-slate-850 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:border-primary/20 hover:shadow-soft text-left group transition-all duration-200"
-            >
-              <div className="h-10 w-10 rounded-xl bg-indigo-50 text-indigo-600 dark:bg-indigo-950/20 dark:text-indigo-400 flex items-center justify-center flex-shrink-0">
-                <PlusCircle className="h-5 w-5" />
-              </div>
-              <div>
-                <h4 className="text-sm font-bold text-text-primary dark:text-slate-200">New Non-GST Invoice</h4>
-                <p className="text-[10px] text-text-secondary dark:text-slate-400">Simple offline bills or estimates</p>
-              </div>
-            </button>
-
-            <button
-              onClick={() => handleQuickAction('customers')}
-              className="flex items-center gap-3.5 p-4 rounded-xl border border-slate-100 dark:border-slate-850 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:border-primary/20 hover:shadow-soft text-left group transition-all duration-200"
-            >
-              <div className="h-10 w-10 rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/20 dark:text-emerald-400 flex items-center justify-center flex-shrink-0">
-                <Users className="h-5 w-5" />
-              </div>
-              <div>
-                <h4 className="text-sm font-bold text-text-primary dark:text-slate-200">Add Customer</h4>
-                <p className="text-[10px] text-text-secondary dark:text-slate-400">Register customer contact details</p>
-              </div>
-            </button>
-
-            <button
-              onClick={() => handleQuickAction('products')}
-              className="flex items-center gap-3.5 p-4 rounded-xl border border-slate-100 dark:border-slate-850 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:border-primary/20 hover:shadow-soft text-left group transition-all duration-200"
-            >
-              <div className="h-10 w-10 rounded-xl bg-amber-50 text-amber-600 dark:bg-amber-950/20 dark:text-amber-400 flex items-center justify-center flex-shrink-0">
-                <Package className="h-5 w-5" />
-              </div>
-              <div>
-                <h4 className="text-sm font-bold text-text-primary dark:text-slate-200">New Product Item</h4>
-                <p className="text-[10px] text-text-secondary dark:text-slate-400">Add item, rate and HSN to inventory</p>
-              </div>
-            </button>
+          
+          <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800/80 grid grid-cols-2 gap-2 text-center text-xs font-bold text-text-secondary dark:text-slate-400">
+            <div className="bg-slate-50 dark:bg-slate-800/40 p-2.5 rounded-xl">
+              <div className="text-text-primary dark:text-slate-200 font-extrabold text-sm">{stats?.totalCustomers || 0}</div>
+              <div className="text-[8px] text-text-light uppercase tracking-wider mt-0.5">Customers</div>
+            </div>
+            <div className="bg-slate-50 dark:bg-slate-800/40 p-2.5 rounded-xl">
+              <div className="text-text-primary dark:text-slate-200 font-extrabold text-sm">{stats?.totalProducts || 0}</div>
+              <div className="text-[8px] text-text-light uppercase tracking-wider mt-0.5">Products</div>
+            </div>
           </div>
-        </div>
+        </motion.div>
       </div>
 
       {/* Recent Invoices Section */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-6 shadow-soft space-y-4">
+      <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl p-6 shadow-soft space-y-4">
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-sm uppercase font-bold tracking-wider text-text-secondary dark:text-slate-400">Recent Invoices</h3>

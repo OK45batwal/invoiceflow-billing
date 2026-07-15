@@ -9,9 +9,6 @@ import {
   Edit, 
   Trash2, 
   Building, 
-  Mail, 
-  Phone, 
-  MapPin, 
   History, 
   AlertTriangle,
   Users
@@ -28,6 +25,7 @@ export const Customers: React.FC = () => {
   } = useApp();
 
   const [searchQuery, setSearchQuery] = useState('');
+  const [typeFilter, setTypeFilter] = useState<'ALL' | 'GST' | 'REGULAR'>('ALL');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
@@ -128,11 +126,19 @@ export const Customers: React.FC = () => {
   };
 
   // Filtered customer list
-  const filteredCustomers = customers.filter(c => 
-    c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (c.company_name && c.company_name.toLowerCase().includes(searchQuery.toLowerCase())) ||
-    c.mobile.includes(searchQuery)
-  );
+  const filteredCustomers = customers.filter(c => {
+    const matchesSearch = 
+      c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (c.company_name && c.company_name.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      c.mobile.includes(searchQuery);
+      
+    const matchesType = 
+      typeFilter === 'ALL' ? true :
+      typeFilter === 'GST' ? !!c.gstin :
+      !c.gstin;
+      
+    return matchesSearch && matchesType;
+  });
 
   // Invoices list for history
   const getCustomerInvoices = (customerId: string) => {
@@ -149,124 +155,205 @@ export const Customers: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-12">
-      {/* Search and Action Bar */}
-      <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
-        <div className="relative w-full sm:w-80">
-          <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-            <Search className="h-4.5 w-4.5 text-text-light dark:text-slate-500" />
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-5 shadow-soft flex items-center justify-between">
+          <div className="space-y-1">
+            <span className="text-[10px] font-extrabold text-text-secondary dark:text-slate-400 uppercase tracking-wider">Total Customers</span>
+            <h2 className="text-2xl font-black text-text-primary dark:text-slate-100">{customers.length}</h2>
           </div>
-          <input
-            type="text"
-            placeholder="Search customers..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full h-10 pl-10 pr-4 text-sm bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-text-primary dark:text-slate-200"
-          />
+          <div className="p-3 rounded-xl bg-primary/10 text-primary dark:bg-primary-dark/20 dark:text-primary-light">
+            <Users className="h-5 w-5" />
+          </div>
         </div>
+
+        <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-5 shadow-soft flex items-center justify-between">
+          <div className="space-y-1">
+            <span className="text-[10px] font-extrabold text-text-secondary dark:text-slate-400 uppercase tracking-wider">GST Registered</span>
+            <h2 className="text-2xl font-black text-success">{customers.filter(c => c.gstin).length}</h2>
+          </div>
+          <div className="p-3 rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/20 dark:text-emerald-400">
+            <Building className="h-5 w-5" />
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-5 shadow-soft flex items-center justify-between">
+          <div className="space-y-1">
+            <span className="text-[10px] font-extrabold text-text-secondary dark:text-slate-400 uppercase tracking-wider">Regular (Non-GST)</span>
+            <h2 className="text-2xl font-black text-text-primary dark:text-slate-100">{customers.filter(c => !c.gstin).length}</h2>
+          </div>
+          <div className="p-3 rounded-xl bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+            <Users className="h-5 w-5" />
+          </div>
+        </div>
+      </div>
+
+      {/* Search and Filter Action Bar */}
+      <div className="flex flex-col md:flex-row gap-4 justify-between items-stretch md:items-center">
+        <div className="flex flex-col sm:flex-row gap-3 flex-grow max-w-xl">
+          <div className="relative flex-grow">
+            <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+              <Search className="h-4.5 w-4.5 text-text-light dark:text-slate-500" />
+            </div>
+            <input
+              type="text"
+              placeholder="Search customers by name, company, mobile..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full h-10 pl-10 pr-4 text-sm bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-text-primary dark:text-slate-200"
+            />
+          </div>
+
+          {/* Type Filter Selector */}
+          <div className="flex bg-slate-50 dark:bg-slate-800 p-1 rounded-xl border border-slate-100 dark:border-slate-800/80 self-start sm:self-auto">
+            <button
+              type="button"
+              onClick={() => setTypeFilter('ALL')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all
+                ${typeFilter === 'ALL'
+                  ? 'bg-white dark:bg-slate-700 text-primary dark:text-slate-200 shadow-soft'
+                  : 'text-text-secondary dark:text-slate-400 hover:text-text-primary'
+                }
+              `}
+            >
+              All
+            </button>
+            <button
+              type="button"
+              onClick={() => setTypeFilter('GST')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all
+                ${typeFilter === 'GST'
+                  ? 'bg-white dark:bg-slate-700 text-primary dark:text-slate-200 shadow-soft'
+                  : 'text-text-secondary dark:text-slate-400 hover:text-text-primary'
+                }
+              `}
+            >
+              GST
+            </button>
+            <button
+              type="button"
+              onClick={() => setTypeFilter('REGULAR')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all
+                ${typeFilter === 'REGULAR'
+                  ? 'bg-white dark:bg-slate-700 text-primary dark:text-slate-200 shadow-soft'
+                  : 'text-text-secondary dark:text-slate-400 hover:text-text-primary'
+                }
+              `}
+            >
+              Regular
+            </button>
+          </div>
+        </div>
+
         <button
           onClick={handleOpenCreate}
-          className="w-full sm:w-auto h-10 px-4 flex items-center justify-center gap-2 rounded-xl bg-primary hover:bg-primary-dark text-white font-semibold text-sm shadow-soft hover:shadow-premium transition-all duration-200"
+          className="h-10 px-4 flex items-center justify-center gap-2 rounded-xl bg-primary hover:bg-primary-dark text-white font-semibold text-sm shadow-soft hover:shadow-premium transition-all duration-200"
         >
           <PlusCircle className="h-4.5 w-4.5" />
           <span>Create Customer</span>
         </button>
       </div>
 
-      {/* Customer Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredCustomers.length > 0 ? (
-          filteredCustomers.map(cust => {
-            const customerInvoices = getCustomerInvoices(cust.id);
-            const totalBilled = customerInvoices.reduce((sum, inv) => sum + (Number(inv.grand_total) || 0), 0);
+      {/* Customer Data Table */}
+      <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl shadow-soft overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="border-b border-slate-100 dark:border-slate-800 text-[10px] font-extrabold uppercase tracking-wider text-text-secondary dark:text-slate-500 bg-slate-50/50 dark:bg-slate-900/50">
+                <th className="py-4 pl-6">Customer / Company</th>
+                <th className="py-4">Contact Info</th>
+                <th className="py-4">Location</th>
+                <th className="py-4">GSTIN / PAN</th>
+                <th className="py-4">Invoiced Details</th>
+                <th className="py-4 text-right pr-6">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-50 dark:divide-slate-850">
+              {filteredCustomers.length > 0 ? (
+                filteredCustomers.map(cust => {
+                  const customerInvoices = getCustomerInvoices(cust.id);
+                  const totalBilled = customerInvoices.reduce((sum, inv) => sum + (Number(inv.grand_total) || 0), 0);
 
-            return (
-              <div 
-                key={cust.id} 
-                className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800/80 rounded-2xl p-6 shadow-soft hover:shadow-premium flex flex-col justify-between transition-all duration-200 group"
-              >
-                <div className="space-y-4">
-                  {/* Customer Header */}
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-1">
-                      <h3 className="text-base font-extrabold text-text-primary dark:text-slate-200">{cust.name}</h3>
-                      {cust.company_name && (
-                        <div className="flex items-center gap-1 text-xs text-text-secondary dark:text-slate-400 font-medium">
-                          <Building className="h-3.5 w-3.5" />
-                          <span>{cust.company_name}</span>
+                  return (
+                    <tr key={cust.id} className="hover:bg-slate-50/40 dark:hover:bg-slate-800/20 transition-colors">
+                      <td className="py-4 pl-6">
+                        <div className="font-extrabold text-sm text-text-primary dark:text-slate-200">{cust.name}</div>
+                        {cust.company_name && (
+                          <div className="text-[10px] text-text-secondary dark:text-slate-400 flex items-center gap-1 mt-0.5">
+                            <Building className="h-3 w-3 text-text-light" />
+                            <span>{cust.company_name}</span>
+                          </div>
+                        )}
+                      </td>
+                      <td className="py-4">
+                        <div className="text-xs font-semibold text-text-primary dark:text-slate-200">{cust.mobile}</div>
+                        {cust.email && (
+                          <div className="text-[10px] text-text-secondary dark:text-slate-400 mt-0.5">{cust.email}</div>
+                        )}
+                      </td>
+                      <td className="py-4">
+                        <div className="text-xs font-semibold text-text-primary dark:text-slate-200">{cust.city}</div>
+                        <span className="inline-flex mt-0.5 px-2 py-0.5 text-[9px] font-bold bg-slate-100 dark:bg-slate-800 text-text-secondary dark:text-slate-400 rounded-md">
+                          {cust.state}
+                        </span>
+                      </td>
+                      <td className="py-4">
+                        {cust.gstin ? (
+                          <div className="font-mono text-xs font-bold text-primary dark:text-primary-light">{cust.gstin}</div>
+                        ) : (
+                          <span className="text-[10px] text-text-light dark:text-slate-500 font-semibold italic">Unregistered</span>
+                        )}
+                        {cust.pan && (
+                          <div className="text-[9px] font-mono font-bold text-text-secondary dark:text-slate-400 mt-0.5">PAN: {cust.pan}</div>
+                        )}
+                      </td>
+                      <td className="py-4">
+                        <button
+                          onClick={() => setSelectedCustomerHistory(cust)}
+                          className="flex flex-col items-start text-left group"
+                        >
+                          <div className="text-xs font-bold text-primary dark:text-primary-light group-hover:underline flex items-center gap-1">
+                            <History className="h-3.5 w-3.5" />
+                            <span>{customerInvoices.length} invoices</span>
+                          </div>
+                          <span className="text-[10px] text-text-secondary dark:text-slate-400 font-bold mt-0.5">
+                            Total: ₹{totalBilled.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </span>
+                        </button>
+                      </td>
+                      <td className="py-4 text-right pr-6">
+                        <div className="inline-flex items-center gap-1.5">
+                          <button
+                            onClick={() => handleOpenEdit(cust)}
+                            className="p-1.5 rounded-lg text-text-secondary hover:bg-slate-100 hover:text-text-primary dark:text-slate-400 dark:hover:bg-slate-800 transition-colors"
+                            title="Edit Customer"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => setDeleteConfirmId(cust.id)}
+                            className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-100 dark:text-rose-400 dark:hover:bg-rose-950/20 transition-colors"
+                            title="Delete Customer"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
                         </div>
-                      )}
-                    </div>
-                    <span className="px-2.5 py-1 text-[10px] font-bold border border-blue-100 bg-blue-50 text-blue-600 rounded-full dark:bg-blue-950/20 dark:border-blue-800/30 dark:text-blue-400 flex items-center justify-center">
-                      {cust.state} ({cust.state_code})
-                    </span>
-                  </div>
-
-                  {/* Customer Details */}
-                  <div className="space-y-2 text-xs font-semibold text-text-secondary dark:text-slate-400">
-                    <div className="flex items-center gap-2">
-                      <Phone className="h-3.5 w-3.5 text-text-light dark:text-slate-500" />
-                      <span>{cust.mobile}</span>
-                    </div>
-                    {cust.email && (
-                      <div className="flex items-center gap-2">
-                        <Mail className="h-3.5 w-3.5 text-text-light dark:text-slate-500" />
-                        <span className="line-clamp-1">{cust.email}</span>
-                      </div>
-                    )}
-                    <div className="flex items-start gap-2">
-                      <MapPin className="h-3.5 w-3.5 text-text-light dark:text-slate-500 mt-0.5 flex-shrink-0" />
-                      <span className="line-clamp-2">{cust.address}, {cust.city}</span>
-                    </div>
-                    {cust.gstin && (
-                      <div className="mt-1 bg-slate-50 dark:bg-slate-800/50 p-2 rounded-lg text-[10px] flex justify-between font-bold">
-                        <span className="text-text-light dark:text-slate-500">GSTIN</span>
-                        <span className="text-text-primary dark:text-slate-300">{cust.gstin}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Footer details and actions */}
-                <div className="mt-6 pt-4 border-t border-slate-50 dark:border-slate-850 flex items-center justify-between">
-                  <button 
-                    onClick={() => setSelectedCustomerHistory(cust)}
-                    className="flex flex-col items-start text-left"
-                  >
-                    <div className="flex items-center gap-1.5 text-xs text-primary font-bold hover:underline">
-                      <History className="h-4 w-4" />
-                      <span>History ({customerInvoices.length})</span>
-                    </div>
-                    <span className="text-[10px] text-text-secondary dark:text-slate-400 font-bold mt-0.5 pl-5.5">
-                      Billed: ₹{totalBilled.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </span>
-                  </button>
-                  <div className="flex items-center gap-1">
-                    <button
-                      onClick={() => handleOpenEdit(cust)}
-                      className="p-1.5 rounded-lg text-text-secondary hover:bg-slate-50 hover:text-text-primary dark:text-slate-400 dark:hover:bg-slate-800 transition-colors"
-                      title="Edit Customer"
-                    >
-                      <Edit className="h-4.5 w-4.5" />
-                    </button>
-                    <button
-                      onClick={() => setDeleteConfirmId(cust.id)}
-                      className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-950/20 transition-colors"
-                      title="Delete Customer"
-                    >
-                      <Trash2 className="h-4.5 w-4.5" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            );
-          })
-        ) : (
-          <div className="col-span-full text-center py-16 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl">
-            <Users className="h-10 w-10 text-text-light dark:text-slate-600 mx-auto mb-3" />
-            <h3 className="text-sm font-bold text-text-primary dark:text-slate-200">No Customers Found</h3>
-            <p className="text-xs text-text-secondary dark:text-slate-400 mt-1">Create your first customer to start invoicing.</p>
-          </div>
-        )}
+                      </td>
+                    </tr>
+                  );
+                })
+              ) : (
+                <tr>
+                  <td colSpan={6} className="text-center py-16">
+                    <Users className="h-10 w-10 text-text-light dark:text-slate-650 mx-auto mb-3" />
+                    <h3 className="text-sm font-bold text-text-primary dark:text-slate-200">No Customers Found</h3>
+                    <p className="text-xs text-text-secondary dark:text-slate-500 mt-1">Try matching another query or change the filter status.</p>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Customer Form Dialog */}

@@ -1,31 +1,33 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary: #2563EB;
-  --color-primary-light: #3B82F6;
-  --color-primary-dark: #1D4ED8;
-  --color-primary-shading: #EFF6FF;
-  --color-bg: #F8FAFC;
-  --color-bg-card: #FFFFFF;
-  --color-bg-dark: #0F172A;
-  --color-bg-dark-card: #1E293B;
-  --color-success: #10B981;
-  --color-danger: #EF4444;
-  --color-warning: #F59E0B;
-  --color-text-primary: #1E293B;
-  --color-text-secondary: #64748B;
-  --color-text-light: #94A3B8;
+  --color-primary: #6366f1;
+  --color-primary-light: #818cf8;
+  --color-primary-dark: #4f46e5;
+  --color-primary-shading: #f5f3ff;
+  --color-bg: #f8fafc;
+  --color-bg-card: #ffffff;
+  --color-bg-dark: #090d16;
+  --color-bg-dark-card: #111827;
+  --color-success: #10b981;
+  --color-danger: #f43f5e;
+  --color-warning: #f59e0b;
+  --color-text-primary: #0f172a;
+  --color-text-secondary: #475569;
+  --color-text-light: #94a3b8;
   
   --font-sans: 'Inter', sans-serif;
   
-  --shadow-soft: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
-  --shadow-card: 0 10px 15px -3px rgb(0 0 0 / 0.05), 0 4px 6px -4px rgb(0 0 0 / 0.05);
-  --shadow-premium: 0 20px 25px -5px rgb(0 0 0 / 0.03), 0 8px 10px -6px rgb(0 0 0 / 0.03);
+  --shadow-soft: 0 4px 20px -2px rgba(17, 24, 39, 0.04), 0 2px 8px -1px rgba(17, 24, 39, 0.02);
+  --shadow-card: 0 12px 30px -4px rgba(17, 24, 39, 0.06), 0 4px 12px -2px rgba(17, 24, 39, 0.03);
+  --shadow-premium: 0 24px 48px -8px rgba(17, 24, 39, 0.08), 0 8px 16px -4px rgba(17, 24, 39, 0.04);
 }
 
 @layer base {
   body {
-    @apply bg-bg text-text-primary;
+    background-color: var(--color-bg);
+    color: var(--color-text-primary);
+    transition: background-color 0.3s ease, color 0.3s ease;
   }
 }
 
