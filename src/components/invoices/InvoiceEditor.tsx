@@ -609,7 +609,7 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ type }) => {
         </div>
 
         {/* Live A4 Print Preview Panel */}
-        <div className={`xl:col-span-5 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-6 shadow-soft space-y-6 ${previewTab === 'edit' ? 'hidden xl:block' : 'block'}`}>
+        <div className={`xl:col-span-5 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-6 shadow-soft space-y-6 overflow-x-auto w-full ${previewTab === 'edit' ? 'hidden xl:block' : 'block'}`}>
           <div className="flex justify-between items-center pb-4 border-b border-slate-50 dark:border-slate-850 no-print">
             <h3 className="text-sm font-bold uppercase tracking-wider text-text-secondary dark:text-slate-400">A4 Live Print View</h3>
             <div className="flex gap-2">
