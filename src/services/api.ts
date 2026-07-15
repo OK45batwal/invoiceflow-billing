@@ -1,6 +1,6 @@
 import { BusinessProfile, Customer, Product, Invoice, DashboardStats, ReportData } from '../types';
 
-const API_BASE = 'http://localhost:5001/api';
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
 
 // Helper to determine if we should fallback to offline mode
 let isOfflineMode = false;
