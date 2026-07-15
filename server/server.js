@@ -480,6 +480,10 @@ app.get('/api/reports', async (req, res) => {
 });
 
 // Start Server
-app.listen(PORT, () => {
-  console.log(`InvoiceFlow backend running on port ${PORT}`);
-});
+if (process.env.NODE_ENV !== 'production') {
+  app.listen(PORT, () => {
+    console.log(`InvoiceFlow backend running on port ${PORT}`);
+  });
+}
+
+export default app;
