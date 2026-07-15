@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { BusinessProfile } from '../types';
 import { INDIAN_STATES } from '../utils/gstEngine';
-import { Save, Building, CreditCard, Shield, Download, UploadCloud, Info } from 'lucide-react';
+import { Save, Building, CreditCard, Shield, Download, UploadCloud } from 'lucide-react';
 
 export const Settings: React.FC = () => {
   const { gstProfile, nongstProfile, updateProfile, showToast } = useApp();
@@ -131,7 +131,7 @@ export const Settings: React.FC = () => {
         setTimeout(() => {
           window.location.reload();
         }, 1500);
-      } catch (err) {
+      } catch {
         showToast('Invalid backup file format.', 'danger');
       }
     };

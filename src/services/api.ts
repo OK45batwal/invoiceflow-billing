@@ -286,7 +286,7 @@ export const api = {
         deleteLocalDraft((invoice as any).id);
       }
       return created;
-    } catch (error) {
+    } catch {
       // If server is offline, save to local saved invoices
       console.warn('Saving invoice locally since server is offline');
       const localSaved = JSON.parse(localStorage.getItem('invoiceflow_saved_invoices') || '[]');

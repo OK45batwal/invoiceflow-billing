@@ -120,7 +120,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setInvoices(invs);
       
       setIsOffline(api.isOffline());
-    } catch (error: any) {
+    } catch {
       setIsOffline(true);
       showToast('Offline Mode: Server is unreachable. Saving changes locally.', 'warning');
     } finally {
@@ -138,7 +138,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const updated = await api.updateProfile(type, newProfile);
       setProfiles(prev => ({ ...prev, [type]: updated }));
       showToast(`${type} Business profile saved successfully!`, 'success');
-    } catch (error) {
+    } catch {
       showToast('Profile saved offline.', 'info');
       setProfiles(prev => ({ ...prev, [type]: { ...newProfile, profile_type: type } }));
     }

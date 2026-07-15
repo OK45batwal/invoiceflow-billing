@@ -1,20 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
-import { Invoice, InvoiceType, PaymentStatus } from '../types';
+import { Invoice } from '../types';
 import { api } from '../services/api';
 import { Dialog } from '../components/ui/Dialog';
 import { 
   Search, 
-  Filter, 
   Trash2, 
-  Printer, 
   Copy, 
   Edit, 
-  Calendar,
-  IndianRupee,
   AlertTriangle,
-  Receipt,
-  Download
+  Receipt
 } from 'lucide-react';
 
 export const InvoiceHistory: React.FC = () => {
@@ -76,7 +71,7 @@ export const InvoiceHistory: React.FC = () => {
   };
 
   const handleDuplicate = async (inv: Invoice) => {
-    const { id, invoice_number, created_at, ...duplicateData } = inv;
+    const { id: _id, invoice_number: _invoice_number, created_at: _created_at, ...duplicateData } = inv;
     
     // Create new unique invoice number
     const prefix = inv.invoice_type === 'GST' ? 'GST-' : 'BILL-';

@@ -308,7 +308,9 @@ app.put('/api/invoices/:id', async (req, res) => {
     
     // Insert new items
     const itemsWithInvoiceId = items.map(item => {
-      const { id, invoice_id, ...cleanItem } = item;
+      const cleanItem = { ...item };
+      delete cleanItem.id;
+      delete cleanItem.invoice_id;
       return {
         ...cleanItem,
         invoice_id: invoiceId
@@ -372,8 +374,6 @@ app.get('/api/dashboard/stats', async (req, res) => {
     
     invoices.forEach(inv => {
       const isGstOrNonGst = ['GST', 'Non-GST'].includes(inv.invoice_type);
-      const isPaidOrPartially = ['Paid', 'Partially Paid'].includes(inv.payment_status) || true; // standard count towards total sales
-      
       const invDateStr = inv.invoice_date;
       const amount = Number(inv.grand_total) || 0;
       const cgst = Number(inv.cgst_total) || 0;

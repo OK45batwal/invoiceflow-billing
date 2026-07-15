@@ -1,4 +1,4 @@
-import { InvoiceItem, BusinessProfile, Customer } from '../types';
+import { InvoiceItem, BusinessProfile } from '../types';
 
 /**
  * Extract 2-digit state code from GSTIN.

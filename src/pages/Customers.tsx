@@ -13,8 +13,6 @@ import {
   Phone, 
   MapPin, 
   History, 
-  FileText, 
-  IndianRupee,
   AlertTriangle,
   Users
 } from 'lucide-react';
@@ -232,10 +230,15 @@ export const Customers: React.FC = () => {
                 <div className="mt-6 pt-4 border-t border-slate-50 dark:border-slate-850 flex items-center justify-between">
                   <button 
                     onClick={() => setSelectedCustomerHistory(cust)}
-                    className="flex items-center gap-1.5 text-xs text-primary font-bold hover:underline"
+                    className="flex flex-col items-start text-left"
                   >
-                    <History className="h-4 w-4" />
-                    <span>History ({customerInvoices.length})</span>
+                    <div className="flex items-center gap-1.5 text-xs text-primary font-bold hover:underline">
+                      <History className="h-4 w-4" />
+                      <span>History ({customerInvoices.length})</span>
+                    </div>
+                    <span className="text-[10px] text-text-secondary dark:text-slate-400 font-bold mt-0.5 pl-5.5">
+                      Billed: ₹{totalBilled.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
                   </button>
                   <div className="flex items-center gap-1">
                     <button

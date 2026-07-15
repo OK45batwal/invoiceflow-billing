@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
-import { Invoice, InvoiceItem, Customer, Product, InvoiceType, PaymentMode, PaymentStatus } from '../../types';
+import { Invoice, InvoiceItem, Customer, PaymentMode, PaymentStatus } from '../../types';
 import { calculateInvoiceTotals, numberToWords, INDIAN_STATES } from '../../utils/gstEngine';
 import { Dialog } from '../ui/Dialog';
 import { 
@@ -10,9 +10,7 @@ import {
   Eye, 
   Save, 
   Printer, 
-  Download, 
   UserPlus, 
-  Search, 
   Building,
   ArrowLeft,
   Info

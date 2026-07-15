@@ -3,7 +3,6 @@ import { useApp } from '../context/AppContext';
 import { api } from '../services/api';
 import { ReportData } from '../types';
 import { 
-  BarChart3, 
   Download, 
   Calendar, 
   IndianRupee, 
@@ -29,21 +28,21 @@ export const Reports: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'sales' | 'gst' | 'products' | 'customers'>('sales');
 
-  const fetchReport = async () => {
-    setLoading(true);
-    try {
-      const data = await api.getReportData(startDate, endDate);
-      setReport(data);
-    } catch (e: any) {
-      showToast(e.message, 'danger');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
+    const fetchReport = async () => {
+      setLoading(true);
+      try {
+        const data = await api.getReportData(startDate, endDate);
+        setReport(data);
+      } catch (e: any) {
+        showToast(e.message, 'danger');
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchReport();
-  }, [startDate, endDate]);
+  }, [startDate, endDate, showToast]);
 
   const formatRupee = (value: number) => {
     return new Intl.NumberFormat('en-IN', {

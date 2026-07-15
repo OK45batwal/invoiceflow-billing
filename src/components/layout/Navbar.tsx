@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useApp, ActivePage } from '../../context/AppContext';
-import { Menu, Sun, Moon, Search, Wifi, WifiOff, Building, User } from 'lucide-react';
+import { Menu, Sun, Moon, Search, Wifi, WifiOff, Building } from 'lucide-react';
 
 interface NavbarProps {
   collapsed: boolean;

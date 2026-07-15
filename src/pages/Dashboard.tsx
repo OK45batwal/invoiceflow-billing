@@ -3,7 +3,6 @@ import { useApp, ActivePage } from '../context/AppContext';
 import { api } from '../services/api';
 import { 
   IndianRupee, 
-  FileSpreadsheet, 
   Users, 
   Package, 
   Receipt, 
@@ -11,7 +10,6 @@ import {
   ArrowUpRight, 
   TrendingUp, 
   PlusCircle, 
-  Printer, 
   ExternalLink 
 } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -218,7 +216,7 @@ export const Dashboard: React.FC = () => {
               })}
             </svg>
             <div className="flex justify-between px-4 text-[10px] text-text-secondary dark:text-slate-400 font-semibold mt-2">
-              {months.map((m, idx) => (
+              {months.map((m) => (
                 <span key={m}>{m}</span>
               ))}
             </div>
