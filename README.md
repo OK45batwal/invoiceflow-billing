@@ -6,22 +6,16 @@ A premium, state-of-the-art **GST & Non-GST Billing & Registry System** built wi
 
 ## 📸 Screenshots Gallery
 
-Add your screenshots in the `public/screenshots/` folder to populate this gallery:
+<p align="center">
+  <img src="public/screenshots/dashboard_v2.png" width="49%" alt="Bento Grid Dashboard" />
+  <img src="public/screenshots/invoice_editor_v2.png" width="49%" alt="Split-Screen Invoice Creator" />
+</p>
 
-### 📊 Bento Grid Dashboard
-![Dashboard View](public/screenshots/dashboard_v2.png)
-
-### ✍️ Split-Screen Invoice Creator
-![Invoice Creator View](public/screenshots/invoice_editor_v2.png)
-
-### 👥 Hybrid Customers Registry
-![Customers Registry View](public/screenshots/customers_v2.png)
-
-### 📦 Hybrid Products Catalog
-![Products Inventory View](public/screenshots/products_v2.png)
-
-### 📈 Reports & Tax Analytics
-![Reports View](public/screenshots/reports_v2.png)
+<p align="center">
+  <img src="public/screenshots/customers_v2.png" width="32%" alt="Hybrid Customers Directory" />
+  <img src="public/screenshots/products_v2.png" width="32%" alt="Hybrid Inventory Catalog" />
+  <img src="public/screenshots/reports_v2.png" width="32%" alt="Reports & Tax Analytics" />
+</p>
 
 ---
 
