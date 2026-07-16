@@ -1,8 +1,34 @@
-# ⚡ InvoiceFlow
+<div align="center">
+  <h1>⚡ InvoiceFlow</h1>
+  <p><strong>GST & Non-GST Billing & Registry System</strong></p>
 
-> **Live Demo:** [https://invoiceflow-billing.okbatwal.workers.dev](https://invoiceflow-billing.okbatwal.workers.dev)
+  <p>
+    <a href="https://invoiceflow-billing.okbatwal.workers.dev">
+      <img src="https://img.shields.io/badge/Live%20Demo-View%20Site-6366f1?style=for-the-badge&logo=cloudflare&logoColor=white" alt="Live Demo">
+    </a>
+    <a href="https://github.com/OK45batwal/invoiceflow-billing">
+      <img src="https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=white" alt="React 19">
+    </a>
+    <a href="https://github.com/OK45batwal/invoiceflow-billing">
+      <img src="https://img.shields.io/badge/Tailwind-4-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white" alt="Tailwind v4">
+    </a>
+    <a href="https://github.com/OK45batwal/invoiceflow-billing">
+      <img src="https://img.shields.io/badge/Express-4-000000?style=for-the-badge&logo=express&logoColor=white" alt="Express">
+    </a>
+    <a href="https://github.com/OK45batwal/invoiceflow-billing">
+      <img src="https://img.shields.io/badge/Supabase-FF6600?style=for-the-badge&logo=supabase&logoColor=white" alt="Supabase">
+    </a>
+    <a href="https://github.com/OK45batwal/invoiceflow-billing">
+      <img src="https://img.shields.io/badge/Cloudflare-F38020?style=for-the-badge&logo=cloudflare&logoColor=white" alt="Cloudflare Workers">
+    </a>
+  </p>
 
-A premium, state-of-the-art **GST & Non-GST Billing & Registry System** built with **React 19, Tailwind CSS v4, Express, and Supabase**. Designed with a high-end corporate aesthetic (class-based HSL color palettes, responsive layouts, and glassmorphic micro-animations).
+  <p>
+    <img src="https://img.shields.io/github/last-commit/OK45batwal/invoiceflow-billing?style=flat-square&color=6366f1" alt="Last Commit">
+    <img src="https://img.shields.io/github/repo-size/OK45batwal/invoiceflow-billing?style=flat-square&color=6366f1" alt="Repo Size">
+    <img src="https://img.shields.io/github/license/OK45batwal/invoiceflow-billing?style=flat-square&color=6366f1" alt="License">
+  </p>
+</div>
 
 ---
 
@@ -23,64 +49,102 @@ A premium, state-of-the-art **GST & Non-GST Billing & Registry System** built wi
 
 ## ✨ Features
 
-- **📊 Bento Grid Dashboard**: An asymmetrical dashboard showing live metrics (turnover sales, customer statistics, inventory levels), dynamic SVG line charts, and quick-action shortcuts.
-- **🧾 Split-Screen Invoice Creator**: Form inputs on the left side with a real-time, matching A4 printable sheet preview on the right. Works for both inter-state and intra-state sales.
-- **💼 Dual Business Profiles**: Dedicated support for two distinct billing identities:
-  - **GST Profile**: Captures corporate GSTIN, state codes, and tax rates.
-  - **Non-GST Profile**: For simplified billing, estimates, and regular local profiles.
-- **👥 Hybrid Customers Directory**: Advanced data table listing contact details, state indicators, and total historical billed value metrics with inline filters.
-- **📦 Hybrid Inventory Catalog**: Track product SKU codes, categories, selling/purchase prices, tax brackets, and HSN codes with live color-coded stock alerts.
-- **📈 Reports & Tax Analytics**: Real-time sales ledgers, GSTR-1 returns, customer turnovers, and product-specific analytics sheets exportable to CSV/Excel.
-- **💾 Local Database Backups**: Single-click registry backup file generator to save your setup, with full JSON-based database restore capabilities.
-- **🌓 Seamless Dark Mode**: Fully native class-based theme switcher supporting dark/light palettes.
+| Feature | Description |
+|---------|-------------|
+| 📊 **Bento Grid Dashboard** | Asymmetrical dashboard with live turnover metrics, SVG charts, and quick-action shortcuts |
+| 🧾 **Split-Screen Invoice Creator** | Real-time A4 print preview alongside the form — GST & Non-GST, inter-state & intra-state |
+| 💼 **Dual Business Profiles** | Manage separate GST and Non-GST profiles with full banking and address details |
+| 👥 **Customer Directory** | Searchable table with filters, state indicators, and billing history |
+| 📦 **Product Catalog** | Track SKU, HSN codes, pricing, GST brackets, and stock levels with color-coded alerts |
+| 📈 **Reports & Tax Analytics** | Sales ledgers, GSTR-1 summaries, and daily/monthly aggregation views |
+| 💾 **Offline Backup & Restore** | One-click JSON export/import of all local data for migration or safekeeping |
+| 🌓 **Dark Mode** | Full theme toggle with system preference detection |
 
 ---
 
-## 🛠️ Technology Stack
+## 🛠️ Tech Stack
 
-- **Frontend**:
-  - **React 19** & **TypeScript**
-  - **Tailwind CSS v4** (with selector-based `@custom-variant dark` overrides)
-  - **Framer Motion** (for smooth layout transition fades)
-  - **Lucide Icons** (for modern, scalable vectors)
-  - **Vite 8**
-- **Backend & Database**:
-  - **Node.js 20** (utilizing the native `--experimental-websocket` module)
-  - **Express.js API**
-  - **Supabase JS client** connection to **PostgreSQL** cloud instance
+<table>
+  <tr>
+    <th colspan="2" align="center">Frontend</th>
+    <th colspan="2" align="center">Backend & Infra</th>
+  </tr>
+  <tr>
+    <td align="center"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/react/react-original.svg" width="32" /><br><b>React 19</b></td>
+    <td align="center"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/typescript/typescript-original.svg" width="32" /><br><b>TypeScript</b></td>
+    <td align="center"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/express/express-original.svg" width="32" /><br><b>Express.js</b></td>
+    <td align="center"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/nodejs/nodejs-original.svg" width="32" /><br><b>Node.js</b></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/tailwindcss/tailwindcss-original.svg" width="32" /><br><b>Tailwind v4</b></td>
+    <td align="center"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/vitejs/vitejs-original.svg" width="32" /><br><b>Vite 8</b></td>
+    <td align="center"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/supabase/supabase-original.svg" width="32" /><br><b>Supabase</b></td>
+    <td align="center"><img src="https://img.icons8.com/color/48/cloudflare.png" width="32" /><br><b>Cloudflare Workers</b></td>
+  </tr>
+</table>
 
 ---
 
-## 🚀 Setup & Installation
+## 🚀 Quick Start
 
-### 1. Clone & Install Dependencies
-First, clone the repository and install packages for both the frontend and Express backend:
+### Prerequisites
+- Node.js 20+
+- npm
+
+### 1. Clone & Install
+
 ```bash
 git clone https://github.com/OK45batwal/invoiceflow-billing.git
 cd invoiceflow-billing
-
-# Install frontend dependencies
 npm install
-
-# Install backend dependencies
-cd server
-npm install
+npm --prefix server install
 ```
 
-### 2. Configure Environment Variables
-Create a `.env` file in the `server/` directory:
+### 2. Configure Environment
+
+Create `server/.env`:
+
 ```env
 PORT=5001
 SUPABASE_URL=your_supabase_project_url
 SUPABASE_KEY=your_supabase_anon_key
 ```
 
-### 3. Launch Development Server
-Go back to the root workspace directory and launch the concurrent development task:
+### 3. Run
+
 ```bash
-cd ..
 npm run dev
 ```
 
-- **Frontend client**: [http://localhost:5174](http://localhost:5174)
-- **Backend API**: [http://localhost:5001](http://localhost:5001)
+- **Frontend**: [http://localhost:5174](http://localhost:5174)
+- **API**: [http://localhost:5001](http://localhost:5001)
+
+---
+
+## ☁️ Deploy
+
+This project is configured for **Cloudflare Workers + Assets**:
+
+```bash
+npx wrangler deploy
+```
+
+Set secrets for production:
+
+```bash
+npx wrangler secret put SUPABASE_URL
+npx wrangler secret put SUPABASE_KEY
+```
+
+---
+
+<div align="center">
+  <p>
+    <a href="https://invoiceflow-billing.okbatwal.workers.dev">🌐 Live Demo</a>
+    ·
+    <a href="https://github.com/OK45batwal/invoiceflow-billing/issues">🐛 Report Bug</a>
+    ·
+    <a href="https://github.com/OK45batwal/invoiceflow-billing/issues">✨ Request Feature</a>
+  </p>
+  <p>Built with ❤️ for Indian businesses</p>
+</div>
