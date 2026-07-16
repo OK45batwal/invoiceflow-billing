@@ -1,4 +1,5 @@
-import { httpServer } from 'cloudflare:node';
+import { httpServerHandler } from 'cloudflare:node';
 import app from './server.js';
 
-export default httpServer(app);
+app.listen(5001);
+export default httpServerHandler({ port: 5001 });
