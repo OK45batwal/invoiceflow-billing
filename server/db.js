@@ -2,8 +2,11 @@
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
 
-// Load env variables from process.cwd() locally in dev mode
-if (process.env.NODE_ENV !== 'production') {
+// Detect if running inside Cloudflare Workers
+const isCloudflareWorker = typeof globalThis.caches !== 'undefined' && typeof globalThis.WebSocketPair !== 'undefined';
+
+// Only load dotenv locally if not on Cloudflare and supabase url is missing
+if (!isCloudflareWorker && process.env.NODE_ENV !== 'production' && !process.env.SUPABASE_URL) {
   dotenv.config();
 }
 
