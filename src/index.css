@@ -38,12 +38,19 @@
   --color-text-primary: var(--color-text-primary);
   --color-text-secondary: var(--color-text-secondary);
   --color-text-light: var(--color-text-light);
-  
+
   --font-sans: 'Inter', sans-serif;
-  
+
   --shadow-soft: 0 4px 20px -2px rgba(17, 24, 39, 0.04), 0 2px 8px -1px rgba(17, 24, 39, 0.02);
   --shadow-card: 0 12px 30px -4px rgba(17, 24, 39, 0.06), 0 4px 12px -2px rgba(17, 24, 39, 0.03);
   --shadow-premium: 0 24px 48px -8px rgba(17, 24, 39, 0.08), 0 8px 16px -4px rgba(17, 24, 39, 0.04);
+
+  /* Intermediate slate shades used throughout the app that fall outside Tailwind's default scale */
+  --color-slate-250: #dde3ed;
+  --color-slate-350: #b0bbcf;
+  --color-slate-650: #3e4f66;
+  --color-slate-750: #243047;
+  --color-slate-850: #131f32;
 }
 
 @layer base {
@@ -51,6 +58,28 @@
     background-color: var(--color-bg);
     color: var(--color-text-primary);
     transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
+  /* Ensure ALL form controls inherit the correct foreground color in both themes.
+     Without this, browsers default inputs to black text even on dark backgrounds. */
+  input,
+  select,
+  textarea {
+    color: inherit;
+  }
+
+  /* Dark mode: force form controls to render with a readable text color
+     in case a dark:bg-* is applied but dark:text-* is missing */
+  .dark input,
+  .dark select,
+  .dark textarea {
+    color-scheme: dark;
+  }
+
+  /* Placeholder text should be softer in dark mode */
+  .dark input::placeholder,
+  .dark textarea::placeholder {
+    color: #64748b;
   }
 }
 

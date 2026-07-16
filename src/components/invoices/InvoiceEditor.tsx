@@ -512,7 +512,7 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ type }) => {
                       placeholder="HSN (Optional)"
                       value={item.hsn_code}
                       onChange={(e) => updateItemField(index, { hsn_code: e.target.value })}
-                      className="h-9 px-3 text-xs border border-slate-200 dark:border-slate-750 bg-white dark:bg-slate-800 rounded-lg text-text-secondary"
+                      className="h-9 px-3 text-xs border border-slate-200 dark:border-slate-750 bg-white dark:bg-slate-800 rounded-lg text-text-secondary dark:text-slate-300"
                     />
                     <input
                       type="number"
@@ -521,14 +521,14 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ type }) => {
                       max={100}
                       value={item.discount_pct || ''}
                       onChange={(e) => updateItemField(index, { discount_pct: Number(e.target.value) || 0 })}
-                      className="h-9 px-3 text-xs border border-slate-200 dark:border-slate-750 bg-white dark:bg-slate-800 rounded-lg text-text-secondary"
+                      className="h-9 px-3 text-xs border border-slate-200 dark:border-slate-750 bg-white dark:bg-slate-800 rounded-lg text-text-secondary dark:text-slate-300"
                     />
                     <input
                       type="text"
                       placeholder="Unit (e.g. PCS)"
                       value={item.unit}
                       onChange={(e) => updateItemField(index, { unit: e.target.value })}
-                      className="h-9 px-3 text-xs border border-slate-200 dark:border-slate-750 bg-white dark:bg-slate-800 rounded-lg text-text-secondary"
+                      className="h-9 px-3 text-xs border border-slate-200 dark:border-slate-750 bg-white dark:bg-slate-800 rounded-lg text-text-secondary dark:text-slate-300"
                     />
                   </div>
 
