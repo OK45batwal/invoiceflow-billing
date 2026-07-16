@@ -229,7 +229,7 @@ export const Settings: React.FC = () => {
                       required
                       value={formData.business_name}
                       onChange={(e) => handleFieldChange('business_name', e.target.value)}
-                      className="w-full h-10 px-3.5 text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl"
+                      className="w-full h-10 px-3.5 text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-text-primary dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                     />
                   </div>
                   <div>
@@ -239,7 +239,7 @@ export const Settings: React.FC = () => {
                       placeholder="https://..."
                       value={formData.logo_url}
                       onChange={(e) => handleFieldChange('logo_url', e.target.value)}
-                      className="w-full h-10 px-3.5 text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl"
+                      className="w-full h-10 px-3.5 text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-text-primary dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                     />
                   </div>
                   {editingProfileType === 'GST' && (
@@ -252,7 +252,7 @@ export const Settings: React.FC = () => {
                           value={formData.gstin || ''}
                           onChange={(e) => handleFieldChange('gstin', e.target.value.toUpperCase())}
                           maxLength={15}
-                          className="w-full h-10 px-3.5 text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl"
+                          className="w-full h-10 px-3.5 text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-text-primary dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                         />
                       </div>
                       <div>
@@ -263,7 +263,7 @@ export const Settings: React.FC = () => {
                           value={formData.pan || ''}
                           onChange={(e) => handleFieldChange('pan', e.target.value.toUpperCase())}
                           maxLength={10}
-                          className="w-full h-10 px-3.5 text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl"
+                          className="w-full h-10 px-3.5 text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-text-primary dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                         />
                       </div>
                     </>
@@ -275,7 +275,7 @@ export const Settings: React.FC = () => {
                       required
                       value={formData.phone}
                       onChange={(e) => handleFieldChange('phone', e.target.value)}
-                      className="w-full h-10 px-3.5 text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl"
+                      className="w-full h-10 px-3.5 text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-text-primary dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                     />
                   </div>
                   <div>
@@ -284,7 +284,7 @@ export const Settings: React.FC = () => {
                       type="tel"
                       value={formData.alt_phone}
                       onChange={(e) => handleFieldChange('alt_phone', e.target.value)}
-                      className="w-full h-10 px-3.5 text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl"
+                      className="w-full h-10 px-3.5 text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-text-primary dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                     />
                   </div>
                   <div>
@@ -293,7 +293,7 @@ export const Settings: React.FC = () => {
                       type="email"
                       value={formData.email}
                       onChange={(e) => handleFieldChange('email', e.target.value)}
-                      className="w-full h-10 px-3.5 text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl"
+                      className="w-full h-10 px-3.5 text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-text-primary dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                     />
                   </div>
                   <div>
@@ -303,7 +303,7 @@ export const Settings: React.FC = () => {
                       placeholder="www.yourbusiness.com"
                       value={formData.website}
                       onChange={(e) => handleFieldChange('website', e.target.value)}
-                      className="w-full h-10 px-3.5 text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl"
+                      className="w-full h-10 px-3.5 text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-text-primary dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                     />
                   </div>
                   <div className="md:col-span-2">
@@ -313,7 +313,7 @@ export const Settings: React.FC = () => {
                       rows={2}
                       value={formData.address}
                       onChange={(e) => handleFieldChange('address', e.target.value)}
-                      className="w-full p-3 text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl"
+                      className="w-full p-3 text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-text-primary dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                     />
                   </div>
                   <div>
@@ -323,7 +323,7 @@ export const Settings: React.FC = () => {
                       required
                       value={formData.city}
                       onChange={(e) => handleFieldChange('city', e.target.value)}
-                      className="w-full h-10 px-3.5 text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl"
+                      className="w-full h-10 px-3.5 text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-text-primary dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                     />
                   </div>
                   <div>
@@ -331,7 +331,7 @@ export const Settings: React.FC = () => {
                     <select
                       value={formData.state}
                       onChange={(e) => handleStateChange(e.target.value)}
-                      className="w-full h-10 px-3.5 text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl"
+                      className="w-full h-10 px-3.5 text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-text-primary dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                     >
                       {INDIAN_STATES.map(s => (
                         <option key={s.code} value={s.name}>{s.name} ({s.code})</option>
@@ -366,7 +366,7 @@ export const Settings: React.FC = () => {
                       type="text"
                       value={formData.bank_name || ''}
                       onChange={(e) => handleFieldChange('bank_name', e.target.value)}
-                      className="w-full h-10 px-3.5 text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl"
+                      className="w-full h-10 px-3.5 text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-text-primary dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                     />
                   </div>
                   <div>
@@ -375,7 +375,7 @@ export const Settings: React.FC = () => {
                       type="text"
                       value={formData.branch || ''}
                       onChange={(e) => handleFieldChange('branch', e.target.value)}
-                      className="w-full h-10 px-3.5 text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl"
+                      className="w-full h-10 px-3.5 text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-text-primary dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                     />
                   </div>
                   <div>
@@ -384,7 +384,7 @@ export const Settings: React.FC = () => {
                       type="text"
                       value={formData.account_number || ''}
                       onChange={(e) => handleFieldChange('account_number', e.target.value)}
-                      className="w-full h-10 px-3.5 text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl"
+                      className="w-full h-10 px-3.5 text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-text-primary dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                     />
                   </div>
                   <div>
@@ -394,7 +394,7 @@ export const Settings: React.FC = () => {
                       placeholder="e.g. SBIN0001234"
                       value={formData.ifsc_code || ''}
                       onChange={(e) => handleFieldChange('ifsc_code', e.target.value.toUpperCase())}
-                      className="w-full h-10 px-3.5 text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl"
+                      className="w-full h-10 px-3.5 text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-text-primary dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                     />
                   </div>
                   <div>
@@ -404,7 +404,7 @@ export const Settings: React.FC = () => {
                       placeholder="e.g. mobile@upi"
                       value={formData.upi_id || ''}
                       onChange={(e) => handleFieldChange('upi_id', e.target.value)}
-                      className="w-full h-10 px-3.5 text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl"
+                      className="w-full h-10 px-3.5 text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-text-primary dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                     />
                   </div>
                   <div>
@@ -414,7 +414,7 @@ export const Settings: React.FC = () => {
                       placeholder="https://..."
                       value={formData.qr_code_url || ''}
                       onChange={(e) => handleFieldChange('qr_code_url', e.target.value)}
-                      className="w-full h-10 px-3.5 text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl"
+                      className="w-full h-10 px-3.5 text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-text-primary dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                     />
                   </div>
                 </div>

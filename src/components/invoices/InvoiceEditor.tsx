@@ -830,7 +830,7 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ type }) => {
               required
               value={newCustName}
               onChange={(e) => setNewCustName(e.target.value)}
-              className="w-full h-10 px-3.5 text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl"
+              className="w-full h-10 px-3.5 text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-text-primary dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
             />
           </div>
           <div>
@@ -840,7 +840,7 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ type }) => {
               required
               value={newCustMobile}
               onChange={(e) => setNewCustMobile(e.target.value)}
-              className="w-full h-10 px-3.5 text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl"
+              className="w-full h-10 px-3.5 text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-text-primary dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
             />
           </div>
           <div>
@@ -850,7 +850,7 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ type }) => {
               rows={2}
               value={newCustAddress}
               onChange={(e) => setNewCustAddress(e.target.value)}
-              className="w-full p-3 text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl"
+              className="w-full p-3 text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-text-primary dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
             />
           </div>
           <div className="flex gap-3 justify-end pt-4 border-t border-slate-100 dark:border-slate-850">
