@@ -10,6 +10,40 @@ const PORT = process.env.PORT || 5001;
 // Detect if running inside Cloudflare Workers
 const isCloudflare = typeof globalThis.caches !== 'undefined' && typeof globalThis.WebSocketPair !== 'undefined';
 
+// Simple in-memory Cache Manager for APIs
+const apiCache = {
+  store: new Map(),
+  
+  get(key) {
+    const entry = this.store.get(key);
+    if (!entry) return null;
+    if (Date.now() > entry.expiry) {
+      this.store.delete(key);
+      return null;
+    }
+    return entry.value;
+  },
+  
+  set(key, value, ttl = 60000) {
+    this.store.set(key, {
+      value,
+      expiry: Date.now() + ttl
+    });
+  },
+  
+  invalidate(prefix) {
+    for (const key of this.store.keys()) {
+      if (key.startsWith(prefix)) {
+        this.store.delete(key);
+      }
+    }
+  },
+  
+  clear() {
+    this.store.clear();
+  }
+};
+
 // Middleware
 if (!isCloudflare) {
   app.use(compression({ threshold: 1024 }));
@@ -36,6 +70,10 @@ app.get('/api/health', (req, res) => {
 
 // --- Business Profile Routes ---
 app.get('/api/profile', async (req, res) => {
+  const cacheKey = 'profile';
+  const cached = apiCache.get(cacheKey);
+  if (cached) return res.json(cached);
+
   try {
     const { data, error } = await supabase
       .from('business_profile')
@@ -43,6 +81,7 @@ app.get('/api/profile', async (req, res) => {
       .order('profile_type', { ascending: true });
 
     if (error) throw error;
+    apiCache.set(cacheKey, data, 300000); // 5 mins
     res.json(data);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -83,6 +122,7 @@ app.put('/api/profile/:type', async (req, res) => {
       result = data[0];
     }
     
+    apiCache.invalidate('profile');
     res.json(result);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -91,8 +131,12 @@ app.put('/api/profile/:type', async (req, res) => {
 
 // --- Customers Routes ---
 app.get('/api/customers', async (req, res) => {
+  const { search } = req.query;
+  const cacheKey = 'customers:search=' + (search || '');
+  const cached = apiCache.get(cacheKey);
+  if (cached) return res.json(cached);
+
   try {
-    const { search } = req.query;
     let query = supabase.from('customers').select('*');
     
     if (search) {
@@ -101,6 +145,7 @@ app.get('/api/customers', async (req, res) => {
     
     const { data, error } = await query.order('name', { ascending: true });
     if (error) throw error;
+    apiCache.set(cacheKey, data, 60000); // 1 min
     res.json(data);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -114,6 +159,8 @@ app.post('/api/customers', async (req, res) => {
       .insert([req.body])
       .select();
     if (error) throw error;
+    apiCache.invalidate('customers');
+    apiCache.invalidate('stats');
     res.status(201).json(data[0]);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -128,6 +175,8 @@ app.put('/api/customers/:id', async (req, res) => {
       .eq('id', req.params.id)
       .select();
     if (error) throw error;
+    apiCache.invalidate('customers');
+    apiCache.invalidate('stats');
     res.json(data[0]);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -141,6 +190,8 @@ app.delete('/api/customers/:id', async (req, res) => {
       .delete()
       .eq('id', req.params.id);
     if (error) throw error;
+    apiCache.invalidate('customers');
+    apiCache.invalidate('stats');
     res.json({ message: 'Customer deleted successfully' });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -149,8 +200,12 @@ app.delete('/api/customers/:id', async (req, res) => {
 
 // --- Products Routes ---
 app.get('/api/products', async (req, res) => {
+  const { search } = req.query;
+  const cacheKey = 'products:search=' + (search || '');
+  const cached = apiCache.get(cacheKey);
+  if (cached) return res.json(cached);
+
   try {
-    const { search } = req.query;
     let query = supabase.from('products').select('*');
     
     if (search) {
@@ -159,6 +214,7 @@ app.get('/api/products', async (req, res) => {
     
     const { data, error } = await query.order('name', { ascending: true });
     if (error) throw error;
+    apiCache.set(cacheKey, data, 60000); // 1 min
     res.json(data);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -172,6 +228,8 @@ app.post('/api/products', async (req, res) => {
       .insert([req.body])
       .select();
     if (error) throw error;
+    apiCache.invalidate('products');
+    apiCache.invalidate('stats');
     res.status(201).json(data[0]);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -186,6 +244,8 @@ app.put('/api/products/:id', async (req, res) => {
       .eq('id', req.params.id)
       .select();
     if (error) throw error;
+    apiCache.invalidate('products');
+    apiCache.invalidate('stats');
     res.json(data[0]);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -199,6 +259,8 @@ app.delete('/api/products/:id', async (req, res) => {
       .delete()
       .eq('id', req.params.id);
     if (error) throw error;
+    apiCache.invalidate('products');
+    apiCache.invalidate('stats');
     res.json({ message: 'Product deleted successfully' });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -207,6 +269,10 @@ app.delete('/api/products/:id', async (req, res) => {
 
 // --- Invoices Routes ---
 app.get('/api/invoices', async (req, res) => {
+  const cacheKey = 'invoices:query=' + JSON.stringify(req.query);
+  const cached = apiCache.get(cacheKey);
+  if (cached) return res.json(cached);
+
   try {
     const { search, type, status, start_date, end_date } = req.query;
     let query = supabase.from('invoices').select('*');
@@ -225,12 +291,12 @@ app.get('/api/invoices', async (req, res) => {
     }
     
     if (search) {
-      // Since customer details are inside customer_snapshot, we search invoice_number or customer_snapshot->>name
       query = query.or(`invoice_number.ilike.%${search}%,customer_snapshot->>name.ilike.%${search}%,customer_snapshot->>company_name.ilike.%${search}%`);
     }
     
     const { data, error } = await query.order('invoice_date', { ascending: false }).order('invoice_number', { ascending: false });
     if (error) throw error;
+    apiCache.set(cacheKey, data, 60000); // 1 min
     res.json(data);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -238,6 +304,10 @@ app.get('/api/invoices', async (req, res) => {
 });
 
 app.get('/api/invoices/:id', async (req, res) => {
+  const cacheKey = `invoices:id=${req.params.id}`;
+  const cached = apiCache.get(cacheKey);
+  if (cached) return res.json(cached);
+
   try {
     const { data: invoice, error: invError } = await supabase
       .from('invoices')
@@ -254,7 +324,9 @@ app.get('/api/invoices/:id', async (req, res) => {
       
     if (itemsError) throw itemsError;
     
-    res.json({ ...invoice, items });
+    const responseData = { ...invoice, items };
+    apiCache.set(cacheKey, responseData, 60000); // 1 min
+    res.json(responseData);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -340,6 +412,10 @@ app.post('/api/invoices', async (req, res) => {
       }
     }
     
+    apiCache.invalidate('invoices');
+    apiCache.invalidate('products');
+    apiCache.invalidate('stats');
+    apiCache.invalidate('reports');
     res.status(201).json({ ...newInvoice, items: itemsWithInvoiceId });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -385,6 +461,10 @@ app.put('/api/invoices/:id', async (req, res) => {
       
     if (itemsError) throw itemsError;
     
+    apiCache.invalidate('invoices');
+    apiCache.invalidate('products');
+    apiCache.invalidate('stats');
+    apiCache.invalidate('reports');
     res.json({ ...invoice[0], items: itemsWithInvoiceId });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -398,6 +478,10 @@ app.delete('/api/invoices/:id', async (req, res) => {
       .delete()
       .eq('id', req.params.id);
     if (error) throw error;
+    apiCache.invalidate('invoices');
+    apiCache.invalidate('products');
+    apiCache.invalidate('stats');
+    apiCache.invalidate('reports');
     res.json({ message: 'Invoice deleted successfully' });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -406,6 +490,10 @@ app.delete('/api/invoices/:id', async (req, res) => {
 
 // --- Dashboard Stats Route ---
 app.get('/api/dashboard/stats', async (req, res) => {
+  const cacheKey = 'stats';
+  const cached = apiCache.get(cacheKey);
+  if (cached) return res.json(cached);
+
   try {
     const today = new Date().toISOString().split('T')[0];
     const firstDayOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0];
@@ -466,7 +554,7 @@ app.get('/api/dashboard/stats', async (req, res) => {
       
     if (recError) throw recError;
     
-    res.json({
+    const statsData = {
       todaySales,
       todayInvoices,
       monthlySales,
@@ -474,7 +562,10 @@ app.get('/api/dashboard/stats', async (req, res) => {
       totalProducts: productCount || 0,
       totalGstCollected,
       recentInvoices
-    });
+    };
+    
+    apiCache.set(cacheKey, statsData, 60000); // 1 min
+    res.json(statsData);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -482,6 +573,10 @@ app.get('/api/dashboard/stats', async (req, res) => {
 
 // --- Reports API ---
 app.get('/api/reports', async (req, res) => {
+  const cacheKey = 'reports:query=' + JSON.stringify(req.query);
+  const cached = apiCache.get(cacheKey);
+  if (cached) return res.json(cached);
+
   try {
     const { start_date, end_date } = req.query;
     
@@ -522,7 +617,7 @@ app.get('/api/reports', async (req, res) => {
       amount
     }));
     
-    res.json({
+    const reportsData = {
       totalSales,
       totalTax: totalCgst + totalSgst + totalIgst,
       totalCgst,
@@ -530,7 +625,10 @@ app.get('/api/reports', async (req, res) => {
       totalIgst,
       invoices,
       dailySales
-    });
+    };
+    
+    apiCache.set(cacheKey, reportsData, 60000); // 1 min
+    res.json(reportsData);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
