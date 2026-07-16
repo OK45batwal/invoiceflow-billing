@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
 import compression from 'compression';
-import { supabase } from './db.js';
+import { supabase, dbBreaker } from './db.js';
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -15,6 +15,17 @@ if (!isCloudflare) {
   app.use(compression({ threshold: 1024 }));
 }
 app.use(cors());
+app.use((req, res, next) => {
+  const originalJson = res.json;
+  res.json = function(body) {
+    if (res.statusCode === 500 && body && body.error && 
+        (body.error.includes('Circuit Breaker') || body.error.includes('timed out') || body.error.includes('Database query timed out'))) {
+      res.status(503);
+    }
+    return originalJson.call(this, body);
+  };
+  next();
+});
 app.use(express.json({ limit: '10mb' }));
 app.use(morgan('dev'));
 
