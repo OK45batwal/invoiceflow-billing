@@ -279,13 +279,52 @@ app.post('/api/invoices', async (req, res) => {
       throw itemsError;
     }
 
-    // Update product stock if stock exists
-    for (const item of items) {
-      if (item.product_id && item.quantity) {
-        const { data: prod } = await supabase.from('products').select('stock').eq('id', item.product_id).single();
+    // Update product stock in bulk if stock exists
+    const stockItems = items.filter(item => item.product_id && item.quantity);
+    if (stockItems.length > 0) {
+      // Consolidate quantity updates by product_id (handles duplicate items for the same product)
+      const quantityMap = new Map();
+      for (const item of stockItems) {
+        const currentQty = quantityMap.get(item.product_id) || 0;
+        quantityMap.set(item.product_id, currentQty + item.quantity);
+      }
+      
+      const productIds = Array.from(quantityMap.keys());
+      
+      // Batch select current stock levels
+      const { data: prods, error: fetchProdsError } = await supabase
+        .from('products')
+        .select('id, stock')
+        .in('id', productIds);
+        
+      if (fetchProdsError) {
+        // Attempt to rollback invoice and invoice_items if fetch fails
+        await supabase.from('invoice_items').delete().eq('invoice_id', newInvoice.id);
+        await supabase.from('invoices').delete().eq('id', newInvoice.id);
+        throw fetchProdsError;
+      }
+      
+      const stockUpdates = [];
+      for (const prodId of productIds) {
+        const prod = prods.find(p => p.id === prodId);
         if (prod && prod.stock !== null) {
-          const newStock = prod.stock - item.quantity;
-          await supabase.from('products').update({ stock: newStock }).eq('id', item.product_id);
+          const totalQty = quantityMap.get(prodId) || 0;
+          const newStock = prod.stock - totalQty;
+          stockUpdates.push({ id: prodId, stock: newStock });
+        }
+      }
+      
+      if (stockUpdates.length > 0) {
+        // Batch upsert to update stock columns using unique key constraint
+        const { error: updateStockError } = await supabase
+          .from('products')
+          .upsert(stockUpdates);
+          
+        if (updateStockError) {
+          // Attempt to rollback invoice and invoice_items if update fails
+          await supabase.from('invoice_items').delete().eq('invoice_id', newInvoice.id);
+          await supabase.from('invoices').delete().eq('id', newInvoice.id);
+          throw updateStockError;
         }
       }
     }
