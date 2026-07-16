@@ -1,7 +1,14 @@
 import { BusinessProfile, Customer, Product, Invoice, DashboardStats, ReportData } from '../types';
 
 const getApiBase = () => {
-  let url = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+  let url = import.meta.env.VITE_API_URL;
+  if (!url) {
+    if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
+      url = window.location.origin;
+    } else {
+      url = 'http://localhost:5001';
+    }
+  }
   if (url.endsWith('/')) {
     url = url.slice(0, -1);
   }
