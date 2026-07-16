@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import QRCode from 'qrcode';
 import { useApp } from '../../context/AppContext';
 import { Invoice, InvoiceItem, Customer, PaymentMode, PaymentStatus } from '../../types';
 import { calculateInvoiceTotals, numberToWords, INDIAN_STATES } from '../../utils/gstEngine';
@@ -62,6 +63,9 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ type }) => {
   const [notes, setNotes] = useState('Thank you for your business!');
   const [terms, setTerms] = useState('1. Please pay within due date.\n2. Goods once sold will not be taken back.');
 
+  // UPI QR Code state (generated client-side)
+  const [upiQrDataUrl, setUpiQrDataUrl] = useState<string>('');
+
   // UI state
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
   const [previewTab, setPreviewTab] = useState<'edit' | 'preview'>('edit'); // for mobile toggling
@@ -115,6 +119,24 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ type }) => {
       ]);
     }
   }, [editInvoice, invoices, type]);
+
+  // Auto-generate UPI QR code whenever UPI ID or grand total changes
+  useEffect(() => {
+    if (type !== 'Non-GST' || !profile?.upi_id) {
+      setUpiQrDataUrl('');
+      return;
+    }
+    const sellerProfile = profile || { state: '' } as typeof profile;
+    const grandTotal = calculateInvoiceTotals(items, sellerProfile!, placeOfSupply).grand_total;
+    const upiString = `upi://pay?pa=${encodeURIComponent(profile.upi_id)}&pn=${encodeURIComponent(profile.business_name || '')}&am=${grandTotal.toFixed(2)}&cu=INR&tn=${encodeURIComponent(`Invoice ${invoiceNumber}`)}`.trim();
+    QRCode.toDataURL(upiString, {
+      width: 120,
+      margin: 1,
+      color: { dark: '#000000', light: '#ffffff' }
+    })
+      .then(url => setUpiQrDataUrl(url))
+      .catch(() => setUpiQrDataUrl(''));
+  }, [profile?.upi_id, profile?.business_name, items, type, invoiceNumber, placeOfSupply]);
 
   // Handle customer selection change
   const handleCustomerChange = (id: string) => {
@@ -788,6 +810,19 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ type }) => {
                 <div>Acc No: <strong className="text-black">{profile?.account_number || '-'}</strong></div>
                 <div>IFSC: <strong className="text-black">{profile?.ifsc_code || '-'}</strong></div>
                 {profile?.upi_id && <div>UPI ID: <strong className="text-black">{profile.upi_id}</strong></div>}
+
+                {/* UPI QR Code — Non-GST bills only */}
+                {type === 'Non-GST' && upiQrDataUrl && (
+                  <div className="mt-2 flex flex-col items-start gap-0.5">
+                    <div className="font-bold text-black uppercase text-[9px] tracking-wide">Scan to Pay (UPI):</div>
+                    <img
+                      src={upiQrDataUrl}
+                      alt="UPI QR Code"
+                      className="w-[72px] h-[72px] border border-black rounded"
+                    />
+                    <div className="text-[7px] text-gray-500 font-medium max-w-[80px] break-all">{profile?.upi_id}</div>
+                  </div>
+                )}
               </div>
 
               <div className="flex flex-col justify-between items-end text-right">
