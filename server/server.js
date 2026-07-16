@@ -1,12 +1,19 @@
 import express from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
+import compression from 'compression';
 import { supabase } from './db.js';
 
 const app = express();
 const PORT = process.env.PORT || 5001;
 
+// Detect if running inside Cloudflare Workers
+const isCloudflare = typeof globalThis.caches !== 'undefined' && typeof globalThis.WebSocketPair !== 'undefined';
+
 // Middleware
+if (!isCloudflare) {
+  app.use(compression({ threshold: 1024 }));
+}
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(morgan('dev'));
