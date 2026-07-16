@@ -13,3 +13,5 @@ not_found_handling = "single-page-application"
 
 [vars]
 NODE_ENV = "production"
+SUPABASE_URL = "https://dgvtznykoyyxgwgtpbqf.supabase.co"
+SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRndnR6bnlrb3l5eGd3Z3RwYnFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQxMTgzMTUsImV4cCI6MjA5OTY5NDMxNX0.a3dgjgZbXbCK6_DTPvjn99eb_T9HDvfPKTcNq-M49Ac"
