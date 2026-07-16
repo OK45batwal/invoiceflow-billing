@@ -13,8 +13,10 @@ const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_KEY;
 
 if (!supabaseUrl || !supabaseKey) {
-  console.error('CRITICAL: SUPABASE_URL and SUPABASE_KEY must be set in server/.env');
-  process.exit(1);
+  console.error('CRITICAL: SUPABASE_URL and SUPABASE_KEY must be set.');
+  if (process.env.NODE_ENV !== 'production' && !process.env.CF_PAGES) {
+    process.exit(1);
+  }
 }
 
 export const supabase = createClient(supabaseUrl, supabaseKey, {
