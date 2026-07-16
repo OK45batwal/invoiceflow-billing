@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { BusinessProfile } from '../types';
+import { api } from '../services/api';
 import { INDIAN_STATES } from '../utils/gstEngine';
 import { Save, Building, CreditCard, Shield, Download, UploadCloud } from 'lucide-react';
 
 export const Settings: React.FC = () => {
-  const { gstProfile, nongstProfile, updateProfile, showToast } = useApp();
+  const { gstProfile, nongstProfile, updateProfile, showToast, customers, products, invoices } = useApp();
   const [editingProfileType, setEditingProfileType] = useState<'GST' | 'Non-GST'>('GST');
   const activeProfile = editingProfileType === 'GST' ? gstProfile : nongstProfile;
 
@@ -90,12 +91,11 @@ export const Settings: React.FC = () => {
   const handleBackup = () => {
     try {
       const backupData = {
-        profile_gst: localStorage.getItem('invoiceflow_profile_GST'),
-        profile_nongst: localStorage.getItem('invoiceflow_profile_Non-GST'),
-        customers: localStorage.getItem('invoiceflow_customers'),
-        products: localStorage.getItem('invoiceflow_products'),
-        saved_invoices: localStorage.getItem('invoiceflow_saved_invoices'),
-        drafts: localStorage.getItem('invoiceflow_drafts')
+        profile_gst: gstProfile,
+        profile_nongst: nongstProfile,
+        customers: customers,
+        products: products,
+        invoices: invoices
       };
       
       const jsonString = `data:text/json;charset=utf-8,${encodeURIComponent(JSON.stringify(backupData, null, 2))}`;
@@ -117,22 +117,18 @@ export const Settings: React.FC = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    fileReader.onload = (event) => {
+    fileReader.onload = async (event) => {
       try {
         const parsed = JSON.parse(event.target?.result as string);
-        if (parsed.profile_gst) localStorage.setItem('invoiceflow_profile_GST', parsed.profile_gst);
-        if (parsed.profile_nongst) localStorage.setItem('invoiceflow_profile_Non-GST', parsed.profile_nongst);
-        if (parsed.customers) localStorage.setItem('invoiceflow_customers', parsed.customers);
-        if (parsed.products) localStorage.setItem('invoiceflow_products', parsed.products);
-        if (parsed.saved_invoices) localStorage.setItem('invoiceflow_saved_invoices', parsed.saved_invoices);
-        if (parsed.drafts) localStorage.setItem('invoiceflow_drafts', parsed.drafts);
+        showToast('Restoring database...', 'info');
+        await api.restoreDatabase(parsed);
         
         showToast('Database restored successfully! Reloading page...', 'success');
         setTimeout(() => {
           window.location.reload();
         }, 1500);
-      } catch {
-        showToast('Invalid backup file format.', 'danger');
+      } catch (err: any) {
+        showToast(err.message || 'Invalid backup file format or restoration failed.', 'danger');
       }
     };
     fileReader.readAsText(file);

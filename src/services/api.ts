@@ -104,6 +104,15 @@ export const api = {
     }
   },
 
+  restoreDatabase: async (backupData: any): Promise<void> => {
+    await request<any>('/restore', {
+      method: 'POST',
+      body: JSON.stringify(backupData),
+    });
+    localStorage.removeItem('invoiceflow_profile_GST');
+    localStorage.removeItem('invoiceflow_profile_Non-GST');
+  },
+
   // Customers API
   getCustomers: async (search?: string): Promise<Customer[]> => {
     try {

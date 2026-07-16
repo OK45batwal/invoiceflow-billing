@@ -634,6 +634,76 @@ app.get('/api/reports', async (req, res) => {
   }
 });
 
+// --- Database Restore API ---
+app.post('/api/restore', async (req, res) => {
+  try {
+    const { profile_gst, profile_nongst, customers, products, invoices } = req.body;
+    
+    // 1. Purge existing data
+    await dbBreaker.execute(() => supabase.from('invoice_items').delete().neq('id', '00000000-0000-0000-0000-000000000000'));
+    await dbBreaker.execute(() => supabase.from('invoices').delete().neq('id', '00000000-0000-0000-0000-000000000000'));
+    await dbBreaker.execute(() => supabase.from('products').delete().neq('id', '00000000-0000-0000-0000-000000000000'));
+    await dbBreaker.execute(() => supabase.from('customers').delete().neq('id', '00000000-0000-0000-0000-000000000000'));
+    await dbBreaker.execute(() => supabase.from('business_profile').delete().neq('id', '00000000-0000-0000-0000-000000000000'));
+    
+    // 2. Insert Profiles
+    const profilesToInsert = [];
+    if (profile_gst) {
+      profilesToInsert.push({ ...profile_gst, profile_type: 'GST' });
+    }
+    if (profile_nongst) {
+      profilesToInsert.push({ ...profile_nongst, profile_type: 'Non-GST' });
+    }
+    if (profilesToInsert.length > 0) {
+      const { error: profErr } = await dbBreaker.execute(() => supabase.from('business_profile').insert(profilesToInsert));
+      if (profErr) throw profErr;
+    }
+    
+    // 3. Insert Customers
+    if (customers && customers.length > 0) {
+      const { error: custErr } = await dbBreaker.execute(() => supabase.from('customers').insert(customers));
+      if (custErr) throw custErr;
+    }
+    
+    // 4. Insert Products
+    if (products && products.length > 0) {
+      const { error: prodErr } = await dbBreaker.execute(() => supabase.from('products').insert(products));
+      if (prodErr) throw prodErr;
+    }
+    
+    // 5. Insert Invoices & Invoice Items
+    if (invoices && invoices.length > 0) {
+      const invoicesToInsert = invoices.map(({ items, ...inv }) => inv);
+      const { error: invErr } = await dbBreaker.execute(() => supabase.from('invoices').insert(invoicesToInsert));
+      if (invErr) throw invErr;
+      
+      const itemsToInsert = [];
+      invoices.forEach(inv => {
+        if (inv.items && inv.items.length > 0) {
+          inv.items.forEach(item => {
+            itemsToInsert.push({
+              ...item,
+              invoice_id: inv.id
+            });
+          });
+        }
+      });
+      
+      if (itemsToInsert.length > 0) {
+        const { error: itemsErr } = await dbBreaker.execute(() => supabase.from('invoice_items').insert(itemsToInsert));
+        if (itemsErr) throw itemsErr;
+      }
+    }
+    
+    // Clear caching layer to prevent stale reads
+    apiCache.clear();
+    
+    res.json({ message: 'Database restored successfully!' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Start Server
 if (process.env.NODE_ENV !== 'production') {
   app.listen(PORT, () => {
@@ -642,3 +712,4 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 export default app;
+// Trigger nodemon reload
