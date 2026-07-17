@@ -19,6 +19,8 @@
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "framer-motion": "^12.42.2",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^4.2.1",
     "lucide-react": "^1.24.0",
     "morgan": "^1.10.0",
     "qrcode": "^1.5.4",

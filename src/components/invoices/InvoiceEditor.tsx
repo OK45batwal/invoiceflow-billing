@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import QRCode from 'qrcode';
 import { useApp } from '../../context/AppContext';
 import { Invoice, InvoiceItem, Customer, PaymentMode, PaymentStatus } from '../../types';
@@ -73,6 +73,8 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ type }) => {
   const [newCustName, setNewCustName] = useState('');
   const [newCustMobile, setNewCustMobile] = useState('');
   const [newCustAddress, setNewCustAddress] = useState('');
+
+  const printRef = useRef<HTMLDivElement>(null);
 
   // Auto-generate invoice number
   useEffect(() => {
@@ -302,18 +304,40 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ type }) => {
     window.print();
   };
 
-  const handleWhatsAppShare = () => {
-    const text = [
-      `🧾 *Invoice: ${invoiceNumber}*`,
-      `👤 Customer: ${customerDetails?.name || 'N/A'}`,
-      `💰 Amount: ₹${totals.grand_total.toFixed(2)}`,
-      `📅 Date: ${new Date(invoiceDate).toLocaleDateString('en-IN')}`,
-      `📊 Status: ${paymentStatus}`,
-      `━━━━━━━━━━━━`,
-      `Powered by InvoiceFlow`,
-      `https://invoiceflow-billing.okbatwal.workers.dev`
-    ].join('\n');
-    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+  const handleSharePDF = async () => {
+    const { default: html2canvas } = await import('html2canvas');
+    const { default: jsPDF } = await import('jspdf');
+
+    if (!printRef.current) return;
+
+    try {
+      const canvas = await html2canvas(printRef.current, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#ffffff'
+      });
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdfWidth = 210;
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      const pdfBlob = pdf.output('blob');
+
+      const file = new File([pdfBlob], `${invoiceNumber}.pdf`, { type: 'application/pdf' });
+
+      if (navigator.share && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: invoiceNumber });
+      } else {
+        const url = URL.createObjectURL(pdfBlob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${invoiceNumber}.pdf`;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+    } catch {
+      window.open(`https://wa.me/?text=${encodeURIComponent(`Invoice: ${invoiceNumber} - ₹${totals.grand_total.toFixed(2)}`)}`, '_blank');
+    }
   };
 
   const isIGST = type === 'GST' && totals.igst_total > 0;
@@ -651,11 +675,11 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ type }) => {
             <h3 className="text-sm font-bold uppercase tracking-wider text-text-secondary dark:text-slate-400">A4 Live Print View</h3>
             <div className="flex gap-2">
               <button
-                onClick={handleWhatsAppShare}
+                onClick={handleSharePDF}
                 className="h-9 px-3 rounded-lg bg-green-50 hover:bg-green-100 text-green-600 dark:bg-green-950/20 dark:text-green-400 text-xs font-bold flex items-center gap-1.5"
               >
                 <Share2 className="h-4 w-4" />
-                <span>WhatsApp</span>
+                <span>Share PDF</span>
               </button>
               <button
                 onClick={handlePrint}
@@ -675,7 +699,7 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ type }) => {
           </div>
 
           {/* Printable Invoice Page Container */}
-          <div className="bg-white text-black p-6 border border-slate-200 rounded-xl max-w-2xl mx-auto shadow-sm text-xs font-sans print-container select-text">
+          <div ref={printRef} className="bg-white text-black p-6 border border-slate-200 rounded-xl max-w-2xl mx-auto shadow-sm text-xs font-sans print-container select-text">
             {/* Header: Company Details & Invoice Info */}
             <div className="flex justify-between items-start border-b border-black pb-4">
               <div className="space-y-1">
