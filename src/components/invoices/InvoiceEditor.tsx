@@ -309,7 +309,7 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ type }) => {
     const pdf = new jsPDF('p', 'mm', 'a4');
     const m = 12, r = 198;
     let y = 20;
-    const bold = (t: string, x: number, y: number, opts?: any) => { pdf.setFont('helvetica', 'bold'); pdf.text(t, x, y, opts); pdf.setFont('helvetica', 'normal'); };
+    const bold = (t: string, x: number, yo: number, opts?: any) => { pdf.setFont('helvetica', 'bold'); pdf.text(t, x, yo, opts); pdf.setFont('helvetica', 'normal'); };
     const s = data.customer_snapshot;
     const sel = data.seller_snapshot;
 
@@ -318,190 +318,176 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ type }) => {
     const lineTotal = (item: any) => item.rate * (1 - item.discount_pct / 100) * item.quantity;
     const taxableAmount = totals.items.reduce((sum: number, item: any) => sum + lineTotal(item), 0);
 
-    // ─── HEADER ───
+    // ──── HEADER BAR ────
     pdf.setFillColor(30, 41, 59);
     pdf.rect(m - 2, y - 7, r - m + 4, 20, 'F');
     pdf.setTextColor(255, 255, 255);
-    pdf.setFontSize(13);
+    pdf.setFontSize(12);
     pdf.setFont('helvetica', 'bold');
     pdf.text(sel.business_name, m, y);
     pdf.setFontSize(7);
     pdf.setTextColor(203, 213, 225);
     const addrLines = pdf.splitTextToSize(`${sel.address}, ${sel.city}, ${sel.state}`, 80);
     addrLines.forEach((l: string, i: number) => pdf.text(l, m, y + 3.5 + i * 3));
-    pdf.setFontSize(15);
+    pdf.setFontSize(14);
     pdf.setFont('helvetica', 'bold');
     pdf.setTextColor(255, 255, 255);
     pdf.text(isGst ? 'TAX INVOICE' : 'CASH MEMO', r, y, { align: 'right' });
-    if (isGst) { pdf.setFontSize(6); pdf.setTextColor(252, 211, 77); pdf.text('Original', r, y + 4.5, { align: 'right' }); }
+    if (isGst) { pdf.setFontSize(6); pdf.setTextColor(252, 211, 77); pdf.text('Original', r, y + 4, { align: 'right' }); }
     y += 22;
-    pdf.setTextColor(0, 0, 0);
+    pdf.setTextColor(0);
 
-    // ─── META LINE ───
-    pdf.setDrawColor(200);
-    pdf.line(m, y, r, y); y += 4;
-    pdf.setFontSize(7.5);
-    pdf.text(`#${invoiceNumber}`, m, y);
-    pdf.text(new Date(invoiceDate).toLocaleDateString('en-IN'), m + 60, y);
-    if (dueDate) pdf.text(`Due: ${new Date(dueDate).toLocaleDateString('en-IN')}`, m + 100, y);
-    if (isGst) pdf.text(placeOfSupply, r, y, { align: 'right' });
-    y += 6;
+    // ──── META ────
+    pdf.setDrawColor(180);
     pdf.line(m, y, r, y); y += 5;
+    pdf.setFontSize(8);
+    pdf.text(`${isGst ? 'Invoice' : 'Bill'} No: ${invoiceNumber}`, m, y);
+    pdf.text(`Date: ${new Date(invoiceDate).toLocaleDateString('en-IN')}`, m + 65, y);
+    if (dueDate) pdf.text(`Due: ${new Date(dueDate).toLocaleDateString('en-IN')}`, m + 110, y);
+    if (isGst) bold('Place of Supply:', r, y, { align: 'right' });
+    y += 5;
+    pdf.setDrawColor(180);
+    pdf.line(m, y, r, y); y += 6;
 
-    // ─── BILL FROM / TO ───
-    pdf.setFontSize(7);
-    pdf.setTextColor(100, 116, 139);
+    // ──── BILL FROM / TO ────
     bold('Bill From', m, y);
     bold('Bill To', 105, y);
     y += 5;
-    pdf.setFontSize(8);
-    pdf.setTextColor(0);
     let ly = y, ry = y;
-    bold(sel.business_name, m, ly); ly += 4.5;
-    if (profile?.gstin) { pdf.setFontSize(7); pdf.setTextColor(100, 116, 139); pdf.text(`GSTIN: ${profile.gstin}`, m, ly); ly += 4; }
-    pdf.setFontSize(7.5);
-    pdf.setTextColor(80);
-    pdf.text(`${sel.address}, ${sel.city}, ${sel.state}`, m, ly); ly += 4;
-    pdf.text(`Phone: ${sel.phone}`, m, ly);
+    pdf.setFontSize(8.5);
+    bold(sel.business_name, m, ly); ly += 5;
     pdf.setFontSize(8);
-    pdf.setTextColor(0);
-    bold(s.name, 105, ry); ry += 4.5;
+    if (profile?.gstin) { pdf.text(`GSTIN: ${profile.gstin}`, m, ly); ly += 4.5; }
+    pdf.text(`${sel.address}, ${sel.city}, ${sel.state}`, m, ly); ly += 4.5;
+    pdf.text(`Phone: ${sel.phone}`, m, ly);
+    pdf.setFontSize(8.5);
+    bold(s.name, 105, ry); ry += 5;
+    pdf.setFontSize(8);
     if (s.company_name) { pdf.text(s.company_name, 105, ry); ry += 4.5; }
-    if (s.gstin) { pdf.setFontSize(7); pdf.setTextColor(100, 116, 139); pdf.text(`GSTIN: ${s.gstin}`, 105, ry); ry += 4; }
-    pdf.setFontSize(7.5);
-    pdf.setTextColor(80);
-    pdf.text(`${s.address || ''}, ${s.city || ''}, ${s.state || ''}`, 105, ry); ry += 4;
-    pdf.text(`Phone: ${s.mobile || ''}`, 105, ry); ry += 3.5;
-    if (s.email) { pdf.setFontSize(7); pdf.text(`Email: ${s.email}`, 105, ry); }
-    y = Math.max(ly, ry) + 3;
-    pdf.setDrawColor(200);
-    pdf.line(m, y, r, y); y += 5;
+    if (s.gstin) { pdf.text(`GSTIN: ${s.gstin}`, 105, ry); ry += 4.5; }
+    pdf.text(`${s.address || ''}, ${s.city || ''}, ${s.state || ''}`, 105, ry); ry += 4.5;
+    pdf.text(`Phone: ${s.mobile || ''}`, 105, ry); ry += 4;
+    if (s.email) pdf.text(`Email: ${s.email}`, 105, ry);
 
-    // ─── ITEMS TABLE ───
+    y = Math.max(ly, ry) + 4;
+    pdf.setDrawColor(180);
+    pdf.line(m, y, r, y); y += 6;
+
+    // ──── ITEMS TABLE ────
     if (y > 260) { pdf.addPage(); y = 20; }
     const colW = (r - m) / (isGst ? 7 : 5);
-    const colPct = isGst
-      ? [0.3, 2.2, 0.8, 0.7, 1.0, 0.8, 1.2]
-      : [0.3, 2.0, 0.7, 1.0, 1.0];
-    const colOffsets = colPct.map((p, i) => m + colPct.slice(0, i).reduce((a, b) => a + b, 0) * colW);
-    const colWidths = colPct.map(p => p * colW);
-    const labels = isGst ? ['#', 'Item', 'HSN', 'Qty', 'Price', 'GST%', 'Amount'] : ['#', 'Item', 'Qty', 'Price', 'Amount'];
-    const headerLeft = (i: number) => i === 0 ? false : (i === 1 || (isGst && i === 2));
-    const nCols = colPct.length;
-    for (let c = 0; c < nCols; c++) {
-      const x = colOffsets[c], w = colWidths[c];
-      pdf.text(labels[c], headerLeft(c) ? x + 1 : (c === 0 ? x + w / 2 : x + w - 2), y, headerLeft(c) ? {} : { align: c === 0 ? 'center' : 'right' });
-    }
-    const colRow = (item: any, i: number) => {
-      const vals = isGst
-        ? [String(i + 1), item.product_name || '', item.hsn_code || '-', String(item.quantity), `\u20B9${item.rate.toFixed(2)}`, `${item.gst_rate}%`, `\u20B9${lineTotal(item).toFixed(2)}`]
-        : [String(i + 1), item.product_name || '', String(item.quantity), `\u20B9${item.rate.toFixed(2)}`, `\u20B9${lineTotal(item).toFixed(2)}`];
-      for (let c = 0; c < nCols; c++) {
-        const x = colOffsets[c], w = colWidths[c];
-        const col = c;
-        if (col === 0) { pdf.setTextColor(130); pdf.text(vals[col], x + w / 2, y, { align: 'center' }); }
-        else if (col === 1) { pdf.setTextColor(0); pdf.text(vals[col], x + 1, y); }
-        else { pdf.setTextColor(80); pdf.text(vals[col], x + w - 2, y, { align: 'right' }); }
-      }
-    };
-    pdf.setFillColor(241, 245, 249);
-    pdf.rect(m, y - 3, r - m, 6, 'F');
-    pdf.setTextColor(71, 85, 105);
-    pdf.setFontSize(7);
+    const colPct = isGst ? [0.3, 2.2, 0.8, 0.7, 1.0, 0.8, 1.2] : [0.3, 2.0, 0.7, 1.0, 1.0];
+    const colLbl = isGst ? ['#', 'Item', 'HSN', 'Qty', 'Price', 'GST%', 'Amount'] : ['#', 'Item', 'Qty', 'Price', 'Amount'];
+    const colX = colPct.reduce((acc: number[], p) => [...acc, (acc.at(-1) ?? m) + p * colW], [] as number[]);
+    colX.unshift(m);
+    pdf.setFontSize(8);
     pdf.setFont('helvetica', 'bold');
-    pdf.setDrawColor(200);
+    for (let c = 0; c < colPct.length; c++) {
+      const cx = colX[c], cw = colPct[c] * colW;
+      if (c === 0) pdf.text(colLbl[c], cx + cw / 2, y, { align: 'center' });
+      else if (c <= 1 || (isGst && c === 2)) pdf.text(colLbl[c], cx + 1, y);
+      else pdf.text(colLbl[c], cx + cw - 1, y, { align: 'right' });
+    }
+    pdf.setDrawColor(180);
     pdf.line(m, y + 1, r, y + 1);
     pdf.setDrawColor(0);
-    y += 5.5;
+    y += 6;
     pdf.setFont('helvetica', 'normal');
     totals.items.forEach((item: any, i: number) => {
       if (y > 275) { pdf.addPage(); y = 20; }
-      colRow(item, i);
-      pdf.setDrawColor(230);
-      pdf.line(m, y + 4, r, y + 4);
-      pdf.setDrawColor(0);
-      y += 5;
+      for (let c = 0; c < colPct.length; c++) {
+        const cx = colX[c], cw = colPct[c] * colW;
+        let val = String(i + 1);
+        if (c === 1) val = item.product_name || '';
+        else if (isGst && c === 2) val = item.hsn_code || '-';
+        else if (!isGst && c === 2) val = String(item.quantity);
+        else if (c === (isGst ? 3 : 3)) { pdf.setFont('helvetica', 'bold'); val = String(item.quantity); }
+        else if (c === (isGst ? 4 : 4)) val = `\u20B9${item.rate.toFixed(2)}`;
+        else if (isGst && c === 5) val = `${item.gst_rate}%`;
+        else if (c === (isGst ? 6 : 4)) { pdf.setFont('helvetica', 'bold'); val = `\u20B9${lineTotal(item).toFixed(2)}`; }
+        if (c === 0) pdf.text(val, cx + cw / 2, y, { align: 'center' });
+        else if (c === 1) pdf.text(val, cx + 1, y);
+        else pdf.text(val, cx + cw - 1, y, { align: 'right' });
+        pdf.setFont('helvetica', 'normal');
+      }
+      y += 6.5;
     });
+    pdf.setDrawColor(180);
+    pdf.line(m, y - 2, r, y - 2);
+    pdf.setDrawColor(0);
     y += 4;
 
-    // ─── TOTALS ───
-    const tRight = r, tLabelX = r - 80;
-    pdf.setFontSize(8);
-    const tLine = (l: string, v: string, b = false) => {
-      if (b) { pdf.setFont('helvetica', 'bold'); pdf.setFontSize(9); }
-      pdf.text(l, tLabelX, y);
+    // ──── TOTALS ────
+    pdf.setFontSize(9);
+    const tRight = r, tLeft = r - 78;
+    const totLine = (l: string, v: string, b = false) => {
+      if (b) { pdf.setFont('helvetica', 'bold'); pdf.setFontSize(11); }
+      pdf.text(l, tLeft, y);
       pdf.text(v, tRight, y, { align: 'right' });
-      y += 5;
-      if (b) { pdf.setFont('helvetica', 'normal'); pdf.setFontSize(8); }
+      y += 5.5;
+      if (b) { pdf.setFont('helvetica', 'normal'); pdf.setFontSize(9); }
     };
     if (isGst) {
-      tLine('Taxable Amount:', `\u20B9${taxableAmount.toFixed(2)}`);
-      if (!isIGST && totals.cgst_total > 0) tLine('CGST (9%):', `\u20B9${totals.cgst_total.toFixed(2)}`);
-      if (!isIGST && totals.sgst_total > 0) tLine('SGST (9%):', `\u20B9${totals.sgst_total.toFixed(2)}`);
-      if (isIGST && totals.igst_total > 0) tLine('IGST:', `\u20B9${totals.igst_total.toFixed(2)}`);
-      if (totalDiscount > 0) tLine('Discount:', `-\u20B9${totalDiscount.toFixed(2)}`);
+      totLine('Taxable Amount:', `\u20B9${taxableAmount.toFixed(2)}`);
+      if (!isIGST && totals.cgst_total > 0) totLine('CGST (9%):', `\u20B9${totals.cgst_total.toFixed(2)}`);
+      if (!isIGST && totals.sgst_total > 0) totLine('SGST (9%):', `\u20B9${totals.sgst_total.toFixed(2)}`);
+      if (isIGST && totals.igst_total > 0) totLine('IGST:', `\u20B9${totals.igst_total.toFixed(2)}`);
+      if (totalDiscount > 0) totLine('Discount:', `-\u20B9${totalDiscount.toFixed(2)}`);
     } else {
-      tLine('Subtotal:', `\u20B9${taxableAmount.toFixed(2)}`);
-      if (totalDiscount > 0) tLine('Discount:', `-\u20B9${totalDiscount.toFixed(2)}`);
-      tLine('Delivery:', '\u20B90.00');
+      totLine('Subtotal:', `\u20B9${taxableAmount.toFixed(2)}`);
+      if (totalDiscount > 0) totLine('Discount:', `-\u20B9${totalDiscount.toFixed(2)}`);
+      totLine('Delivery:', '\u20B90.00');
     }
-    if (totals.round_off !== 0) tLine('Round Off:', `${totals.round_off.toFixed(2)}`);
-    pdf.setDrawColor(0);
-    pdf.line(tLabelX, y - 1, tRight, y - 1);
-    tLine(isGst ? 'GRAND TOTAL' : 'TOTAL', `\u20B9${totals.grand_total.toFixed(2)}`, true);
-    y += 4;
+    if (totals.round_off !== 0) totLine('Round Off:', `${totals.round_off.toFixed(2)}`);
+    pdf.line(tLeft, y - 1, tRight, y - 1);
+    totLine(isGst ? 'GRAND TOTAL' : 'TOTAL', `\u20B9${totals.grand_total.toFixed(2)}`, true);
+    y += 3;
 
-    // ─── AMOUNT IN WORDS ───
-    pdf.setDrawColor(200);
-    pdf.line(m, y, r, y); y += 4;
-    pdf.setFontSize(7.5);
+    // ──── AMOUNT IN WORDS ────
+    pdf.setDrawColor(180);
+    pdf.line(m, y, r, y); y += 5;
+    pdf.setFontSize(9);
     pdf.setFont('helvetica', 'bold');
     pdf.text('Amount in Words:', m, y);
     pdf.setFont('helvetica', 'normal');
-    pdf.text(numberToWords(totals.grand_total), r, y, { align: 'right' });
-    y += 8;
+    const amtWords = pdf.splitTextToSize(numberToWords(totals.grand_total), r - m - 40);
+    pdf.text(amtWords, m + 35, y);
+    y += amtWords.length * 4.5 + 4;
 
-    // ─── BANK DETAILS + QR ───
-    if (y > 260) { pdf.addPage(); y = 20; }
-    pdf.setDrawColor(200);
-    pdf.line(m, y, r, y); y += 4;
-    const bankY = y;
-    pdf.setFontSize(8);
-    pdf.setFont('helvetica', 'bold');
-    pdf.text('Bank Details', m, y); y += 5;
-    pdf.setFont('helvetica', 'normal');
-    pdf.setFontSize(7.5);
-    if (profile?.bank_name) { pdf.text(`Bank: ${profile.bank_name}`, m, y); y += 4; }
-    if (profile?.account_number) { pdf.text(`A/C: ${profile.account_number}`, m, y); y += 4; }
-    if (profile?.ifsc_code) { pdf.text(`IFSC: ${profile.ifsc_code}`, m, y); y += 4; }
-    if (profile?.upi_id) { pdf.text(`UPI: ${profile.upi_id}`, m, y); y += 4; }
-    if (upiQrDataUrl) {
+    // ──── BANK DETAILS ────
+    if (profile?.bank_name || profile?.upi_id) {
+      if (y > 260) { pdf.addPage(); y = 20; }
+      pdf.setDrawColor(180);
+      pdf.line(m, y, r, y); y += 5;
+      pdf.setFontSize(9);
       pdf.setFont('helvetica', 'bold');
-      pdf.text('Scan to Pay', r, bankY + 1, { align: 'right' });
+      pdf.text('Bank Details', m, y); y += 5.5;
       pdf.setFont('helvetica', 'normal');
-      pdf.addImage(upiQrDataUrl, 'PNG', r - 28, bankY + 3, 20, 20);
+      pdf.setFontSize(8.5);
+      if (profile?.bank_name) { pdf.text(`Bank: ${profile.bank_name}`, m, y); y += 4.5; }
+      if (profile?.account_number) { pdf.text(`A/C: ${profile.account_number}`, m, y); y += 4.5; }
+      if (profile?.ifsc_code) { pdf.text(`IFSC: ${profile.ifsc_code}`, m, y); y += 4.5; }
+      if (profile?.upi_id) { pdf.text(`UPI: ${profile.upi_id}`, m, y); y += 4.5; }
     }
-    y = Math.max(y, bankY + 28);
 
-    // ─── TERMS & SIGNATURE ───
+    // ──── TERMS & SIGNATURE ────
     if (y > 260) { pdf.addPage(); y = 20; }
-    pdf.setDrawColor(200);
-    pdf.line(m, y, r, y); y += 4;
+    pdf.setDrawColor(180);
+    pdf.line(m, y, r, y); y += 5;
     const termsY = y;
-    pdf.setFontSize(8);
+    pdf.setFontSize(9);
     pdf.setFont('helvetica', 'bold');
-    pdf.text('Terms & Conditions', m, y); y += 5;
+    pdf.text('Terms & Conditions', m, y); y += 5.5;
     pdf.setFont('helvetica', 'normal');
-    pdf.setFontSize(7.5);
     const tLines = pdf.splitTextToSize(terms, 90);
-    tLines.forEach((l: string) => { pdf.text(l, m, y); y += 4; });
-    y = Math.max(y, termsY + 15);
+    tLines.forEach((l: string) => { pdf.text(l, m, y); y += 4.5; });
+    y = Math.max(y, termsY + 16);
     pdf.setFont('helvetica', 'bold');
     pdf.text('Authorized Signature', r, y, { align: 'right' });
     y += 5;
     pdf.setFont('helvetica', 'normal');
     pdf.text(sel.business_name, r, y, { align: 'right' });
-    y += 8;
+    y += 6;
 
     window.open(URL.createObjectURL(pdf.output('blob')), '_blank');
   };
