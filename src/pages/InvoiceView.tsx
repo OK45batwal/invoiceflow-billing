@@ -31,6 +31,12 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoiceId, onBack }) =
     }
   }, [invoiceId]);
 
+  useEffect(() => {
+    if (!loading && invoice && window.location.search.includes('print')) {
+      setTimeout(() => { window.print(); }, 500);
+    }
+  }, [loading, invoice]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen bg-white">
