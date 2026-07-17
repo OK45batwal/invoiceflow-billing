@@ -25,15 +25,17 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({ isOpen, onClose, invoi
   const { showToast } = useApp();
   const isGst = invoice.invoice_type === 'GST';
 
-  // ── Build the PDF (accepts an optional pre-rendered QR data-URL) ─────────
+  /**
+   * Generates a PDF that mirrors the A4 Live Print View exactly.
+   * Sections: Header Bar → Meta Strip → Bill From/To → Items Table →
+   *           Totals Panel → Amount in Words → Bank+QR → Terms+Signature
+   */
   const generatePdf = (qrDataUrl?: string): jsPDF => {
     const pdf = new jsPDF('p', 'mm', 'a4');
-    const ML = 14;                   // left margin
-    const PW = 210;                  // A4 width
-    const W = PW - ML * 2;          // usable width (182)
-    const RX = ML + W;              // right edge (196)
-    const PH = 297;
-    let y = 14;
+    const M = 14;                   // page margin
+    const W = 210 - M * 2;          // usable width (182)
+    const R = M + W;                // right edge
+    let y = M;
 
     const sel = invoice.seller_snapshot || {} as any;
     const cust = invoice.customer_snapshot || {} as any;
@@ -42,245 +44,309 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({ isOpen, onClose, invoi
 
     const lineAmt = (it: any) =>
       Number(it.rate) * Number(it.quantity) * (1 - (Number(it.discount_pct) || 0) / 100);
-    const taxableTotal = rows.reduce((s: number, it: any) => s + lineAmt(it), 0);
     const totalDiscount = rows.reduce((s: number, it: any) =>
       s + Number(it.rate) * Number(it.quantity) * ((Number(it.discount_pct) || 0) / 100), 0);
 
-    const hLine = (clr = 200) => { pdf.setDrawColor(clr); pdf.setLineWidth(0.3); pdf.line(ML, y, RX, y); pdf.setLineWidth(0.2); pdf.setDrawColor(0); };
-    const pageGuard = (h = 20) => { if (y + h > PH - 14) { pdf.addPage(); y = 14; } };
+    const pageGuard = (h = 16) => { if (y + h > 297 - M) { pdf.addPage(); y = M; } };
 
-    // ═══════════════════════════ HEADER ═══════════════════════════════════
-    const hH = 20;
-    pdf.setFillColor(15, 23, 42);
-    pdf.rect(ML, y, W, hH, 'F');
+    // ─── 1. HEADER BAR (slate-800 background) ────────────────────────────
+    const hdrH = 18;
+    pdf.setFillColor(30, 41, 59);                // slate-800
+    pdf.rect(M, y, W, hdrH, 'F');
 
     // Left: business name + address
-    pdf.setFont('helvetica', 'bold'); pdf.setFontSize(12); pdf.setTextColor(255);
-    pdf.text(sel.business_name || 'Business', ML + 5, y + 7);
-    pdf.setFont('helvetica', 'normal'); pdf.setFontSize(7); pdf.setTextColor(160, 174, 192);
+    pdf.setFont('helvetica', 'bold'); pdf.setFontSize(11); pdf.setTextColor(255);
+    pdf.text(sel.business_name || 'Business', M + 4, y + 7);
+    pdf.setFont('helvetica', 'normal'); pdf.setFontSize(6.5); pdf.setTextColor(203, 213, 225);
     const addr = [sel.address, sel.city, sel.state].filter(Boolean).join(', ');
-    const addrW = pdf.splitTextToSize(addr, W * 0.55);
-    addrW.forEach((l: string, i: number) => pdf.text(l, ML + 5, y + 12 + i * 3));
+    pdf.text(addr, M + 4, y + 12);
 
-    // Right: invoice type + number + date
-    pdf.setFont('helvetica', 'bold'); pdf.setFontSize(9); pdf.setTextColor(255);
-    pdf.text(isGst ? 'TAX INVOICE' : 'BILL / CASH MEMO', RX - 5, y + 7, { align: 'right' });
-    pdf.setFont('helvetica', 'normal'); pdf.setFontSize(7); pdf.setTextColor(160, 174, 192);
-    pdf.text(invoice.invoice_number, RX - 5, y + 12, { align: 'right' });
-    pdf.text(`Date: ${new Date(invoice.invoice_date).toLocaleDateString('en-IN')}`, RX - 5, y + 16, { align: 'right' });
-    y += hH + 2;
+    // Right: "Original" badge for GST
+    if (isGst) {
+      pdf.setFontSize(5.5); pdf.setTextColor(252, 211, 77); pdf.setFont('helvetica', 'bold');
+      pdf.text('ORIGINAL', R - 4, y + 7, { align: 'right' });
+    }
+    y += hdrH;
 
-    // Seller details strip
-    pdf.setFontSize(7); pdf.setTextColor(100, 116, 139); pdf.setFont('helvetica', 'normal');
-    const parts: string[] = [];
-    if (sel.gstin) parts.push(`GSTIN: ${sel.gstin}`);
-    if (sel.phone) parts.push(`Ph: ${sel.phone}`);
-    if (sel.email) parts.push(sel.email);
-    if (parts.length) pdf.text(parts.join('  |  '), ML, y + 3);
-    y += 7;
-    hLine(); y += 4;
+    // ─── 2. META STRIP (slate-50 background) ─────────────────────────────
+    const metaH = 7;
+    pdf.setFillColor(248, 250, 252);
+    pdf.rect(M, y, W, metaH, 'F');
+    pdf.setDrawColor(226, 232, 240); pdf.line(M, y + metaH, R, y + metaH); pdf.setDrawColor(0);
 
-    // ═══════════════════════════ BILL TO + META ══════════════════════════
-    const midX = ML + W * 0.52;
-    pdf.setFont('helvetica', 'bold'); pdf.setFontSize(6.5); pdf.setTextColor(120);
-    pdf.text('BILL TO', ML, y); pdf.text('INVOICE DETAILS', midX, y);
-    y += 4;
+    pdf.setFont('helvetica', 'normal'); pdf.setFontSize(7); pdf.setTextColor(71, 85, 105);
+    let mx = M + 4;
+    const metaLabel = (lbl: string, val: string) => {
+      pdf.setFont('helvetica', 'bold'); pdf.setTextColor(51, 65, 85);
+      pdf.text(lbl, mx, y + 4.5);
+      const lw = pdf.getTextWidth(lbl);
+      pdf.setFont('helvetica', 'normal'); pdf.setTextColor(71, 85, 105);
+      pdf.text(' ' + val, mx + lw, y + 4.5);
+      mx += lw + pdf.getTextWidth(' ' + val) + 8;
+    };
+    metaLabel(`${isGst ? 'Invoice' : 'Bill'} No:`, invoice.invoice_number);
+    metaLabel('Date:', new Date(invoice.invoice_date).toLocaleDateString('en-IN'));
+    if (invoice.due_date) metaLabel('Due:', new Date(invoice.due_date).toLocaleDateString('en-IN'));
+    if (isGst) {
+      // Right-align place of supply
+      pdf.setFont('helvetica', 'bold'); pdf.setTextColor(51, 65, 85);
+      const posLbl = 'Place of Supply: ';
+      pdf.text(posLbl, R - 4 - pdf.getTextWidth(posLbl + invoice.place_of_supply), y + 4.5);
+      pdf.setFont('helvetica', 'normal'); pdf.setTextColor(71, 85, 105);
+      pdf.text(invoice.place_of_supply, R - 4, y + 4.5, { align: 'right' });
+    }
+    y += metaH;
 
-    // Bill-to
-    let lY = y;
-    pdf.setFont('helvetica', 'bold'); pdf.setFontSize(9); pdf.setTextColor(30);
-    pdf.text(cust.name || '—', ML, lY); lY += 4.5;
-    pdf.setFont('helvetica', 'normal'); pdf.setFontSize(7.5); pdf.setTextColor(80);
-    if (cust.company_name) { pdf.text(cust.company_name, ML, lY); lY += 4; }
-    if (cust.gstin) { pdf.setFont('helvetica', 'bold'); pdf.text(`GSTIN: ${cust.gstin}`, ML, lY); pdf.setFont('helvetica', 'normal'); lY += 4; }
-    const ca = [cust.address, cust.city, cust.state].filter(Boolean).join(', ');
-    if (ca) { const cL = pdf.splitTextToSize(ca, W * 0.48); cL.forEach((l: string) => { pdf.text(l, ML, lY); lY += 3.5; }); }
-    if (cust.mobile) { pdf.text(`Ph: ${cust.mobile}`, ML, lY); lY += 4; }
+    // ─── 3. BILL FROM / BILL TO (2 equal columns) ───────────────────────
+    y += 0.5;
+    pdf.setDrawColor(226, 232, 240);
+    const colMid = M + W / 2;
 
-    // Meta
-    let rY = y;
-    const meta: [string, string][] = [
-      ['Invoice No', invoice.invoice_number],
-      ['Date', new Date(invoice.invoice_date).toLocaleDateString('en-IN')],
-      ...(invoice.due_date ? [['Due', new Date(invoice.due_date).toLocaleDateString('en-IN')] as [string,string]] : []),
-      ['Payment', invoice.payment_mode || '—'],
-      ['Status', (invoice.payment_status || '').toUpperCase()],
-      ...(isGst ? [['Supply Place', invoice.place_of_supply] as [string,string]] : []),
-    ];
-    pdf.setFontSize(7.5);
-    meta.forEach(([k, v]) => {
-      pdf.setTextColor(100); pdf.setFont('helvetica', 'normal'); pdf.text(k + ':', midX, rY);
-      pdf.setTextColor(30); pdf.setFont('helvetica', 'bold'); pdf.text(v, RX, rY, { align: 'right' });
-      rY += 4.5;
-    });
-    y = Math.max(lY, rY) + 3;
-    hLine(); y += 4;
+    // Left column: Bill From
+    let lY = y + 3;
+    pdf.setFont('helvetica', 'bold'); pdf.setFontSize(6); pdf.setTextColor(100, 116, 139);
+    pdf.text('BILL FROM', M + 4, lY); lY += 3.5;
+    pdf.setFont('helvetica', 'bold'); pdf.setFontSize(8); pdf.setTextColor(30, 41, 59);
+    pdf.text(sel.business_name, M + 4, lY); lY += 4;
+    pdf.setFont('helvetica', 'normal'); pdf.setFontSize(7); pdf.setTextColor(100, 116, 139);
+    if (sel.gstin) { pdf.text(`GSTIN: ${sel.gstin}`, M + 4, lY); lY += 3.5; }
+    pdf.text(addr, M + 4, lY); lY += 3.5;
+    pdf.text(`Phone: ${sel.phone || ''}`, M + 4, lY); lY += 3.5;
 
-    // ═══════════════════════════ ITEMS TABLE ══════════════════════════════
-    pageGuard(20);
-    type Align = 'left' | 'center' | 'right';
-    const cols: { lbl: string; w: number; a: Align }[] = isGst
+    // Vertical divider
+    // Right column: Bill To
+    let rY = y + 3;
+    pdf.setFont('helvetica', 'bold'); pdf.setFontSize(6); pdf.setTextColor(100, 116, 139);
+    pdf.text('BILL TO', colMid + 4, rY); rY += 3.5;
+    pdf.setFont('helvetica', 'bold'); pdf.setFontSize(8); pdf.setTextColor(30, 41, 59);
+    pdf.text(cust.name || 'Customer Name', colMid + 4, rY); rY += 4;
+    pdf.setFont('helvetica', 'normal'); pdf.setFontSize(7); pdf.setTextColor(100, 116, 139);
+    if (cust.gstin) { pdf.text(`GSTIN: ${cust.gstin}`, colMid + 4, rY); rY += 3.5; }
+    const custAddr = [cust.address, cust.city, cust.state].filter(Boolean).join(', ');
+    if (custAddr) { pdf.text(custAddr, colMid + 4, rY); rY += 3.5; }
+    if (cust.mobile) { pdf.text(`Phone: ${cust.mobile}`, colMid + 4, rY); rY += 3.5; }
+    if (cust.email) { pdf.text(`Email: ${cust.email}`, colMid + 4, rY); rY += 3.5; }
+
+    const billBottomY = Math.max(lY, rY) + 1;
+    // Vertical separator line
+    pdf.line(colMid, y + 1, colMid, billBottomY);
+    // Bottom border
+    pdf.line(M, billBottomY, R, billBottomY);
+    y = billBottomY + 2;
+
+    // ─── 4. ITEMS TABLE ──────────────────────────────────────────────────
+    pageGuard(18);
+
+    // Columns match the live preview: # | Item | HSN? | Qty | Price | GST%? | Amount
+    const tCols: { lbl: string; w: number; align: 'left'|'center'|'right' }[] = isGst
       ? [
-          { lbl: '#',    w: 6,  a: 'center' },
-          { lbl: 'Item', w: 56, a: 'left'   },
-          { lbl: 'HSN',  w: 16, a: 'center' },
-          { lbl: 'Qty',  w: 12, a: 'right'  },
-          { lbl: 'Rate', w: 22, a: 'right'  },
-          { lbl: 'GST%', w: 12, a: 'center' },
-          { lbl: 'Disc%',w: 12, a: 'center' },
-          { lbl: 'Amount',w:30, a: 'right'  },
+          { lbl: '#',      w: 6,  align: 'center' },
+          { lbl: 'Item',   w: 62, align: 'left'   },
+          { lbl: 'HSN',    w: 16, align: 'center' },
+          { lbl: 'Qty',    w: 14, align: 'right'  },
+          { lbl: 'Price',  w: 22, align: 'right'  },
+          { lbl: 'GST %',  w: 16, align: 'right'  },
+          { lbl: 'Amount', w: 28, align: 'right'  },
         ]
       : [
-          { lbl: '#',    w: 6,  a: 'center' },
-          { lbl: 'Item', w: 76, a: 'left'   },
-          { lbl: 'Qty',  w: 16, a: 'right'  },
-          { lbl: 'Rate', w: 26, a: 'right'  },
-          { lbl: 'Disc%',w: 14, a: 'center' },
-          { lbl: 'Amount',w:30, a: 'right'  },
+          { lbl: '#',      w: 6,  align: 'center' },
+          { lbl: 'Item',   w: 80, align: 'left'   },
+          { lbl: 'Qty',    w: 18, align: 'right'  },
+          { lbl: 'Price',  w: 28, align: 'right'  },
+          { lbl: 'Amount', w: 32, align: 'right'  },
         ];
+    const tScale = W / tCols.reduce((s, c) => s + c.w, 0);
+    const C = tCols.map(c => ({ ...c, w: c.w * tScale }));
 
-    const totalW = cols.reduce((s, c) => s + c.w, 0);
-    const sc = W / totalW;
-    const C = cols.map(c => ({ ...c, w: c.w * sc }));
-
-    // Header
+    // Table header
     pdf.setFillColor(241, 245, 249);
-    pdf.rect(ML, y - 2.5, W, 6, 'F');
-    pdf.setFont('helvetica', 'bold'); pdf.setFontSize(6.5); pdf.setTextColor(80);
-    let cx = ML;
+    pdf.rect(M, y, W, 5.5, 'F');
+    pdf.setFont('helvetica', 'bold'); pdf.setFontSize(6); pdf.setTextColor(71, 85, 105);
+    let cx = M;
     C.forEach(c => {
-      const tx = c.a === 'center' ? cx + c.w / 2 : c.a === 'right' ? cx + c.w - 2 : cx + 2;
-      pdf.text(c.lbl, tx, y + 1, { align: c.a });
+      const tx = c.align === 'center' ? cx + c.w / 2 : c.align === 'right' ? cx + c.w - 2 : cx + 2;
+      pdf.text(c.lbl.toUpperCase(), tx, y + 3.5, { align: c.align });
       cx += c.w;
     });
     y += 5.5;
 
-    // Rows
-    pdf.setFont('helvetica', 'normal'); pdf.setFontSize(8); pdf.setTextColor(20);
+    // Table rows
+    pdf.setTextColor(30, 41, 59);
     rows.forEach((item: any, i: number) => {
-      const descW = C[1].w - 4;
-      const dLines = pdf.splitTextToSize(item.product_name || '—', descW);
-      const rH = Math.max(5, dLines.length * 3.5);
-      pageGuard(rH + 3);
+      const descLines = pdf.splitTextToSize(item.product_name || '—', C[1].w - 4);
+      const rowH = Math.max(5.5, descLines.length * 3.5 + 1);
+      pageGuard(rowH + 2);
 
-      cx = ML;
+      pdf.setFont('helvetica', 'normal'); pdf.setFontSize(7);
+      cx = M;
       C.forEach((col, ci) => {
         let v = '';
-        if (ci === 0) v = String(i + 1);
-        else if (ci === 1) {
-          // multi-line description
-          dLines.forEach((dl: string, di: number) => pdf.text(dl, cx + 2, y + di * 3.5));
+        if (ci === 0) {
+          v = String(i + 1);
+          pdf.setTextColor(160, 174, 192); // slate-400 for row number
+        } else if (ci === 1) {
+          // Multi-line item name
+          pdf.setFont('helvetica', 'bold'); pdf.setTextColor(30, 41, 59);
+          descLines.forEach((dl: string, di: number) => pdf.text(dl, cx + 2, y + 1 + di * 3.5));
+          if (item.description) {
+            pdf.setFont('helvetica', 'normal'); pdf.setFontSize(5.5); pdf.setTextColor(160, 174, 192);
+            pdf.text(item.description, cx + 2, y + 1 + descLines.length * 3.5);
+            pdf.setFontSize(7);
+          }
+          pdf.setFont('helvetica', 'normal');
           cx += col.w; return;
         } else if (isGst) {
-          if (ci === 2) v = item.hsn_code || '—';
-          else if (ci === 3) v = String(item.quantity);
-          else if (ci === 4) v = `₹${Number(item.rate).toFixed(2)}`;
-          else if (ci === 5) v = `${item.gst_rate ?? 0}%`;
-          else if (ci === 6) v = `${item.discount_pct ?? 0}%`;
-          else if (ci === 7) v = `₹${lineAmt(item).toFixed(2)}`;
+          if (ci === 2) { v = item.hsn_code || '-'; pdf.setTextColor(100, 116, 139); }
+          else if (ci === 3) { v = String(item.quantity); pdf.setTextColor(51, 65, 85); }
+          else if (ci === 4) { v = `₹${Number(item.rate).toFixed(2)}`; pdf.setTextColor(51, 65, 85); }
+          else if (ci === 5) { v = `${item.gst_rate ?? 0}%`; pdf.setTextColor(71, 85, 105); }
+          else if (ci === 6) { v = `₹${lineAmt(item).toFixed(2)}`; pdf.setFont('helvetica', 'bold'); pdf.setTextColor(30, 41, 59); }
         } else {
-          if (ci === 2) v = String(item.quantity);
-          else if (ci === 3) v = `₹${Number(item.rate).toFixed(2)}`;
-          else if (ci === 4) v = `${item.discount_pct ?? 0}%`;
-          else if (ci === 5) v = `₹${lineAmt(item).toFixed(2)}`;
+          if (ci === 2) { v = String(item.quantity); pdf.setTextColor(51, 65, 85); }
+          else if (ci === 3) { v = `₹${Number(item.rate).toFixed(2)}`; pdf.setTextColor(51, 65, 85); }
+          else if (ci === 4) { v = `₹${lineAmt(item).toFixed(2)}`; pdf.setFont('helvetica', 'bold'); pdf.setTextColor(30, 41, 59); }
         }
-        const tx = col.a === 'center' ? cx + col.w / 2 : col.a === 'right' ? cx + col.w - 2 : cx + 2;
-        pdf.text(v, tx, y, { align: col.a });
+        const tx = col.align === 'center' ? cx + col.w / 2 : col.align === 'right' ? cx + col.w - 2 : cx + 2;
+        pdf.text(v, tx, y + 1, { align: col.align });
+        pdf.setFont('helvetica', 'normal'); pdf.setTextColor(30, 41, 59);
         cx += col.w;
       });
 
-      y += rH;
-      pdf.setDrawColor(230); pdf.line(ML, y, RX, y); pdf.setDrawColor(0);
-      y += 1.5;
+      y += rowH;
+      pdf.setDrawColor(226, 232, 240); pdf.line(M, y, R, y); pdf.setDrawColor(0);
+      y += 0.5;
     });
     y += 2;
 
-    // ═══════════════════════════ TOTALS ═══════════════════════════════════
-    pageGuard(35);
-    const tX = ML + W * 0.58;
-    pdf.setFontSize(8);
-    const tR = (lbl: string, val: string) => {
-      pdf.setTextColor(80); pdf.setFont('helvetica', 'normal'); pdf.text(lbl, tX, y);
-      pdf.setTextColor(20); pdf.setFont('helvetica', 'bold'); pdf.text(val, RX, y, { align: 'right' });
-      y += 5;
+    // ─── 5. TOTALS PANEL (right-aligned box, matching live preview) ──────
+    pageGuard(30);
+    const boxW = 60;
+    const boxX = R - boxW - 2;
+
+    // Draw the rounded-ish box background
+    pdf.setFillColor(248, 250, 252);
+    pdf.setDrawColor(226, 232, 240);
+
+    // Calculate box height first
+    let boxLines = 1; // subtotal always
+    if (isGst && !isIGST && Number(invoice.cgst_total) > 0) boxLines++;
+    if (isGst && !isIGST && Number(invoice.sgst_total) > 0) boxLines++;
+    if (isGst && isIGST && Number(invoice.igst_total) > 0) boxLines++;
+    if (totalDiscount > 0) boxLines++;
+    if (Number(invoice.round_off) !== 0) boxLines++;
+    const boxH = boxLines * 5 + 10; // +10 for grand total row and padding
+
+    pdf.roundedRect(boxX, y, boxW + 2, boxH, 1, 1, 'FD');
+    pdf.setDrawColor(0);
+
+    let bY = y + 3.5;
+    const totRow = (label: string, value: string, clrVal = [51, 65, 85]) => {
+      pdf.setFont('helvetica', 'normal'); pdf.setFontSize(7); pdf.setTextColor(100, 116, 139);
+      pdf.text(label, boxX + 3, bY);
+      pdf.setFont('helvetica', 'bold'); pdf.setTextColor(clrVal[0], clrVal[1], clrVal[2]);
+      pdf.text(value, boxX + boxW - 1, bY, { align: 'right' });
+      bY += 5;
     };
-    if (isGst) {
-      tR('Taxable Amount', `₹${taxableTotal.toFixed(2)}`);
-      if (totalDiscount > 0) tR('Discount', `-₹${totalDiscount.toFixed(2)}`);
-      if (!isIGST && Number(invoice.cgst_total) > 0) tR('CGST', `₹${Number(invoice.cgst_total).toFixed(2)}`);
-      if (!isIGST && Number(invoice.sgst_total) > 0) tR('SGST', `₹${Number(invoice.sgst_total).toFixed(2)}`);
-      if (isIGST && Number(invoice.igst_total) > 0) tR('IGST', `₹${Number(invoice.igst_total).toFixed(2)}`);
-    } else {
-      tR('Subtotal', `₹${taxableTotal.toFixed(2)}`);
-      if (totalDiscount > 0) tR('Discount', `-₹${totalDiscount.toFixed(2)}`);
-    }
-    if (Number(invoice.round_off) !== 0) tR('Round Off', `${Number(invoice.round_off) > 0 ? '+' : ''}₹${Number(invoice.round_off).toFixed(2)}`);
 
-    // Grand total bar
-    pdf.setFillColor(15, 23, 42);
-    pdf.rect(tX - 3, y - 2, RX - tX + 5, 8, 'F');
-    pdf.setFont('helvetica', 'bold'); pdf.setFontSize(9.5); pdf.setTextColor(255);
-    pdf.text('TOTAL', tX, y + 3);
-    pdf.text(`₹${Number(invoice.grand_total).toFixed(2)}`, RX - 1, y + 3, { align: 'right' });
-    y += 10;
+    totRow(isGst ? 'Taxable Amount' : 'Subtotal', `₹${Number(invoice.grand_total - (Number(invoice.cgst_total)||0) - (Number(invoice.sgst_total)||0) - (Number(invoice.igst_total)||0) - (Number(invoice.round_off)||0)).toFixed(2)}`, [30, 41, 59]);
+    if (isGst && !isIGST && Number(invoice.cgst_total) > 0) totRow('CGST', `₹${Number(invoice.cgst_total).toFixed(2)}`);
+    if (isGst && !isIGST && Number(invoice.sgst_total) > 0) totRow('SGST', `₹${Number(invoice.sgst_total).toFixed(2)}`);
+    if (isGst && isIGST && Number(invoice.igst_total) > 0) totRow('IGST', `₹${Number(invoice.igst_total).toFixed(2)}`);
+    if (totalDiscount > 0) totRow('Discount', `-₹${totalDiscount.toFixed(2)}`, [71, 85, 105]);
+    if (Number(invoice.round_off) !== 0) totRow('Round Off', `${Number(invoice.round_off).toFixed(2)}`);
 
-    // Amount in words
-    pdf.setFont('helvetica', 'normal'); pdf.setFontSize(7.5); pdf.setTextColor(80);
-    pdf.text('In Words:', ML, y);
-    pdf.setFont('helvetica', 'italic'); pdf.setTextColor(30);
-    const wLines = pdf.splitTextToSize(numberToWords(Number(invoice.grand_total)), W - 22);
-    pdf.text(wLines, ML + 20, y);
-    y += wLines.length * 3.5 + 4;
-    hLine(); y += 5;
+    // Grand total line separator + total
+    pdf.setDrawColor(148, 163, 184); pdf.line(boxX + 3, bY - 2, boxX + boxW - 1, bY - 2); pdf.setDrawColor(0);
+    pdf.setFont('helvetica', 'bold'); pdf.setFontSize(6.5); pdf.setTextColor(30, 41, 59);
+    pdf.text(isGst ? 'GRAND TOTAL' : 'TOTAL', boxX + 3, bY + 1);
+    pdf.setFontSize(9);
+    pdf.text(`₹${Number(invoice.grand_total).toFixed(2)}`, boxX + boxW - 1, bY + 1, { align: 'right' });
 
-    // ═══════════════════════════ FOOTER (3 columns) ══════════════════════
-    pageGuard(40);
-    const col1X = ML;          // Bank details
-    const col2X = ML + W * 0.40; // Terms
-    const col3X = ML + W * 0.75; // QR + Signature
+    y += boxH + 2;
 
-    // Col 1: Bank Details
-    let bY = y;
-    pdf.setFont('helvetica', 'bold'); pdf.setFontSize(7.5); pdf.setTextColor(30);
-    pdf.text('Payment Details', col1X, bY); bY += 4.5;
-    pdf.setFont('helvetica', 'normal'); pdf.setFontSize(7); pdf.setTextColor(80);
-    if (sel.bank_name)      { pdf.text(`Bank:  ${sel.bank_name}`, col1X, bY); bY += 4; }
-    if (sel.branch)         { pdf.text(`Branch: ${sel.branch}`, col1X, bY); bY += 4; }
-    if (sel.account_number) { pdf.text(`A/C:   ${sel.account_number}`, col1X, bY); bY += 4; }
-    if (sel.ifsc_code)      { pdf.text(`IFSC:  ${sel.ifsc_code}`, col1X, bY); bY += 4; }
-    if (sel.upi_id)         { pdf.setFont('helvetica', 'bold'); pdf.text(`UPI:   ${sel.upi_id}`, col1X, bY); pdf.setFont('helvetica', 'normal'); bY += 4; }
+    // ─── 6. AMOUNT IN WORDS (light strip) ────────────────────────────────
+    pageGuard(8);
+    pdf.setFillColor(248, 250, 252);
+    pdf.setDrawColor(226, 232, 240);
+    pdf.rect(M, y, W, 6, 'F');
+    pdf.line(M, y, R, y); pdf.line(M, y + 6, R, y + 6);
+    pdf.setDrawColor(0);
+    pdf.setFont('helvetica', 'bold'); pdf.setFontSize(6); pdf.setTextColor(100, 116, 139);
+    pdf.text('AMOUNT IN WORDS:', M + 3, y + 4);
+    pdf.setFont('helvetica', 'italic'); pdf.setFontSize(7); pdf.setTextColor(51, 65, 85);
+    pdf.text(numberToWords(Number(invoice.grand_total)), M + 33, y + 4);
+    y += 6;
 
-    // Col 2: Terms
-    let tY = y;
-    pdf.setFont('helvetica', 'bold'); pdf.setFontSize(7.5); pdf.setTextColor(30);
-    pdf.text('Terms & Conditions', col2X, tY); tY += 4.5;
-    pdf.setFont('helvetica', 'normal'); pdf.setFontSize(6.5); pdf.setTextColor(80);
-    const terms = invoice.terms_conditions || '1. Goods once sold will not be taken back.\n2. Interest @ 24% p.a. for delayed payment.';
-    const tLines = pdf.splitTextToSize(terms, (col3X - col2X) - 6);
-    tLines.forEach((l: string) => { pdf.text(l, col2X, tY); tY += 3.5; });
+    // ─── 7. BANK DETAILS + QR CODE (2 columns) ──────────────────────────
+    pageGuard(22);
+    pdf.setDrawColor(226, 232, 240); pdf.line(M, y, R, y); pdf.setDrawColor(0);
+    y += 2;
 
-    // Col 3: QR Code (if available)
-    let qY = y;
+    let bankEndY = y + 3;
+    // Left: Bank details
+    pdf.setFont('helvetica', 'bold'); pdf.setFontSize(6); pdf.setTextColor(51, 65, 85);
+    pdf.text('BANK DETAILS', M + 3, bankEndY); bankEndY += 3.5;
+    pdf.setFont('helvetica', 'normal'); pdf.setFontSize(6.5); pdf.setTextColor(100, 116, 139);
+    const bankLine = (lbl: string, val: string) => {
+      pdf.text(lbl, M + 3, bankEndY);
+      pdf.setFont('helvetica', 'bold'); pdf.setTextColor(51, 65, 85);
+      pdf.text(val, M + 16, bankEndY);
+      pdf.setFont('helvetica', 'normal'); pdf.setTextColor(100, 116, 139);
+      bankEndY += 3.5;
+    };
+    if (sel.bank_name) bankLine('Bank:', sel.bank_name);
+    if (sel.account_number) bankLine('A/C:', sel.account_number);
+    if (sel.ifsc_code) bankLine('IFSC:', sel.ifsc_code);
+    if (sel.upi_id) bankLine('UPI:', sel.upi_id);
+
+    // Right: QR code
+    let qrEndY = y + 3;
     if (qrDataUrl && sel.upi_id) {
-      pdf.setFont('helvetica', 'bold'); pdf.setFontSize(6.5); pdf.setTextColor(30);
-      pdf.text('Scan to Pay', col3X + 10, qY, { align: 'center' }); qY += 2;
+      pdf.setFont('helvetica', 'bold'); pdf.setFontSize(5.5); pdf.setTextColor(100, 116, 139);
+      pdf.text('SCAN TO PAY', R - 14, qrEndY, { align: 'center' }); qrEndY += 1.5;
       try {
-        pdf.addImage(qrDataUrl, 'PNG', col3X, qY, 20, 20);
-      } catch { /* QR embed failed silently */ }
-      qY += 21;
-      pdf.setFont('helvetica', 'normal'); pdf.setFontSize(5.5); pdf.setTextColor(100);
-      pdf.text(sel.upi_id, col3X + 10, qY, { align: 'center' });
-      qY += 5;
+        pdf.addImage(qrDataUrl, 'PNG', R - 24, qrEndY, 18, 18);
+      } catch { /* silently skip */ }
+      qrEndY += 19;
+      pdf.setFont('helvetica', 'normal'); pdf.setFontSize(4.5); pdf.setTextColor(160, 174, 192);
+      pdf.text(sel.upi_id, R - 14, qrEndY, { align: 'center' });
+      qrEndY += 3;
     }
+    y = Math.max(bankEndY, qrEndY) + 1;
 
-    // Signature (bottom right)
-    const sigY = Math.max(bY, tY, qY) + 6;
-    pageGuard(sigY - y + 14);
-    pdf.setFont('helvetica', 'bold'); pdf.setFontSize(7.5); pdf.setTextColor(30);
-    pdf.text(`For ${sel.business_name}`, RX, sigY, { align: 'right' });
-    pdf.setDrawColor(120); pdf.line(RX - 35, sigY + 8, RX, sigY + 8); pdf.setDrawColor(0);
-    pdf.setFont('helvetica', 'normal'); pdf.setFontSize(6.5); pdf.setTextColor(100);
-    pdf.text('Authorized Signatory', RX, sigY + 12, { align: 'right' });
+    // ─── 8. TERMS & SIGNATURE (2 columns) ────────────────────────────────
+    pageGuard(20);
+    pdf.setDrawColor(226, 232, 240); pdf.line(M, y, R, y); pdf.setDrawColor(0);
+    y += 2;
+
+    // Left: Terms
+    let termsEndY = y + 3;
+    pdf.setFont('helvetica', 'bold'); pdf.setFontSize(6); pdf.setTextColor(100, 116, 139);
+    pdf.text('TERMS & CONDITIONS', M + 3, termsEndY); termsEndY += 3.5;
+    pdf.setFont('helvetica', 'normal'); pdf.setFontSize(6); pdf.setTextColor(100, 116, 139);
+    const termsText = invoice.terms_conditions || '1. Goods once sold will not be taken back.\n2. Interest @ 24% p.a. for delayed payment.';
+    const tLines = pdf.splitTextToSize(termsText, W / 2 - 8);
+    tLines.forEach((l: string) => { pdf.text(l, M + 3, termsEndY); termsEndY += 3; });
+
+    // Vertical divider
+    pdf.setDrawColor(226, 232, 240);
+    pdf.line(colMid, y, colMid, Math.max(termsEndY, y + 18));
+    pdf.setDrawColor(0);
+
+    // Right: Signature
+    const sigBaseY = Math.max(termsEndY, y + 16);
+    pdf.setFont('helvetica', 'normal'); pdf.setFontSize(6.5); pdf.setTextColor(100, 116, 139);
+    pdf.text('For ', R - 4 - pdf.getTextWidth(sel.business_name || ''), sigBaseY - 6);
+    pdf.setFont('helvetica', 'bold'); pdf.setTextColor(51, 65, 85);
+    pdf.text(sel.business_name, R - 4, sigBaseY - 6, { align: 'right' });
+    // Dashed signature line
+    pdf.setDrawColor(148, 163, 184);
+    pdf.setLineDashPattern([1, 1], 0);
+    pdf.line(R - 34, sigBaseY, R - 4, sigBaseY);
+    pdf.setLineDashPattern([], 0);
+    pdf.setDrawColor(0);
+    pdf.setFont('helvetica', 'bold'); pdf.setFontSize(7); pdf.setTextColor(51, 65, 85);
+    pdf.text('Authorized Signature', R - 4, sigBaseY + 3.5, { align: 'right' });
 
     return pdf;
   };
@@ -296,16 +362,14 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({ isOpen, onClose, invoi
   const handleDownload = async () => {
     showToast('Generating PDF...', 'info');
     try {
-      // Pre-generate UPI QR code if UPI ID is available
       let qrDataUrl: string | undefined;
       const sel = invoice.seller_snapshot || {} as any;
       if (sel.upi_id) {
         const upiStr = `upi://pay?pa=${encodeURIComponent(sel.upi_id)}&pn=${encodeURIComponent(sel.business_name || '')}&am=${Number(invoice.grand_total).toFixed(2)}&cu=INR&tn=${encodeURIComponent('Inv ' + invoice.invoice_number)}`;
         try {
-          qrDataUrl = await QRCode.toDataURL(upiStr, { width: 200, margin: 1, color: { dark: '#0f172a', light: '#ffffff' } });
-        } catch { /* QR generation failed, continue without it */ }
+          qrDataUrl = await QRCode.toDataURL(upiStr, { width: 200, margin: 1, color: { dark: '#1e293b', light: '#ffffff' } });
+        } catch { /* continue without QR */ }
       }
-
       const pdf = generatePdf(qrDataUrl);
       pdf.save(`${invoice.invoice_number}.pdf`);
       showToast('PDF downloaded!', 'success');
