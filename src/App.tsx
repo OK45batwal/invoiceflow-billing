@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AppProvider, useApp } from './context/AppContext';
 import { Sidebar } from './components/layout/Sidebar';
 import { Navbar } from './components/layout/Navbar';
@@ -6,6 +6,7 @@ import { Dashboard } from './pages/Dashboard';
 import { GSTInvoice } from './pages/GSTInvoice';
 import { NonGSTInvoice } from './pages/NonGSTInvoice';
 import { InvoiceHistory } from './pages/InvoiceHistory';
+import { InvoiceView } from './pages/InvoiceView';
 import { Customers } from './pages/Customers';
 import { Products } from './pages/Products';
 import { Reports } from './pages/Reports';
@@ -14,11 +15,21 @@ import { ToastContainer } from './components/ui/ToastContainer';
 import { RefreshCw } from 'lucide-react';
 
 const AppContent: React.FC = () => {
-  const { activePage, loading } = useApp();
+  const { activePage, loading, refreshData } = useApp();
   
   // Collapse States
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  // Shareable invoice route: /invoice/:id
+  const [shareInvoiceId, setShareInvoiceId] = useState<string | null>(null);
+  useEffect(() => {
+    const m = window.location.pathname.match(/^\/invoice\/(.+)$/);
+    if (m) {
+      setShareInvoiceId(m[1]);
+      refreshData();
+    }
+  }, []);
 
   // Dynamic Page Router
   const renderPage = () => {
@@ -45,6 +56,15 @@ const AppContent: React.FC = () => {
   };
 
   const leftMargin = collapsed ? 'lg:pl-20' : 'lg:pl-64';
+
+  if (shareInvoiceId) {
+    return (
+      <>
+        <InvoiceView invoiceId={shareInvoiceId} onBack={() => window.location.href = '/'} />
+        <ToastContainer />
+      </>
+    );
+  }
 
   if (loading) {
     return (

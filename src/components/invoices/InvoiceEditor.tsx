@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import QRCode from 'qrcode';
-import { jsPDF } from 'jspdf';
 import { useApp } from '../../context/AppContext';
 import { Invoice, InvoiceItem, Customer, PaymentMode, PaymentStatus } from '../../types';
 import { calculateInvoiceTotals, numberToWords, INDIAN_STATES } from '../../utils/gstEngine';
 import { Dialog } from '../ui/Dialog';
+import { ShareDialog } from './ShareDialog';
 import { 
   Plus, 
   Trash2, 
@@ -70,10 +70,11 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ type }) => {
 
   // UI state
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
-  const [previewTab, setPreviewTab] = useState<'edit' | 'preview'>('edit'); // for mobile toggling
+  const [previewTab, setPreviewTab] = useState<'edit' | 'preview'>('edit');
   const [newCustName, setNewCustName] = useState('');
   const [newCustMobile, setNewCustMobile] = useState('');
   const [newCustAddress, setNewCustAddress] = useState('');
+  const [shareOpen, setShareOpen] = useState(false);
 
   const printRef = useRef<HTMLDivElement>(null);
 
@@ -305,89 +306,29 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ type }) => {
     window.print();
   };
 
-  const handleSharePDF = async () => {
-    showToast('Generating PDF...', 'info');
-
-    const pdf = new jsPDF('p', 'mm', 'a4');
-    const pageW = 190;
-    let y = 15;
-    const ln = () => { y += 6; };
-    const hr = () => { y += 3; pdf.line(10, y, 200, y); ln(); };
-
-    pdf.setFontSize(16);
-    pdf.text('TAX INVOICE', 105, y, { align: 'center' }); ln(); hr();
-    pdf.setFontSize(10);
-    pdf.text(`Invoice: ${invoiceNumber}`, 10, y); ln();
-    pdf.text(`Date: ${new Date(invoiceDate).toLocaleDateString('en-IN')}`, 10, y); ln();
-    pdf.text(`Place of Supply: ${placeOfSupply}`, 10, y); ln(); hr();
-
-    pdf.setFontSize(12);
-    pdf.text('Seller', 10, y); ln();
-    pdf.setFontSize(10);
-    const sell = sellerObj;
-    pdf.text(`${sell.business_name}`, 10, y); ln();
-    pdf.text(`${sell.address}, ${sell.city}, ${sell.state}`, 10, y); ln();
-    pdf.text(`Phone: ${sell.phone}`, 10, y); ln();
-    if (profile?.gstin) pdf.text(`GSTIN: ${profile.gstin}`, 10, y); ln(); hr();
-
-    pdf.setFontSize(12);
-    pdf.text('Customer', 10, y); ln();
-    pdf.setFontSize(10);
-    if (customerDetails) {
-      pdf.text(`${customerDetails.name}`, 10, y); ln();
-      if (customerDetails.company_name) { pdf.text(customerDetails.company_name, 10, y); ln(); }
-      pdf.text(`${customerDetails.address}, ${customerDetails.city}, ${customerDetails.state}`, 10, y); ln();
-      pdf.text(`Mobile: ${customerDetails.mobile}`, 10, y); ln();
-      if (customerDetails.gstin) pdf.text(`GSTIN: ${customerDetails.gstin}`, 10, y);
-    }
-    ln(); hr();
-
-    pdf.setFontSize(12);
-    pdf.text('Items', 10, y); ln();
-    pdf.setFontSize(9);
-    pdf.text('#  Item                         Qty  Rate     Disc   Amount', 10, y); ln();
-    pdf.setFontSize(8);
-    totals.items.forEach((item, i) => {
-      if (y > 270) { pdf.addPage(); y = 20; }
-      const line = `${i + 1}. ${(item.product_name || '').padEnd(28, ' ').slice(0, 28)} ${String(item.quantity).padStart(4, ' ')} ${item.rate.toFixed(2).padStart(7, ' ')} ${item.discount_pct ? item.discount_pct + '%' : '    '} ${item.amount.toFixed(2).padStart(8, ' ')}`;
-      pdf.text(line, 10, y); ln();
-    });
-    hr();
-
-    pdf.setFontSize(10);
-    pdf.text(`Subtotal:       ₹${totals.subtotal.toFixed(2)}`, 130, y, { align: 'right' }); ln();
-    if (totals.cgst_total > 0) pdf.text(`CGST:           ₹${totals.cgst_total.toFixed(2)}`, 130, y, { align: 'right' }); ln();
-    if (totals.sgst_total > 0) pdf.text(`SGST:           ₹${totals.sgst_total.toFixed(2)}`, 130, y, { align: 'right' }); ln();
-    if (totals.igst_total > 0) pdf.text(`IGST:           ₹${totals.igst_total.toFixed(2)}`, 130, y, { align: 'right' }); ln();
-    if (totals.round_off !== 0) pdf.text(`Round Off:      ₹${totals.round_off.toFixed(2)}`, 130, y, { align: 'right' }); ln();
-    pdf.setFontSize(14);
-    pdf.text(`Grand Total:    ₹${totals.grand_total.toFixed(2)}`, 130, y, { align: 'right' }); ln();
-
-    const pdfBlob = pdf.output('blob');
-    const url = URL.createObjectURL(pdfBlob);
-
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${invoiceNumber}.pdf`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-
-    const waText = encodeURIComponent([
-      `*INVOICE: ${invoiceNumber}*`,
-      `Customer: ${customerDetails?.name || 'N/A'}`,
-      `Amount: ₹${totals.grand_total.toFixed(2)}`,
-      `Date: ${new Date(invoiceDate).toLocaleDateString('en-IN')}`,
-      ``,
-      `📎 PDF has been downloaded — please attach it here.`,
-      `Powered by InvoiceFlow`
-    ].join('\n'));
-
-    window.open(`https://wa.me/?text=${waText}`, '_blank');
-
-    setTimeout(() => URL.revokeObjectURL(url), 5000);
-    showToast(`PDF downloaded & WhatsApp opened! Attach the PDF file to send.`, 'success');
-  };
+  const getInvoiceData = (): Invoice => ({
+    id: editInvoice?.id || `inv_${Date.now()}`,
+    invoice_number: invoiceNumber,
+    invoice_type: type,
+    invoice_date: invoiceDate,
+    due_date: dueDate || undefined,
+    payment_mode: paymentMode,
+    payment_status: paymentStatus,
+    place_of_supply: placeOfSupply,
+    reverse_charge: reverseCharge,
+    customer_id: customerDetails?.id || '',
+    customer_snapshot: customerDetails || { id: '', name: '', address: '', city: '', state: '', state_code: '', mobile: '' },
+    seller_snapshot: sellerObj,
+    subtotal: totals.subtotal,
+    cgst_total: totals.cgst_total,
+    sgst_total: totals.sgst_total,
+    igst_total: totals.igst_total,
+    round_off: totals.round_off,
+    grand_total: totals.grand_total,
+    notes,
+    terms_conditions: terms,
+    items: totals.items,
+  });
 
   const isIGST = type === 'GST' && totals.igst_total > 0;
 
@@ -724,11 +665,11 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ type }) => {
             <h3 className="text-sm font-bold uppercase tracking-wider text-text-secondary dark:text-slate-400">A4 Live Print View</h3>
             <div className="flex gap-2">
               <button
-                onClick={handleSharePDF}
-                className="h-9 px-3 rounded-lg bg-green-50 hover:bg-green-100 text-green-600 dark:bg-green-950/20 dark:text-green-400 text-xs font-bold flex items-center gap-1.5"
+                onClick={() => setShareOpen(true)}
+                className="h-9 px-3 rounded-lg bg-primary hover:bg-primary-dark text-white text-xs font-bold flex items-center gap-1.5 shadow-soft"
               >
                 <Share2 className="h-4 w-4" />
-                <span>PDF & WhatsApp</span>
+                <span>Share</span>
               </button>
               <button
                 onClick={handlePrint}
@@ -767,7 +708,7 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ type }) => {
 
               <div className="text-right space-y-1">
                 <div className="text-lg font-extrabold uppercase tracking-wide border-b border-black pb-1 mb-2">
-                  TAX INVOICE
+                  {type === 'GST' ? 'TAX INVOICE' : 'INVOICE'}
                 </div>
                 <div>Invoice No: <strong>{invoiceNumber}</strong></div>
                 <div>Date: {new Date(invoiceDate).toLocaleDateString('en-IN')}</div>
@@ -854,7 +795,7 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ type }) => {
                   
                   {/* Total Calculations */}
                   <tr className="border-t border-black font-bold">
-                    <td colSpan={type === 'GST' ? (isIGST ? 8 : 9) : 7} className="border-r border-black p-1.5 text-right uppercase">Subtotal (Taxable Value):</td>
+                    <td colSpan={type === 'GST' ? (isIGST ? 9 : 10) : 7} className="border-r border-black p-1.5 text-right uppercase">Subtotal{type === 'GST' ? ' (Taxable Value)' : ''}:</td>
                     <td className="p-1.5 text-right">{totals.subtotal.toFixed(2)}</td>
                   </tr>
                   {type === 'GST' ? (
@@ -878,12 +819,12 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ type }) => {
                   ) : null}
                   {totals.round_off !== 0 && (
                     <tr className="font-bold text-[9px]">
-                      <td colSpan={type === 'GST' ? (isIGST ? 8 : 9) : 7} className="border-r border-black p-1.5 text-right uppercase">Round Off:</td>
+                      <td colSpan={type === 'GST' ? (isIGST ? 9 : 10) : 7} className="border-r border-black p-1.5 text-right uppercase">Round Off:</td>
                       <td className="p-1.5 text-right">{totals.round_off.toFixed(2)}</td>
                     </tr>
                   )}
                   <tr className="border-t-2 border-black font-extrabold text-[11px] bg-slate-50">
-                    <td colSpan={type === 'GST' ? (isIGST ? 8 : 9) : 7} className="border-r border-black p-1.5 text-right uppercase tracking-wider">Grand Total (₹):</td>
+                    <td colSpan={type === 'GST' ? (isIGST ? 9 : 10) : 7} className="border-r border-black p-1.5 text-right uppercase tracking-wider">Grand Total (₹):</td>
                     <td className="p-1.5 text-right text-base font-extrabold">{totals.grand_total.toFixed(2)}</td>
                   </tr>
                 </tbody>
@@ -945,6 +886,14 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ type }) => {
           </div>
         </div>
       </div>
+
+      {/* Share Dialog */}
+      <ShareDialog
+        isOpen={shareOpen}
+        onClose={() => setShareOpen(false)}
+        invoice={getInvoiceData()}
+        items={totals.items}
+      />
 
       {/* Quick Add Customer Dialog */}
       <Dialog

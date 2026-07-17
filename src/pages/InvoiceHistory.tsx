@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { Invoice } from '../types';
 import { api } from '../services/api';
-import { jsPDF } from 'jspdf';
 import { Dialog } from '../components/ui/Dialog';
+import { ShareDialog } from '../components/invoices/ShareDialog';
 import { 
   Search, 
   Trash2, 
@@ -11,8 +11,7 @@ import {
   Edit, 
   AlertTriangle,
   Receipt,
-  Share2,
-  MessageCircle
+  Share2
 } from 'lucide-react';
 
 export const InvoiceHistory: React.FC = () => {
@@ -34,6 +33,7 @@ export const InvoiceHistory: React.FC = () => {
   
   // UI states
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [shareInvoice, setShareInvoice] = useState<Invoice | null>(null);
   const [filteredInvoices, setFilteredInvoices] = useState<Invoice[]>([]);
 
   // Apply filters on invoices list
@@ -106,97 +106,6 @@ export const InvoiceHistory: React.FC = () => {
         showToast(e.message, 'danger');
       }
     }
-  };
-
-  const handleWhatsAppShare = (inv: Invoice) => {
-    const text = [
-      `🧾 *Invoice: ${inv.invoice_number}*`,
-      `👤 Customer: ${inv.customer_snapshot.name}${inv.customer_snapshot.company_name ? ` (${inv.customer_snapshot.company_name})` : ''}`,
-      `💰 Amount: ₹${Number(inv.grand_total).toFixed(2)}`,
-      `📅 Date: ${new Date(inv.invoice_date).toLocaleDateString('en-IN')}`,
-      `📊 Status: ${inv.payment_status}`,
-      `━━━━━━━━━━━━`,
-      `Powered by InvoiceFlow`,
-      `https://invoiceflow-billing.okbatwal.workers.dev`
-    ].join('\n');
-    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
-  };
-
-  const handleSharePDF = async (inv: Invoice) => {
-    const pdf = new jsPDF('p', 'mm', 'a4');
-    const pageWidth = 190;
-    let y = 20;
-
-    pdf.setFontSize(18);
-    pdf.text(`Invoice: ${inv.invoice_number}`, pageWidth / 2, y, { align: 'center' });
-    y += 12;
-    pdf.setFontSize(10);
-    pdf.text(`Date: ${new Date(inv.invoice_date).toLocaleDateString('en-IN')}`, pageWidth / 2, y, { align: 'center' });
-    y += 12;
-
-    pdf.setFontSize(12);
-    pdf.text('Customer Details', 10, y);
-    y += 7;
-    pdf.setFontSize(10);
-    pdf.text(`Name: ${inv.customer_snapshot.name}`, 10, y);
-    y += 5;
-    if (inv.customer_snapshot.company_name) {
-      pdf.text(`Company: ${inv.customer_snapshot.company_name}`, 10, y);
-      y += 5;
-    }
-    pdf.text(`Mobile: ${inv.customer_snapshot.mobile}`, 10, y);
-    y += 5;
-    pdf.text(`Address: ${inv.customer_snapshot.address}, ${inv.customer_snapshot.city}`, 10, y);
-    y += 10;
-
-    pdf.setFontSize(12);
-    pdf.text('Invoice Details', 10, y);
-    y += 7;
-    pdf.setFontSize(10);
-    pdf.text(`Type: ${inv.invoice_type}`, 10, y);
-    y += 5;
-    pdf.text(`Payment: ${inv.payment_mode} (${inv.payment_status})`, 10, y);
-    y += 5;
-    pdf.text(`Subtotal: ₹${Number(inv.subtotal).toFixed(2)}`, 10, y);
-    y += 5;
-    pdf.text(`Grand Total: ₹${Number(inv.grand_total).toFixed(2)}`, 10, y);
-    y += 10;
-
-    if (inv.items && inv.items.length > 0) {
-      pdf.setFontSize(12);
-      pdf.text('Items', 10, y);
-      y += 7;
-      pdf.setFontSize(9);
-      inv.items.forEach((item, i) => {
-        pdf.text(`${i + 1}. ${item.product_name} x ${item.quantity} @ ₹${item.rate} = ₹${Number(item.amount).toFixed(2)}`, 10, y);
-        y += 5;
-        if (y > 280) { pdf.addPage(); y = 20; }
-      });
-    }
-
-    const pdfBlob = pdf.output('blob');
-    const url = URL.createObjectURL(pdfBlob);
-
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${inv.invoice_number}.pdf`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-
-    const waText = encodeURIComponent([
-      `*INVOICE: ${inv.invoice_number}*`,
-      `Customer: ${inv.customer_snapshot.name}${inv.customer_snapshot.company_name ? ` (${inv.customer_snapshot.company_name})` : ''}`,
-      `Amount: ₹${Number(inv.grand_total).toFixed(2)}`,
-      `Date: ${new Date(inv.invoice_date).toLocaleDateString('en-IN')}`,
-      `Status: ${inv.payment_status}`,
-      ``,
-      `📎 PDF has been downloaded — please attach it here.`,
-      `Powered by InvoiceFlow`
-    ].join('\n'));
-
-    window.open(`https://wa.me/?text=${waText}`, '_blank');
-    setTimeout(() => URL.revokeObjectURL(url), 5000);
   };
 
   const formatRupee = (value: number) => {
@@ -354,18 +263,11 @@ export const InvoiceHistory: React.FC = () => {
                           <Copy className="h-4.5 w-4.5" />
                         </button>
                         <button
-                          onClick={() => handleSharePDF(inv)}
-                          className="p-1.5 rounded-lg text-green-600 hover:bg-green-50 dark:text-green-400 dark:hover:bg-green-950/20 transition-colors"
-                          title="Download PDF & WhatsApp"
+                          onClick={() => setShareInvoice(inv)}
+                          className="p-1.5 rounded-lg text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-950/20 transition-colors"
+                          title="Share Invoice"
                         >
                           <Share2 className="h-4.5 w-4.5" />
-                        </button>
-                        <button
-                          onClick={() => handleWhatsAppShare(inv)}
-                          className="p-1.5 rounded-lg text-emerald-600 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-950/20 transition-colors"
-                          title="Share on WhatsApp"
-                        >
-                          <MessageCircle className="h-4.5 w-4.5" />
                         </button>
                         <button
                           onClick={() => setDeleteConfirmId(inv.id || null)}
@@ -391,6 +293,14 @@ export const InvoiceHistory: React.FC = () => {
           </table>
         </div>
       </div>
+
+      {/* Share Dialog */}
+      <ShareDialog
+        isOpen={shareInvoice !== null}
+        onClose={() => setShareInvoice(null)}
+        invoice={shareInvoice || {} as Invoice}
+        items={shareInvoice?.items || []}
+      />
 
       {/* Delete Confirmation Dialog */}
       <Dialog
