@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { Invoice } from '../types';
 import { api } from '../services/api';
+import { jsPDF } from 'jspdf';
 import { Dialog } from '../components/ui/Dialog';
 import { 
   Search, 
@@ -122,7 +123,6 @@ export const InvoiceHistory: React.FC = () => {
   };
 
   const handleSharePDF = async (inv: Invoice) => {
-    const { jsPDF } = await import('jspdf');
     const pdf = new jsPDF('p', 'mm', 'a4');
     const pageWidth = 190;
     let y = 20;
@@ -175,20 +175,24 @@ export const InvoiceHistory: React.FC = () => {
     }
 
     const pdfBlob = pdf.output('blob');
+    const url = URL.createObjectURL(pdfBlob);
     const file = new File([pdfBlob], `${inv.invoice_number}.pdf`, { type: 'application/pdf' });
 
     if (navigator.share) {
       try {
         await navigator.share({ files: [file], title: inv.invoice_number });
+        URL.revokeObjectURL(url);
         return;
       } catch {}
     }
-    const url = URL.createObjectURL(pdfBlob);
+
     const a = document.createElement('a');
     a.href = url;
     a.download = `${inv.invoice_number}.pdf`;
+    document.body.appendChild(a);
     a.click();
-    URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 
   const formatRupee = (value: number) => {

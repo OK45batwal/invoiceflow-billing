@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import QRCode from 'qrcode';
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
 import { useApp } from '../../context/AppContext';
 import { Invoice, InvoiceItem, Customer, PaymentMode, PaymentStatus } from '../../types';
 import { calculateInvoiceTotals, numberToWords, INDIAN_STATES } from '../../utils/gstEngine';
@@ -305,10 +307,9 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ type }) => {
   };
 
   const handleSharePDF = async () => {
-    const html2canvas = (await import('html2canvas')).default;
-    const { jsPDF } = await import('jspdf');
-
     if (!printRef.current) return;
+
+    showToast('Generating PDF...', 'info');
 
     try {
       const canvas = await html2canvas(printRef.current, {
@@ -320,25 +321,47 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ type }) => {
       const pdf = new jsPDF('p', 'mm', 'a4');
       const pdfWidth = 210;
       const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      if (pdfHeight > pdfWidth * 1.414) {
+        // Content exceeds one page
+        let heightLeft = pdfHeight;
+        let position = 0;
+        const pageHeight = pdfWidth * 1.414;
+        pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
+        heightLeft -= pageHeight;
+        while (heightLeft > 0) {
+          position -= pageHeight;
+          pdf.addPage();
+          pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
+          heightLeft -= pageHeight;
+        }
+      } else {
+        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      }
       const pdfBlob = pdf.output('blob');
+      const url = URL.createObjectURL(pdfBlob);
 
       const file = new File([pdfBlob], `${invoiceNumber}.pdf`, { type: 'application/pdf' });
 
       if (navigator.share) {
         try {
           await navigator.share({ files: [file], title: invoiceNumber });
+          URL.revokeObjectURL(url);
+          showToast('PDF shared successfully!', 'success');
           return;
         } catch {}
       }
-      const url = URL.createObjectURL(pdfBlob);
+
       const a = document.createElement('a');
       a.href = url;
       a.download = `${invoiceNumber}.pdf`;
+      document.body.appendChild(a);
       a.click();
-      URL.revokeObjectURL(url);
-    } catch {
-      window.open(`https://wa.me/?text=${encodeURIComponent(`Invoice: ${invoiceNumber} - ₹${totals.grand_total.toFixed(2)}`)}`, '_blank');
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      showToast('PDF downloaded! Share it manually on WhatsApp.', 'success');
+    } catch (err) {
+      showToast('Could not generate PDF. Opening WhatsApp text instead.', 'warning');
+      window.open(`https://wa.me/?text=${encodeURIComponent(`Invoice: ${invoiceNumber} - ₹${totals.grand_total.toFixed(2)}\nhttps://invoiceflow-billing.okbatwal.workers.dev`)}`, '_blank');
     }
   };
 
