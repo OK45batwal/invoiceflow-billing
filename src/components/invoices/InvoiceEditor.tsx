@@ -379,26 +379,36 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ type }) => {
 
     // ─── ITEMS TABLE ───
     if (y > 260) { pdf.addPage(); y = 20; }
+    const colW = (r - m) / (isGst ? 7 : 5);
+    const colPct = isGst
+      ? [0.3, 2.2, 0.8, 0.7, 1.0, 0.8, 1.2]
+      : [0.3, 2.0, 0.7, 1.0, 1.0];
+    const colOffsets = colPct.map((p, i) => m + colPct.slice(0, i).reduce((a, b) => a + b, 0) * colW);
+    const colWidths = colPct.map(p => p * colW);
+    const labels = isGst ? ['#', 'Item', 'HSN', 'Qty', 'Price', 'GST%', 'Amount'] : ['#', 'Item', 'Qty', 'Price', 'Amount'];
+    const headerLeft = (i: number) => i === 0 ? false : (i === 1 || (isGst && i === 2));
+    const nCols = colPct.length;
+    for (let c = 0; c < nCols; c++) {
+      const x = colOffsets[c], w = colWidths[c];
+      pdf.text(labels[c], headerLeft(c) ? x + 1 : (c === 0 ? x + w / 2 : x + w - 2), y, headerLeft(c) ? {} : { align: c === 0 ? 'center' : 'right' });
+    }
+    const colRow = (item: any, i: number) => {
+      const vals = isGst
+        ? [String(i + 1), item.product_name || '', item.hsn_code || '-', String(item.quantity), `\u20B9${item.rate.toFixed(2)}`, `${item.gst_rate}%`, `\u20B9${lineTotal(item).toFixed(2)}`]
+        : [String(i + 1), item.product_name || '', String(item.quantity), `\u20B9${item.rate.toFixed(2)}`, `\u20B9${lineTotal(item).toFixed(2)}`];
+      for (let c = 0; c < nCols; c++) {
+        const x = colOffsets[c], w = colWidths[c];
+        const col = c;
+        if (col === 0) { pdf.setTextColor(130); pdf.text(vals[col], x + w / 2, y, { align: 'center' }); }
+        else if (col === 1) { pdf.setTextColor(0); pdf.text(vals[col], x + 1, y); }
+        else { pdf.setTextColor(80); pdf.text(vals[col], x + w - 2, y, { align: 'right' }); }
+      }
+    };
     pdf.setFillColor(241, 245, 249);
     pdf.rect(m, y - 3, r - m, 6, 'F');
     pdf.setTextColor(71, 85, 105);
     pdf.setFontSize(7);
     pdf.setFont('helvetica', 'bold');
-    let cx = m;
-    const colW = (r - m) / (isGst ? 7 : 5);
-    const col = (t: string, w: number, a: string = 'left') => {
-      const x = cx; cx += w;
-      if (a === 'r') pdf.text(t, x + w - 2, y, { align: 'right' });
-      else if (a === 'c') pdf.text(t, x + w / 2, y, { align: 'center' });
-      else pdf.text(t, x + 1, y);
-    };
-    col('#', colW * 0.3, 'c');
-    col('Item', isGst ? colW * 2.2 : colW * 2.0);
-    if (isGst) col('HSN', colW * 0.8, 'c');
-    col('Qty', colW * 0.7, 'r');
-    col('Price', colW * 1, 'r');
-    if (isGst) col('GST%', colW * 0.8, 'r');
-    col('Amount', isGst ? colW * 1.2 : colW * 1.0, 'r');
     pdf.setDrawColor(200);
     pdf.line(m, y + 1, r, y + 1);
     pdf.setDrawColor(0);
@@ -406,17 +416,7 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ type }) => {
     pdf.setFont('helvetica', 'normal');
     totals.items.forEach((item: any, i: number) => {
       if (y > 275) { pdf.addPage(); y = 20; }
-      cx = m;
-      pdf.setTextColor(130);
-      col(String(i + 1), colW * 0.3, 'c');
-      pdf.setTextColor(0);
-      col(item.product_name || '', isGst ? colW * 2.2 : colW * 2.0);
-      if (isGst) { pdf.setTextColor(130); col(item.hsn_code || '-', colW * 0.8, 'c'); }
-      pdf.setTextColor(80);
-      col(String(item.quantity), colW * 0.7, 'r');
-      col(`\u20B9${item.rate.toFixed(2)}`, colW * 1, 'r');
-      if (isGst) col(`${item.gst_rate}%`, colW * 0.8, 'r');
-      col(`\u20B9${lineTotal(item).toFixed(2)}`, isGst ? colW * 1.2 : colW * 1.0, 'r');
+      colRow(item, i);
       pdf.setDrawColor(230);
       pdf.line(m, y + 4, r, y + 4);
       pdf.setDrawColor(0);
