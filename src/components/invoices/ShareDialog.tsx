@@ -122,6 +122,9 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({ isOpen, onClose, invoi
     col('Price', colW * 1, 'r');
     if (isGst) col('GST%', colW * 0.8, 'r');
     col('Amount', isGst ? colW * 1.2 : colW * 1.0, 'r');
+    pdf.setDrawColor(200);
+    pdf.line(m, y + 1, r, y + 1);
+    pdf.setDrawColor(0);
     y += 5.5;
     pdf.setFont('helvetica', 'normal');
     itemsToPrint.forEach((item: any, i: number) => {
@@ -137,10 +140,10 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({ isOpen, onClose, invoi
       col(`\u20B9${item.rate.toFixed(2)}`, colW * 1, 'r');
       if (isGst) col(`${item.gst_rate}%`, colW * 0.8, 'r');
       col(`\u20B9${lineTotal(item).toFixed(2)}`, isGst ? colW * 1.2 : colW * 1.0, 'r');
-      y += 5;
       pdf.setDrawColor(230);
-      pdf.line(m, y, r, y);
+      pdf.line(m, y + 4, r, y + 4);
       pdf.setDrawColor(0);
+      y += 5;
     });
     y += 4;
 
