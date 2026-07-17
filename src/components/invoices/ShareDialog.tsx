@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { jsPDF } from 'jspdf';
+import html2canvas from 'html2canvas';
 import {
   FileDown,
   Printer,
@@ -23,205 +24,37 @@ interface ShareDialogProps {
 export const ShareDialog: React.FC<ShareDialogProps> = ({ isOpen, onClose, invoice, items }) => {
   const { showToast } = useApp();
   const isGst = invoice.invoice_type === 'GST';
+  const printRef = useRef<HTMLDivElement>(null);
+  const totalDiscount = (items || []).reduce((sum, item) =>
+    sum + item.rate * item.quantity * item.discount_pct / 100, 0);
+  const lineTotal = (item: any) => item.rate * (1 - item.discount_pct / 100) * item.quantity;
+  const taxableAmount = (items || []).reduce((sum, item) => sum + lineTotal(item), 0);
+  const isIGST = isGst && Number(invoice.igst_total) > 0;
+  const s = invoice.customer_snapshot;
+  const sel = invoice.seller_snapshot;
 
-  const generatePdf = (): jsPDF => {
+  const generatePdf = async (): Promise<jsPDF> => {
+    if (!printRef.current) return new jsPDF('p', 'mm', 'a4');
+    const canvas = await html2canvas(printRef.current, { scale: 2, useCORS: true, logging: false });
+    const imgData = canvas.toDataURL('image/png');
     const pdf = new jsPDF('p', 'mm', 'a4');
-    const m = 12, r = 198;
-    let y = 20;
-    const bold = (t: string, x: number, yo: number, opts?: any) => {
-      pdf.setFont('helvetica', 'bold'); pdf.text(t, x, yo, opts); pdf.setFont('helvetica', 'normal');
-    };
-    const s = invoice.customer_snapshot;
-    const sel = invoice.seller_snapshot;
-    const itemsToPrint = items || [];
-
-    const totalDiscount = itemsToPrint.reduce((sum, item) =>
-      sum + item.rate * item.quantity * item.discount_pct / 100, 0);
-    const lineTotal = (item: any) => item.rate * (1 - item.discount_pct / 100) * item.quantity;
-    const taxableAmount = itemsToPrint.reduce((sum, item) => sum + lineTotal(item), 0);
-    const isIGST = isGst && Number(invoice.igst_total) > 0;
-
-    // ──── HEADER BAR ────
-    pdf.setFillColor(30, 41, 59);
-    pdf.rect(m - 2, y - 7, r - m + 4, 20, 'F');
-    pdf.setTextColor(255, 255, 255);
-    pdf.setFontSize(12);
-    pdf.setFont('helvetica', 'bold');
-    pdf.text(sel.business_name, m, y);
-    pdf.setFontSize(7);
-    pdf.setTextColor(203, 213, 225);
-    const addrLines = pdf.splitTextToSize(`${sel.address}, ${sel.city}, ${sel.state}`, 80);
-    addrLines.forEach((l: string, i: number) => pdf.text(l, m, y + 3.5 + i * 3));
-    pdf.setFontSize(14);
-    pdf.setFont('helvetica', 'bold');
-    pdf.setTextColor(255, 255, 255);
-    pdf.text(isGst ? 'TAX INVOICE' : 'CASH MEMO', r, y, { align: 'right' });
-    if (isGst) { pdf.setFontSize(6); pdf.setTextColor(252, 211, 77); pdf.text('Original', r, y + 4, { align: 'right' }); }
-    y += 22;
-    pdf.setTextColor(0);
-
-    // ──── META ────
-    pdf.setDrawColor(180);
-    pdf.line(m, y, r, y); y += 5;
-    pdf.setFontSize(8);
-    pdf.text(`${isGst ? 'Invoice' : 'Bill'} No: ${invoice.invoice_number}`, m, y);
-    pdf.text(`Date: ${new Date(invoice.invoice_date).toLocaleDateString('en-IN')}`, m + 65, y);
-    if (invoice.due_date) pdf.text(`Due: ${new Date(invoice.due_date).toLocaleDateString('en-IN')}`, m + 110, y);
-    if (isGst) bold('Place of Supply:', r, y, { align: 'right' });
-    y += 5;
-    pdf.setDrawColor(180);
-    pdf.line(m, y, r, y); y += 6;
-
-    // ──── BILL FROM / TO ────
-    bold('Bill From', m, y);
-    bold('Bill To', 105, y);
-    y += 5;
-    let ly = y, ry = y;
-    pdf.setFontSize(8.5);
-    bold(sel.business_name, m, ly); ly += 5;
-    pdf.setFontSize(8);
-    if (sel.gstin) { pdf.text(`GSTIN: ${sel.gstin}`, m, ly); ly += 4.5; }
-    pdf.text(`${sel.address}, ${sel.city}, ${sel.state}`, m, ly); ly += 4.5;
-    pdf.text(`Phone: ${sel.phone}`, m, ly);
-    pdf.setFontSize(8.5);
-    bold(s.name, 105, ry); ry += 5;
-    pdf.setFontSize(8);
-    if (s.company_name) { pdf.text(s.company_name, 105, ry); ry += 4.5; }
-    if (s.gstin) { pdf.text(`GSTIN: ${s.gstin}`, 105, ry); ry += 4.5; }
-    pdf.text(`${s.address}, ${s.city}, ${s.state}`, 105, ry); ry += 4.5;
-    pdf.text(`Phone: ${s.mobile}`, 105, ry); ry += 4;
-    if (s.email) pdf.text(`Email: ${s.email}`, 105, ry);
-
-    y = Math.max(ly, ry) + 4;
-    pdf.setDrawColor(180);
-    pdf.line(m, y, r, y); y += 6;
-
-    // ──── ITEMS TABLE ────
-    if (y > 260) { pdf.addPage(); y = 20; }
-    const colW = (r - m) / (isGst ? 7 : 5);
-    const colPct = isGst ? [0.3, 2.2, 0.8, 0.7, 1.0, 0.8, 1.2] : [0.3, 2.0, 0.7, 1.0, 1.0];
-    const colLbl = isGst ? ['#', 'Item', 'HSN', 'Qty', 'Price', 'GST%', 'Amount'] : ['#', 'Item', 'Qty', 'Price', 'Amount'];
-    const colX = colPct.reduce((acc: number[], p) => [...acc, (acc.at(-1) ?? m) + p * colW], [] as number[]);
-    colX.unshift(m);
-    pdf.setFontSize(8);
-    pdf.setFont('helvetica', 'bold');
-    for (let c = 0; c < colPct.length; c++) {
-      const cx = colX[c], cw = colPct[c] * colW;
-      if (c === 0) pdf.text(colLbl[c], cx + cw / 2, y, { align: 'center' });
-      else if (c <= 1 || (isGst && c === 2)) pdf.text(colLbl[c], cx + 1, y);
-      else pdf.text(colLbl[c], cx + cw - 1, y, { align: 'right' });
+    const pw = pdf.internal.pageSize.getWidth();
+    const ph = pdf.internal.pageSize.getHeight();
+    const m = 10;
+    const iw = pw - m * 2;
+    const ih = (canvas.height * iw) / canvas.width;
+    let pos = 0;
+    for (let page = 0; pos < ih; page++) {
+      if (page > 0) pdf.addPage();
+      pdf.addImage(imgData, 'PNG', m, m - pos, iw, ih);
+      pos += ph - m * 2;
     }
-    pdf.setDrawColor(180);
-    pdf.line(m, y + 1, r, y + 1);
-    pdf.setDrawColor(0);
-    y += 6;
-    pdf.setFont('helvetica', 'normal');
-    itemsToPrint.forEach((item: any, i: number) => {
-      if (y > 275) { pdf.addPage(); y = 20; }
-      for (let c = 0; c < colPct.length; c++) {
-        const cx = colX[c], cw = colPct[c] * colW;
-        let val = String(i + 1);
-        if (c === 1) val = item.product_name || '';
-        else if (isGst && c === 2) val = item.hsn_code || '-';
-        else if (!isGst && c === 2) val = String(item.quantity);
-        else if (c === (isGst ? 3 : 3)) { pdf.setFont('helvetica', 'bold'); val = String(item.quantity); }
-        else if (c === (isGst ? 4 : 4)) val = `\u20B9${item.rate.toFixed(2)}`;
-        else if (isGst && c === 5) val = `${item.gst_rate}%`;
-        else if (c === (isGst ? 6 : 4)) { pdf.setFont('helvetica', 'bold'); val = `\u20B9${lineTotal(item).toFixed(2)}`; }
-        if (c === 0) pdf.text(val, cx + cw / 2, y, { align: 'center' });
-        else if (c === 1) pdf.text(val, cx + 1, y);
-        else pdf.text(val, cx + cw - 1, y, { align: 'right' });
-        pdf.setFont('helvetica', 'normal');
-      }
-      y += 6.5;
-    });
-    pdf.setDrawColor(180);
-    pdf.line(m, y - 2, r, y - 2);
-    pdf.setDrawColor(0);
-    y += 4;
-
-    // ──── TOTALS ────
-    pdf.setFontSize(9);
-    const tRight = r, tLeft = r - 78;
-    const totLine = (l: string, v: string, b = false) => {
-      if (b) { pdf.setFont('helvetica', 'bold'); pdf.setFontSize(11); }
-      pdf.text(l, tLeft, y);
-      pdf.text(v, tRight, y, { align: 'right' });
-      y += 5.5;
-      if (b) { pdf.setFont('helvetica', 'normal'); pdf.setFontSize(9); }
-    };
-    if (isGst) {
-      totLine('Taxable Amount:', `\u20B9${taxableAmount.toFixed(2)}`);
-      if (!isIGST && Number(invoice.cgst_total) > 0) totLine('CGST (9%):', `\u20B9${Number(invoice.cgst_total).toFixed(2)}`);
-      if (!isIGST && Number(invoice.sgst_total) > 0) totLine('SGST (9%):', `\u20B9${Number(invoice.sgst_total).toFixed(2)}`);
-      if (isIGST && Number(invoice.igst_total) > 0) totLine('IGST:', `\u20B9${Number(invoice.igst_total).toFixed(2)}`);
-      if (totalDiscount > 0) totLine('Discount:', `-\u20B9${totalDiscount.toFixed(2)}`);
-    } else {
-      totLine('Subtotal:', `\u20B9${taxableAmount.toFixed(2)}`);
-      if (totalDiscount > 0) totLine('Discount:', `-\u20B9${totalDiscount.toFixed(2)}`);
-      totLine('Delivery:', '\u20B90.00');
-    }
-    if (Number(invoice.round_off) !== 0) totLine('Round Off:', `${Number(invoice.round_off).toFixed(2)}`);
-    pdf.line(tLeft, y - 1, tRight, y - 1);
-    totLine(isGst ? 'GRAND TOTAL' : 'TOTAL', `\u20B9${Number(invoice.grand_total).toFixed(2)}`, true);
-    y += 3;
-
-    // ──── AMOUNT IN WORDS ────
-    pdf.setDrawColor(180);
-    pdf.line(m, y, r, y); y += 5;
-    pdf.setFontSize(9);
-    pdf.setFont('helvetica', 'bold');
-    pdf.text('Amount in Words:', m, y);
-    pdf.setFont('helvetica', 'normal');
-    const amtWords = pdf.splitTextToSize(numberToWords(Number(invoice.grand_total)), r - m - 40);
-    pdf.text(amtWords, m + 35, y);
-    y += amtWords.length * 4.5 + 4;
-
-    // ──── BANK DETAILS ────
-    if (sel.bank_name || sel.upi_id) {
-      if (y > 260) { pdf.addPage(); y = 20; }
-      pdf.setDrawColor(180);
-      pdf.line(m, y, r, y); y += 5;
-      pdf.setFontSize(9);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text('Bank Details', m, y); y += 5.5;
-      pdf.setFont('helvetica', 'normal');
-      pdf.setFontSize(8.5);
-      if (sel.bank_name) { pdf.text(`Bank: ${sel.bank_name}`, m, y); y += 4.5; }
-      if (sel.account_number) { pdf.text(`A/C: ${sel.account_number}`, m, y); y += 4.5; }
-      if (sel.ifsc_code) { pdf.text(`IFSC: ${sel.ifsc_code}`, m, y); y += 4.5; }
-      if (sel.upi_id) { pdf.text(`UPI: ${sel.upi_id}`, m, y); y += 4.5; }
-    }
-
-    // ──── TERMS & SIGNATURE ────
-    if (y > 260) { pdf.addPage(); y = 20; }
-    pdf.setDrawColor(180);
-    pdf.line(m, y, r, y); y += 5;
-    const termsY = y;
-    pdf.setFontSize(9);
-    pdf.setFont('helvetica', 'bold');
-    pdf.text('Terms & Conditions', m, y); y += 5.5;
-    pdf.setFont('helvetica', 'normal');
-    if (invoice.terms_conditions) {
-      pdf.splitTextToSize(invoice.terms_conditions, 90).forEach((l: string) => { pdf.text(l, m, y); y += 4.5; });
-    } else {
-      pdf.text('1. Goods once sold will not be taken back.', m, y); y += 4.5;
-      pdf.text('2. Interest @ 24% p.a. for delayed payment.', m, y); y += 4.5;
-    }
-    y = Math.max(y, termsY + 16);
-    pdf.setFont('helvetica', 'bold');
-    pdf.text('Authorized Signature', r, y, { align: 'right' });
-    y += 5;
-    pdf.setFont('helvetica', 'normal');
-    pdf.text(sel.business_name, r, y, { align: 'right' });
-    y += 6;
-
     return pdf;
   };
 
-  const downloadPDF = () => {
+  const downloadPDF = async () => {
     showToast('Generating PDF...', 'info');
-    const pdf = generatePdf();
+    const pdf = await generatePdf();
     const pdfBlob = pdf.output('blob');
     const url = URL.createObjectURL(pdfBlob);
     const a = document.createElement('a');
@@ -235,15 +68,15 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({ isOpen, onClose, invoi
     onClose();
   };
 
-  const handlePrint = () => {
+  const handlePrint = async () => {
     onClose();
-    const pdf = generatePdf();
+    const pdf = await generatePdf();
     window.open(URL.createObjectURL(pdf.output('blob')), '_blank');
   };
 
   const handleWhatsApp = async () => {
     showToast('Preparing PDF...', 'info');
-    const pdf = generatePdf();
+    const pdf = await generatePdf();
     const pdfBlob = pdf.output('blob');
     const pdfFile = new File([pdfBlob], `${invoice.invoice_number}.pdf`, { type: 'application/pdf' });
 
@@ -323,7 +156,158 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({ isOpen, onClose, invoi
   ];
 
   return (
-    <AnimatePresence>
+    <>
+      {/* Hidden invoice HTML for PDF capture */}
+      <div ref={printRef} className="bg-white text-slate-800 p-0 max-w-2xl mx-auto text-xs font-sans select-text" style={{ position: 'fixed', left: '-9999px', top: 0, width: '672px' }}>
+        <div className="bg-slate-800 text-white px-6 py-4">
+          <div className="flex justify-between items-start">
+            <div>
+              <div className="font-bold text-sm tracking-wide">{sel.business_name}</div>
+              <div className="text-[8px] text-slate-300 leading-relaxed mt-0.5">{sel.address}, {sel.city}, {sel.state}</div>
+            </div>
+            <div className="text-right">
+              <div className="text-sm font-bold uppercase tracking-wider text-white">{isGst ? 'TAX INVOICE' : 'CASH MEMO'}</div>
+              {isGst && <div className="text-[7px] uppercase tracking-widest text-amber-300 font-semibold">Original</div>}
+            </div>
+          </div>
+        </div>
+        <div className="flex justify-between items-center px-6 py-2.5 bg-slate-50 border-b border-slate-200 text-[9px] text-slate-600">
+          <div className="flex gap-6">
+            <span><span className="font-semibold text-slate-700">{isGst ? 'Invoice' : 'Bill'} No:</span> {invoice.invoice_number}</span>
+            <span><span className="font-semibold text-slate-700">Date:</span> {new Date(invoice.invoice_date).toLocaleDateString('en-IN')}</span>
+            {invoice.due_date && <span><span className="font-semibold text-slate-700">Due:</span> {new Date(invoice.due_date).toLocaleDateString('en-IN')}</span>}
+          </div>
+          {isGst && <span><span className="font-semibold text-slate-700">Place of Supply:</span> {invoice.place_of_supply}</span>}
+        </div>
+        <div className="grid grid-cols-2 gap-0 px-6 py-3 border-b border-slate-200">
+          <div className="pr-4">
+            <div className="text-[8px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Bill From</div>
+            <div className="text-[9px] leading-relaxed text-slate-700">
+              <div className="font-semibold text-slate-800">{sel.business_name}</div>
+              {sel.gstin && <div className="text-slate-500">GSTIN: {sel.gstin}</div>}
+              <div className="text-slate-500">{sel.address}, {sel.city}, {sel.state}</div>
+              <div className="text-slate-500">Phone: {sel.phone}</div>
+            </div>
+          </div>
+          <div className="pl-4 border-l border-slate-200">
+            <div className="text-[8px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Bill To</div>
+            <div className="text-[9px] leading-relaxed text-slate-700">
+              <div className="font-semibold text-slate-800">{s.name}</div>
+              {s.gstin && <div className="text-slate-500">GSTIN: {s.gstin}</div>}
+              <div className="text-slate-500">{s.address}, {s.city}, {s.state}</div>
+              <div className="text-slate-500">Phone: {s.mobile}</div>
+              {s.email && <div className="text-slate-500">Email: {s.email}</div>}
+            </div>
+          </div>
+        </div>
+        <div className="px-6 py-3">
+          <table className="w-full text-left border-collapse text-[9px]">
+            <thead>
+              <tr className="bg-slate-100 text-slate-600 font-semibold uppercase text-[8px] tracking-wider">
+                <th className="p-1.5 text-center w-6">#</th>
+                <th className="p-1.5">Item</th>
+                {isGst && <th className="p-1.5 text-center w-12">HSN</th>}
+                <th className="p-1.5 text-right w-10">Qty</th>
+                <th className="p-1.5 text-right w-14">Price</th>
+                {isGst && <th className="p-1.5 text-right w-12">GST %</th>}
+                <th className="p-1.5 text-right w-16">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(items || []).map((item: any, idx: number) => (
+                <tr key={idx} className="border-b border-slate-100 last:border-b-0">
+                  <td className="p-1.5 text-center text-slate-400">{idx + 1}</td>
+                  <td className="p-1.5 font-medium text-slate-800">{item.product_name}</td>
+                  {isGst && <td className="p-1.5 text-center text-slate-500">{item.hsn_code || '-'}</td>}
+                  <td className="p-1.5 text-right text-slate-700">{item.quantity}</td>
+                  <td className="p-1.5 text-right text-slate-700">\u20B9{item.rate.toFixed(2)}</td>
+                  {isGst && <td className="p-1.5 text-right text-slate-600">{item.gst_rate}%</td>}
+                  <td className="p-1.5 text-right font-semibold text-slate-800">\u20B9{lineTotal(item).toFixed(2)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div className="flex justify-end px-6 pb-3">
+          <div className="w-56 bg-slate-50 rounded-lg border border-slate-200 p-3">
+            <div className="space-y-1.5 text-[9px]">
+              <div className="flex justify-between">
+                <span className="text-slate-500">{isGst ? 'Taxable Amount' : 'Subtotal'}</span>
+                <span className="font-semibold text-slate-800">\u20B9{taxableAmount.toFixed(2)}</span>
+              </div>
+              {isGst && !isIGST && Number(invoice.cgst_total) > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-slate-500">CGST (9%)</span>
+                  <span className="text-slate-700">\u20B9{Number(invoice.cgst_total).toFixed(2)}</span>
+                </div>
+              )}
+              {isGst && !isIGST && Number(invoice.sgst_total) > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-slate-500">SGST (9%)</span>
+                  <span className="text-slate-700">\u20B9{Number(invoice.sgst_total).toFixed(2)}</span>
+                </div>
+              )}
+              {isGst && isIGST && Number(invoice.igst_total) > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-slate-500">IGST</span>
+                  <span className="text-slate-700">\u20B9{Number(invoice.igst_total).toFixed(2)}</span>
+                </div>
+              )}
+              {totalDiscount > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Discount</span>
+                  <span className="text-slate-600">-\u20B9{totalDiscount.toFixed(2)}</span>
+                </div>
+              )}
+              {!isGst && (
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Delivery</span>
+                  <span className="text-slate-700">\u20B90.00</span>
+                </div>
+              )}
+              {Number(invoice.round_off) !== 0 && (
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Round Off</span>
+                  <span className="text-slate-700">{Number(invoice.round_off).toFixed(2)}</span>
+                </div>
+              )}
+              <div className="border-t border-slate-300 pt-1.5 mt-1.5 flex justify-between font-bold text-slate-800">
+                <span className="uppercase text-[10px]">{isGst ? 'Grand Total' : 'TOTAL'}</span>
+                <span className="text-sm">\u20B9{Number(invoice.grand_total).toFixed(2)}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="px-6 py-2 border-t border-slate-200 bg-slate-50/50">
+          <span className="text-[8px] font-bold uppercase tracking-wide text-slate-500">Amount in Words: </span>
+          <span className="text-[9px] font-medium text-slate-700 italic">{numberToWords(Number(invoice.grand_total))}</span>
+        </div>
+        <div className="grid grid-cols-2 gap-0 px-6 py-3 border-t border-slate-200">
+          <div className="text-[8px] text-slate-500 space-y-0.5">
+            <div className="font-bold text-slate-700 uppercase text-[8px] tracking-wide mb-1">Bank Details</div>
+            <div>Bank: <span className="font-medium text-slate-700">{sel.bank_name || '-'}</span></div>
+            <div>A/C: <span className="font-medium text-slate-700">{sel.account_number || '-'}</span></div>
+            <div>IFSC: <span className="font-medium text-slate-700">{sel.ifsc_code || '-'}</span></div>
+            {sel.upi_id && <div>UPI: <span className="font-medium text-slate-700">{sel.upi_id}</span></div>}
+          </div>
+          <div className="flex flex-col items-end justify-start" />
+        </div>
+        <div className="grid grid-cols-2 gap-0 px-6 py-3 border-t border-slate-200">
+          <div className="pr-4">
+            <div className="text-[8px] font-bold uppercase tracking-wide text-slate-500 mb-0.5">Terms &amp; Conditions</div>
+            <div className="text-[8px] text-slate-500 leading-relaxed whitespace-pre-line">{invoice.terms_conditions || '1. Goods once sold will not be taken back.\n2. Interest @ 24% p.a. for delayed payment.'}</div>
+          </div>
+          <div className="flex flex-col items-end justify-end pl-4 border-l border-slate-200">
+            <div className="text-right">
+              <div className="text-[8px] text-slate-500">For <span className="font-semibold text-slate-700">{sel.business_name}</span></div>
+              <div className="w-28 border-b border-dashed border-slate-300 mt-5 mb-0.5" />
+              <div className="text-[9px] font-semibold text-slate-700">Authorized Signature</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <AnimatePresence>
       {isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
           <motion.div
@@ -367,5 +351,6 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({ isOpen, onClose, invoi
         </div>
       )}
     </AnimatePresence>
+    </>
   );
 };
