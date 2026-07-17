@@ -154,9 +154,16 @@
   main.lg\:pl-20,
   .p-6,
   .p-4,
-  .md\:p-8 {
+  .md\:p-8,
+  .max-w-3xl,
+  .max-w-2xl,
+  .mx-auto,
+  .space-y-4 > :not(.no-print) {
     padding: 0 !important;
     padding-left: 0 !important;
+    max-width: none !important;
+    margin: 0 !important;
+    margin-top: 0 !important;
   }
 
   .grid.grid-cols-1.xl\:grid-cols-12 {

@@ -3,7 +3,6 @@ import { jsPDF } from 'jspdf';
 import QRCode from 'qrcode';
 import {
   FileDown,
-  Printer,
   MessageCircle,
   Mail,
   Link,
@@ -356,12 +355,6 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({ isOpen, onClose, invoi
 
   // ── Actions ────────────────────────────────────────────────────────────────
 
-  const handlePrint = () => {
-    showToast('Opening print view...', 'info');
-    onClose();
-    window.open(`/invoice/${invoice.id}?print`, '_blank');
-  };
-
   const handleDownload = async () => {
     showToast('Generating PDF...', 'info');
     try {
@@ -421,7 +414,6 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({ isOpen, onClose, invoi
 
   const actions = [
     { icon: FileDown, label: 'Download PDF', desc: 'Save as PDF file', onClick: handleDownload, color: 'text-blue-600 bg-blue-50 dark:bg-blue-950/20 dark:text-blue-400' },
-    { icon: Printer, label: 'Print', desc: 'Open print view', onClick: handlePrint, color: 'text-slate-600 bg-slate-50 dark:bg-slate-800 dark:text-slate-300' },
     { icon: MessageCircle, label: 'WhatsApp', desc: 'Share invoice link', onClick: handleWhatsApp, color: 'text-green-600 bg-green-50 dark:bg-green-950/20 dark:text-green-400' },
     { icon: Mail, label: 'Email', desc: 'Send via email', onClick: handleEmail, color: 'text-rose-600 bg-rose-50 dark:bg-rose-950/20 dark:text-rose-400' },
     { icon: Link, label: 'Copy Link', desc: 'Copy shareable link', onClick: handleCopyLink, color: 'text-purple-600 bg-purple-50 dark:bg-purple-950/20 dark:text-purple-400' },
