@@ -761,7 +761,7 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ type }) => {
                 </thead>
                 <tbody>
                   {totals.items.map((item, idx) => (
-                    <tr key={idx} className="border-b border-slate-100 last:border-b-0 hover:bg-slate-50/50">
+                    <tr key={idx} className="border-b border-slate-200 last:border-b-0 hover:bg-slate-50/50">
                       <td className="p-1.5 text-center text-slate-400">{idx + 1}</td>
                       <td className="p-1.5 font-medium text-slate-800">
                         {item.product_name}

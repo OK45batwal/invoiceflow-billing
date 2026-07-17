@@ -123,7 +123,6 @@
 
   html, body {
     background: white !important;
-    color: black !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
@@ -168,5 +167,13 @@
 
   tr {
     page-break-inside: avoid;
+  }
+
+  table {
+    border-collapse: collapse !important;
+  }
+
+  td, th {
+    border-color: inherit !important;
   }
 }

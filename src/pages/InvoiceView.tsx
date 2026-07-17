@@ -185,7 +185,7 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoiceId, onBack }) =
               </thead>
               <tbody>
                 {items.map((item: any, idx: number) => (
-                  <tr key={idx} className="border-b border-slate-100 last:border-b-0">
+                  <tr key={idx} className="border-b border-slate-200 last:border-b-0">
                     <td className="p-1.5 text-center text-slate-400">{idx + 1}</td>
                     <td className="p-1.5 font-medium text-slate-800">
                       {item.product_name}
