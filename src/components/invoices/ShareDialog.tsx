@@ -69,6 +69,7 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({ isOpen, onClose, invoi
   };
 
   const handlePrint = async () => {
+    showToast('Generating PDF...', 'info');
     onClose();
     const pdf = await generatePdf();
     window.open(URL.createObjectURL(pdf.output('blob')), '_blank');
@@ -158,7 +159,8 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({ isOpen, onClose, invoi
   return (
     <>
       {/* Hidden invoice HTML for PDF capture */}
-      <div ref={printRef} className="bg-white text-slate-800 p-0 max-w-2xl mx-auto text-xs font-sans select-text" style={{ position: 'fixed', left: '-9999px', top: 0, width: '672px' }}>
+      <div style={{ position: 'relative' }}>
+        <div ref={printRef} className="bg-white text-slate-800 p-0 max-w-2xl mx-auto text-xs font-sans select-text" style={{ position: 'absolute', left: 0, top: 0, opacity: 0, pointerEvents: 'none', zIndex: -1, width: '672px' }}>
         <div className="bg-slate-800 text-white px-6 py-4">
           <div className="flex justify-between items-start">
             <div>
@@ -304,6 +306,7 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({ isOpen, onClose, invoi
               <div className="text-[9px] font-semibold text-slate-700">Authorized Signature</div>
             </div>
           </div>
+        </div>
         </div>
       </div>
 

@@ -306,8 +306,11 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ type }) => {
 
   // Print via PDF
   const handlePrint = async () => {
-    if (!printRef.current) return;
-    const canvas = await html2canvas(printRef.current, { scale: 2, useCORS: true, logging: false });
+    const el = printRef.current;
+    if (!el) return;
+    el.style.overflow = 'visible';
+    const canvas = await html2canvas(el, { scale: 2, useCORS: true, logging: false });
+    el.style.overflow = '';
     const imgData = canvas.toDataURL('image/png');
     const pdf = new jsPDF('p', 'mm', 'a4');
     const pw = pdf.internal.pageSize.getWidth();
