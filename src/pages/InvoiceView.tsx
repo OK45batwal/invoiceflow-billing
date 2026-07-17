@@ -82,77 +82,90 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoiceId, onBack }) =
           </div>
         </div>
 
-        {/* Invoice */}
-        <div className="bg-white text-black p-6 md:p-8 border border-slate-200 rounded-xl shadow-sm text-xs font-sans select-text">
-          {/* Header */}
-          <div className="flex justify-between items-start border-b border-black pb-4 mb-3">
-            <div className="space-y-1">
-              {sel.logo_url ? (
-                <img src={sel.logo_url} alt="Logo" className="h-10 object-contain mb-2 max-w-[120px]" />
-              ) : (
-                <div className="font-extrabold text-base tracking-wider uppercase text-slate-800">{sel.business_name}</div>
-              )}
-              <div className="text-[10px] leading-relaxed max-w-xs">{sel.address}, {sel.city}, {sel.state}</div>
-            </div>
-            <div className="text-right space-y-1">
-              <div className="flex flex-col items-end gap-1">
-                <div className="text-lg font-extrabold uppercase tracking-wide">
+        {/* Invoice — Modern Professional Layout */}
+        <div className="bg-white text-slate-800 border border-slate-200 rounded-xl shadow-sm text-xs font-sans select-text overflow-hidden">
+          {/* ─── HEADER BAR ─── */}
+          <div className="bg-slate-800 text-white px-6 py-4">
+            <div className="flex justify-between items-start">
+              <div className="flex items-center gap-3">
+                {sel.logo_url ? (
+                  <img src={sel.logo_url} alt="Logo" className="h-10 w-10 object-contain rounded bg-white p-1" />
+                ) : null}
+                <div>
+                  <div className="font-bold text-sm tracking-wide">{sel.business_name}</div>
+                  <div className="text-[8px] text-slate-300 leading-relaxed mt-0.5">{sel.address}, {sel.city}, {sel.state}</div>
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="text-sm font-bold uppercase tracking-wider text-white">
                   {isGst ? 'TAX INVOICE' : 'CASH MEMO'}
                 </div>
-                <span className="inline-block text-[8px] font-bold bg-black text-white px-2 py-0.5 uppercase tracking-wider rounded">Original</span>
+                {isGst && <div className="text-[7px] uppercase tracking-widest text-amber-300 font-semibold">Original</div>}
               </div>
-              <div className="mt-2">Invoice No: <strong>{invoice.invoice_number}</strong></div>
-              <div>Date: {new Date(invoice.invoice_date).toLocaleDateString('en-IN')}</div>
-              {invoice.due_date && <div>Due Date: {new Date(invoice.due_date).toLocaleDateString('en-IN')}</div>}
             </div>
           </div>
 
-          {/* Bill From | Bill To */}
-          <div className="grid grid-cols-2 gap-4 py-3 border-b border-black">
-            <div>
-              <div className="font-bold uppercase text-[10px] mb-1">Bill From:</div>
-              <div className="font-bold">{sel.business_name}</div>
-              {sel.gstin && <div className="text-[10px]">GSTIN: {sel.gstin}</div>}
-              <div className="text-[10px] leading-relaxed">{sel.address}, {sel.city}, {sel.state}</div>
-              <div className="text-[10px]">Phone: {sel.phone}</div>
+          {/* ─── INVOICE META ─── */}
+          <div className="flex justify-between items-center px-6 py-2.5 bg-slate-50 border-b border-slate-200 text-[9px] text-slate-500">
+            <div className="flex gap-6">
+              <span><span className="font-semibold text-slate-700">{isGst ? 'Invoice' : 'Bill'} No:</span> {invoice.invoice_number}</span>
+              <span><span className="font-semibold text-slate-700">Date:</span> {new Date(invoice.invoice_date).toLocaleDateString('en-IN')}</span>
+              {invoice.due_date && <span><span className="font-semibold text-slate-700">Due:</span> {new Date(invoice.due_date).toLocaleDateString('en-IN')}</span>}
             </div>
-            <div>
-              <div className="font-bold uppercase text-[10px] mb-1">Bill To:</div>
-              <div className="font-bold">{s.name}</div>
-              {s.gstin && <div className="text-[10px]">GSTIN: {s.gstin}</div>}
-              <div className="text-[10px] leading-relaxed">{s.address}, {s.city}, {s.state}</div>
-              <div className="text-[10px]">Phone: {s.mobile}</div>
-              {s.email && <div className="text-[10px]">Email: {s.email}</div>}
+            {isGst && <span><span className="font-semibold text-slate-700">Place of Supply:</span> {invoice.place_of_supply}</span>}
+          </div>
+
+          {/* ─── BILL FROM / BILL TO ─── */}
+          <div className="grid grid-cols-2 gap-0 px-6 py-3 border-b border-slate-200">
+            <div className="pr-4">
+              <div className="text-[8px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Bill From</div>
+              <div className="text-[9px] leading-relaxed text-slate-700">
+                <div className="font-semibold text-slate-800">{sel.business_name}</div>
+                {sel.gstin && <div className="text-slate-500">GSTIN: {sel.gstin}</div>}
+                <div className="text-slate-500">{sel.address}, {sel.city}, {sel.state}</div>
+                <div className="text-slate-500">Phone: {sel.phone}</div>
+              </div>
+            </div>
+            <div className="pl-4 border-l border-slate-200">
+              <div className="text-[8px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Bill To</div>
+              <div className="text-[9px] leading-relaxed text-slate-700">
+                <div className="font-semibold text-slate-800">{s.name}</div>
+                {s.company_name && <div className="text-slate-500">{s.company_name}</div>}
+                {s.gstin && <div className="text-slate-500">GSTIN: {s.gstin}</div>}
+                <div className="text-slate-500">{s.address}, {s.city}, {s.state}</div>
+                <div className="text-slate-500">Phone: {s.mobile}</div>
+                {s.email && <div className="text-slate-500">Email: {s.email}</div>}
+              </div>
             </div>
           </div>
 
-          {/* Items Table */}
-          <div className="py-4 overflow-x-auto">
-            <table className="w-full text-left border-collapse border border-black text-[10px]">
+          {/* ─── ITEMS TABLE ─── */}
+          <div className="px-6 py-3">
+            <table className="w-full text-left border-collapse text-[9px]">
               <thead>
-                <tr className="bg-slate-100 border-b border-black font-bold uppercase text-[9px]">
-                  <th className="border-r border-black p-1.5 text-center w-8">#</th>
-                  <th className="border-r border-black p-1.5">Item</th>
-                  {isGst && <th className="border-r border-black p-1.5 text-center w-14">HSN</th>}
-                  <th className="border-r border-black p-1.5 text-right w-12">Qty</th>
-                  <th className="border-r border-black p-1.5 text-right w-14">Price</th>
-                  {isGst && <th className="border-r border-black p-1.5 text-right w-14">GST %</th>}
+                <tr className="bg-slate-100 text-slate-500 font-semibold uppercase text-[8px] tracking-wider">
+                  <th className="p-1.5 text-center w-6">#</th>
+                  <th className="p-1.5">Item</th>
+                  {isGst && <th className="p-1.5 text-center w-12">HSN</th>}
+                  <th className="p-1.5 text-right w-10">Qty</th>
+                  <th className="p-1.5 text-right w-14">Price</th>
+                  {isGst && <th className="p-1.5 text-right w-12">GST %</th>}
                   <th className="p-1.5 text-right w-16">Amount</th>
                 </tr>
               </thead>
               <tbody>
                 {items.map((item: any, idx: number) => (
-                  <tr key={idx} className="border-b border-black">
-                    <td className="border-r border-black p-1.5 text-center">{idx + 1}</td>
-                    <td className="border-r border-black p-1.5 font-bold">
+                  <tr key={idx} className="border-b border-slate-100 last:border-b-0">
+                    <td className="p-1.5 text-center text-slate-400">{idx + 1}</td>
+                    <td className="p-1.5 font-medium text-slate-800">
                       {item.product_name}
-                      {item.description && <div className="text-[8px] font-normal text-gray-600 leading-tight">{item.description}</div>}
+                      {item.description && <div className="text-[7px] text-slate-400 font-normal">{item.description}</div>}
                     </td>
-                    {isGst && <td className="border-r border-black p-1.5 text-center">{item.hsn_code || '-'}</td>}
-                    <td className="border-r border-black p-1.5 text-right">{item.quantity}</td>
-                    <td className="border-r border-black p-1.5 text-right">{Number(item.rate).toFixed(2)}</td>
-                    {isGst && <td className="border-r border-black p-1.5 text-right">{item.gst_rate}%</td>}
-                    <td className="p-1.5 text-right font-bold">
+                    {isGst && <td className="p-1.5 text-center text-slate-500">{item.hsn_code || '-'}</td>}
+                    <td className="p-1.5 text-right text-slate-700">{item.quantity}</td>
+                    <td className="p-1.5 text-right text-slate-700">{Number(item.rate).toFixed(2)}</td>
+                    {isGst && <td className="p-1.5 text-right text-slate-600">{item.gst_rate}%</td>}
+                    <td className="p-1.5 text-right font-semibold text-slate-800">
                       {(Number(item.rate) * (1 - Number(item.discount_pct) / 100) * Number(item.quantity)).toFixed(2)}
                     </td>
                   </tr>
@@ -161,107 +174,91 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoiceId, onBack }) =
             </table>
           </div>
 
-          {/* Totals Panel */}
-          <div className="flex justify-end py-2">
-            <table className="text-right text-[10px] border-collapse w-64">
-              <tbody>
-                {isGst ? (
-                  <>
-                    <tr className="border-b border-black">
-                      <td className="p-1.5 font-bold uppercase">Taxable Amount:</td>
-                      <td className="p-1.5 w-24 font-bold">{Number(totals.subtotal).toFixed(2)}</td>
-                    </tr>
-                    {totals.cgst_total > 0 && (
-                      <tr className="border-b border-black">
-                        <td className="p-1.5 font-bold uppercase">CGST (9%):</td>
-                        <td className="p-1.5 font-bold">{totals.cgst_total.toFixed(2)}</td>
-                      </tr>
-                    )}
-                    {totals.sgst_total > 0 && (
-                      <tr className="border-b border-black">
-                        <td className="p-1.5 font-bold uppercase">SGST (9%):</td>
-                        <td className="p-1.5 font-bold">{totals.sgst_total.toFixed(2)}</td>
-                      </tr>
-                    )}
-                    {totals.igst_total > 0 && (
-                      <tr className="border-b border-black">
-                        <td className="p-1.5 font-bold uppercase">IGST:</td>
-                        <td className="p-1.5 font-bold">{totals.igst_total.toFixed(2)}</td>
-                      </tr>
-                    )}
-                    {totalDiscount > 0 && (
-                      <tr className="border-b border-black">
-                        <td className="p-1.5 font-bold uppercase">Discount:</td>
-                        <td className="p-1.5 font-bold">-{totalDiscount.toFixed(2)}</td>
-                      </tr>
-                    )}
-                  </>
-                ) : (
-                  <>
-                    <tr className="border-b border-black">
-                      <td className="p-1.5 font-bold uppercase">Subtotal:</td>
-                      <td className="p-1.5 w-24 font-bold">{Number(totals.subtotal).toFixed(2)}</td>
-                    </tr>
-                    {totalDiscount > 0 && (
-                      <tr className="border-b border-black">
-                        <td className="p-1.5 font-bold uppercase">Discount:</td>
-                        <td className="p-1.5 font-bold">-{totalDiscount.toFixed(2)}</td>
-                      </tr>
-                    )}
-                    <tr className="border-b border-black">
-                      <td className="p-1.5 font-bold uppercase">Delivery:</td>
-                      <td className="p-1.5 font-bold">0.00</td>
-                    </tr>
-                  </>
+          {/* ─── TOTALS PANEL ─── */}
+          <div className="flex justify-end px-6 pb-3">
+            <div className="w-56 bg-slate-50 rounded-lg border border-slate-200 p-3">
+              <div className="space-y-1.5 text-[9px]">
+                <div className="flex justify-between">
+                  <span className="text-slate-500">{isGst ? 'Taxable Amount' : 'Subtotal'}</span>
+                  <span className="font-semibold text-slate-800">{Number(totals.subtotal).toFixed(2)}</span>
+                </div>
+                {isGst && totals.cgst_total > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">CGST (9%)</span>
+                    <span className="text-slate-700">{totals.cgst_total.toFixed(2)}</span>
+                  </div>
+                )}
+                {isGst && totals.sgst_total > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">SGST (9%)</span>
+                    <span className="text-slate-700">{totals.sgst_total.toFixed(2)}</span>
+                  </div>
+                )}
+                {isGst && totals.igst_total > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">IGST</span>
+                    <span className="text-slate-700">{totals.igst_total.toFixed(2)}</span>
+                  </div>
+                )}
+                {totalDiscount > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Discount</span>
+                    <span className="text-slate-600">-{totalDiscount.toFixed(2)}</span>
+                  </div>
+                )}
+                {!isGst && (
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Delivery</span>
+                    <span className="text-slate-700">0.00</span>
+                  </div>
                 )}
                 {Number(totals.round_off) !== 0 && (
-                  <tr className="border-b border-black">
-                    <td className="p-1.5 font-bold uppercase">Round Off:</td>
-                    <td className="p-1.5 font-bold">{totals.round_off.toFixed(2)}</td>
-                  </tr>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Round Off</span>
+                    <span className="text-slate-700">{totals.round_off.toFixed(2)}</span>
+                  </div>
                 )}
-                <tr className="border-t-2 border-black font-extrabold text-[11px]">
-                  <td className="p-1.5 uppercase tracking-wider">{isGst ? 'Grand Total (\u20B9):' : 'TOTAL (\u20B9):'}</td>
-                  <td className="p-1.5 text-base font-extrabold">{totals.grand_total.toFixed(2)}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          {/* Amount in words */}
-          <div className="py-2 border-b border-black">
-            <span className="font-bold text-[9px] uppercase tracking-wide mr-1.5">Amount Chargeable (in words):</span>
-            <span className="font-semibold italic text-[10px]">{numberToWords(totals.grand_total)}</span>
-          </div>
-
-          {/* Bank Details + Scan & Pay */}
-          <div className="grid grid-cols-2 gap-4 py-4">
-            <div className="space-y-1 font-semibold text-[9px] text-gray-700">
-              <div className="font-bold text-black uppercase text-[10px] mb-1">Bank Details:</div>
-              <div>Bank: <strong className="text-black">{sel.bank_name || '-'}</strong></div>
-              <div>Branch: <strong className="text-black">{sel.branch || '-'}</strong></div>
-              <div>Acc No: <strong className="text-black">{sel.account_number || '-'}</strong></div>
-              <div>IFSC: <strong className="text-black">{sel.ifsc_code || '-'}</strong></div>
-              {sel.upi_id && <div>UPI ID: <strong className="text-black">{sel.upi_id}</strong></div>}
-            </div>
-            <div className="flex flex-col justify-center items-end text-right">
-              <div className="font-bold uppercase text-[10px] mb-1">Scan & Pay</div>
-              <div className="text-[9px] text-gray-500">QR Code</div>
-            </div>
-          </div>
-
-          {/* Terms & Conditions + Signature */}
-          <div className="border-t border-black pt-3.5 grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <div className="font-bold uppercase text-[9px] mb-1">Terms & Conditions:</div>
-              <div className="text-[9px] text-gray-500 font-semibold leading-relaxed whitespace-pre-line">{invoice.terms_conditions}</div>
-            </div>
-            <div className="flex flex-col justify-end items-end text-right">
-              <div className="text-[9px] text-gray-500 font-semibold">For <strong>{sel.business_name}</strong></div>
-              <div className="h-12 flex items-center justify-end">
-                <div className="w-24 border-b border-dashed border-gray-400 mt-8" />
+                <div className="border-t border-slate-300 pt-1.5 mt-1.5 flex justify-between font-bold text-slate-800">
+                  <span className="uppercase text-[10px]">{isGst ? 'Grand Total' : 'TOTAL'}</span>
+                  <span className="text-sm">{totals.grand_total.toFixed(2)}</span>
+                </div>
               </div>
-              <div className="text-[10px] font-bold">Authorized Signatory</div>
+            </div>
+          </div>
+
+          {/* ─── AMOUNT IN WORDS ─── */}
+          <div className="px-6 py-2 border-t border-slate-200 bg-slate-50/50">
+            <span className="text-[8px] font-bold uppercase tracking-wide text-slate-500">Amount in Words: </span>
+            <span className="text-[9px] font-medium text-slate-700 italic">{numberToWords(totals.grand_total)}</span>
+          </div>
+
+          {/* ─── BANK DETAILS + QR ─── */}
+          <div className="grid grid-cols-2 gap-0 px-6 py-3 border-t border-slate-200">
+            <div className="text-[8px] text-slate-500 space-y-0.5">
+              <div className="font-bold text-slate-700 uppercase text-[8px] tracking-wide mb-1">Bank Details</div>
+              <div>Bank: <span className="font-medium text-slate-700">{sel.bank_name || '-'}</span></div>
+              <div>A/C: <span className="font-medium text-slate-700">{sel.account_number || '-'}</span></div>
+              <div>IFSC: <span className="font-medium text-slate-700">{sel.ifsc_code || '-'}</span></div>
+              {sel.upi_id && <div>UPI: <span className="font-medium text-slate-700">{sel.upi_id}</span></div>}
+            </div>
+            <div className="flex flex-col items-end justify-start">
+              <div className="text-[7px] font-bold uppercase tracking-wide text-slate-500 mb-1">Scan to Pay</div>
+              <div className="text-[8px] text-slate-400 italic">QR Code</div>
+            </div>
+          </div>
+
+          {/* ─── TERMS & SIGNATURE ─── */}
+          <div className="grid grid-cols-2 gap-0 px-6 py-3 border-t border-slate-200">
+            <div className="pr-4">
+              <div className="text-[8px] font-bold uppercase tracking-wide text-slate-500 mb-0.5">Terms &amp; Conditions</div>
+              <div className="text-[8px] text-slate-500 leading-relaxed whitespace-pre-line">{invoice.terms_conditions}</div>
+            </div>
+            <div className="flex flex-col items-end justify-end pl-4 border-l border-slate-200">
+              <div className="text-right">
+                <div className="text-[8px] text-slate-500">For <span className="font-semibold text-slate-700">{sel.business_name}</span></div>
+                <div className="w-28 border-b border-dashed border-slate-300 mt-5 mb-0.5" />
+                <div className="text-[9px] font-semibold text-slate-700">Authorized Signature</div>
+              </div>
             </div>
           </div>
         </div>

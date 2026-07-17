@@ -303,191 +303,222 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ type }) => {
     }
   };
 
-  // Print via PDF
+  // Print via PDF — modern professional layout
   const handlePrint = () => {
     const data = getInvoiceData();
     const pdf = new jsPDF('p', 'mm', 'a4');
-    let y = 20;
-    const L = 12, R = 198, C = 105;
-    const dowN = (h = 5) => { y += h; };
-    const hr = () => { y += 2; pdf.line(L, y, R, y); y += 4; };
+    const m = 12, r = 198;
+    let y = 15;
+    const ln = (h = 5) => { y += h; };
+    const hr = (h = 2) => { y += h; pdf.setDrawColor(200); pdf.line(m, y, r, y); pdf.setDrawColor(0); y += 3; };
     const bold = (t: string, x: number, y: number, opts?: any) => { pdf.setFont('helvetica', 'bold'); pdf.text(t, x, y, opts); pdf.setFont('helvetica', 'normal'); };
     const s = data.customer_snapshot;
     const sel = data.seller_snapshot;
 
     const isGst = type === 'GST';
     const totalDiscount = totals.items.reduce((s: number, i: any) => s + i.rate * i.quantity * i.discount_pct / 100, 0);
+    const lineTotal = (item: any) => item.rate * (1 - item.discount_pct / 100) * item.quantity;
+    const taxableAmount = totals.items.reduce((sum: number, item: any) => sum + lineTotal(item), 0);
 
-    // ───── 1. HEADER ─────
-    pdf.setFontSize(10);
-    bold(sel.business_name, L, y);
-    pdf.setFontSize(7);
-    y += 4;
-    const aLines = pdf.splitTextToSize(`${sel.address}, ${sel.city}, ${sel.state}`, 80);
-    pdf.text(aLines, L, y); y += aLines.length * 3;
-    pdf.text(`Phone: ${sel.phone}`, L, y); y += 3;
-    if (profile?.email) { pdf.text(`Email: ${profile.email}`, L, y); y += 3; }
-    if (profile?.gstin) { pdf.setFont('helvetica', 'bold'); pdf.text(`GSTIN: ${profile.gstin}`, L, y); pdf.setFont('helvetica', 'normal'); y += 3; }
-    const leftBot = y;
-
-    pdf.setFontSize(16);
-    bold(isGst ? 'TAX INVOICE' : 'CASH MEMO', C, 20);
-    let my = 22;
-    if (isGst) { pdf.setFontSize(7); pdf.text('Original', C, my, { align: 'center' }); my += 5; }
-    pdf.setFontSize(8);
-    pdf.text(`${isGst ? 'Invoice' : 'Bill'} No: ${invoiceNumber}`, R, my, { align: 'right' }); my += 4;
-    pdf.text(`Date: ${new Date(invoiceDate).toLocaleDateString('en-IN')}`, R, my, { align: 'right' }); my += 4;
-    if (dueDate) { pdf.text(`Due Date: ${new Date(dueDate).toLocaleDateString('en-IN')}`, R, my, { align: 'right' }); my += 4; }
-    if (isGst) pdf.text(`Place of Supply: ${placeOfSupply}`, R, my, { align: 'right' });
-
-    y = Math.max(leftBot, my + 4);
-    hr();
-
-    // ───── 2. BILL FROM / BILL TO ─────
-    pdf.setFontSize(7.5);
-    bold('Bill From', L, y);
-    bold('Bill To', C + 5, y);
-    y += 4;
-
-    const bfY = y;
-    pdf.setFontSize(7);
-    pdf.setFont('helvetica', 'bold');
-    pdf.text(sel.business_name, L, bfY);
-    pdf.setFont('helvetica', 'normal');
-    let bf = bfY + 3.5;
-    if (profile?.gstin) { pdf.text(`GSTIN: ${profile.gstin}`, L, bf); bf += 3; }
-    const bfA = pdf.splitTextToSize(`${sel.address}, ${sel.city}, ${sel.state}`, 80);
-    pdf.text(bfA, L, bf); bf += bfA.length * 3;
-    pdf.text(`Phone: ${sel.phone}`, L, bf); bf += 3;
-
-    pdf.setFont('helvetica', 'bold');
-    pdf.text(s.name, C + 5, bfY);
-    pdf.setFont('helvetica', 'normal');
-    let bt = bfY + 3.5;
-    if (s.gstin) { pdf.text(`GSTIN: ${s.gstin}`, C + 5, bt); bt += 3; }
-    const btA = pdf.splitTextToSize(`${s.address || ''}, ${s.city || ''}, ${s.state || ''}`, 80);
-    pdf.text(btA, C + 5, bt); bt += btA.length * 3;
-    pdf.text(`Phone: ${s.mobile || ''}`, C + 5, bt); bt += 3;
-    if (s.email) pdf.text(`Email: ${s.email}`, C + 5, bt);
-
-    y = Math.max(bf, bt) + 1;
-    hr();
-
-    // ───── 3. ITEMS TABLE ─────
-    pdf.setFontSize(7.5);
-    const hdr = isGst
-      ? `#  Item                         HSN    Qty  Price  GST%     Amount`
-      : `#  Item                                  Qty  Price     Amount`;
-    pdf.setFont('helvetica', 'bold');
-    pdf.text(hdr, L, y); dowN(4.5);
-    pdf.setFont('helvetica', 'normal');
-
-    totals.items.forEach((item: any, i: number) => {
-      if (y > 270) { pdf.addPage(); y = 20; }
-      const amt = item.rate * (1 - item.discount_pct / 100) * item.quantity;
-      const n = (item.product_name || '').padEnd(28, ' ').slice(0, 28);
-      const q = String(item.quantity).padStart(5, ' ');
-      const r = item.rate.toFixed(2).padStart(7, ' ');
-      const a = amt.toFixed(2).padStart(9, ' ');
-      if (isGst) {
-        const h = (item.hsn_code || '-').padEnd(6, ' ');
-        const g = String(item.gst_rate).padStart(4, ' ');
-        pdf.text(`${i + 1}. ${n} ${h} ${q} ${r} ${g}%  ${a}`, L, y);
-      } else {
-        pdf.text(`${i + 1}. ${n} ${q} ${r}  ${a}`, L, y);
-      }
-      dowN(4.5);
-    });
-    hr();
-
-    // ───── 4. TOTALS ─────
-    pdf.setFontSize(9);
-    const rx = R;
-    if (isGst) {
-      pdf.text('Taxable Amount', rx - 30, y, { align: 'right' });
-      pdf.text(`\u20B9${totals.subtotal.toFixed(2)}`, rx, y, { align: 'right' }); dowN(5);
-      if (!isIGST && totals.cgst_total > 0) {
-        pdf.text('CGST (9%)', rx - 30, y, { align: 'right' });
-        pdf.text(`\u20B9${totals.cgst_total.toFixed(2)}`, rx, y, { align: 'right' }); dowN(5);
-      }
-      if (!isIGST && totals.sgst_total > 0) {
-        pdf.text('SGST (9%)', rx - 30, y, { align: 'right' });
-        pdf.text(`\u20B9${totals.sgst_total.toFixed(2)}`, rx, y, { align: 'right' }); dowN(5);
-      }
-      if (isIGST && totals.igst_total > 0) {
-        pdf.text('IGST', rx - 30, y, { align: 'right' });
-        pdf.text(`\u20B9${totals.igst_total.toFixed(2)}`, rx, y, { align: 'right' }); dowN(5);
-      }
-    } else {
-      pdf.text('Subtotal', rx - 30, y, { align: 'right' });
-      pdf.text(`\u20B9${totals.subtotal.toFixed(2)}`, rx, y, { align: 'right' }); dowN(5);
-    }
-    if (totalDiscount > 0) {
-      pdf.text('Discount', rx - 30, y, { align: 'right' });
-      pdf.text(`-\u20B9${totalDiscount.toFixed(2)}`, rx, y, { align: 'right' }); dowN(5);
-    }
-    if (!isGst) {
-      pdf.text('Delivery', rx - 30, y, { align: 'right' });
-      pdf.text('\u20B90.00', rx, y, { align: 'right' }); dowN(5);
-    }
-    if (totals.round_off !== 0) {
-      pdf.text('Round Off', rx - 30, y, { align: 'right' });
-      pdf.text(`${totals.round_off.toFixed(2)}`, rx, y, { align: 'right' }); dowN(5);
-    }
+    // ───── 1. HEADER BAR ─────
+    pdf.setFillColor(30, 41, 59);
+    pdf.rect(m - 2, y - 6, r - m + 4, 18, 'F');
+    pdf.setTextColor(255, 255, 255);
     pdf.setFontSize(12);
-    pdf.setFont('helvetica', 'bold');
-    pdf.text(isGst ? 'GRAND TOTAL' : 'TOTAL', rx - 30, y, { align: 'right' });
-    pdf.text(`\u20B9${totals.grand_total.toFixed(2)}`, rx, y, { align: 'right' }); dowN(6);
-    pdf.setFont('helvetica', 'normal');
-
-    hr();
-
-    // ───── 5. AMOUNT IN WORDS ─────
-    pdf.setFontSize(8);
-    pdf.setFont('helvetica', 'bold');
-    pdf.text('Amount in Words:', L, y);
-    pdf.setFont('helvetica', 'normal');
-    const ntw = pdf.splitTextToSize(numberToWords(totals.grand_total), 170);
-    pdf.text(ntw, L + 30, y); dowN(ntw.length * 3 + 2);
-    hr();
-
-    // ───── 6. BANK DETAILS + QR ─────
-    const qrTop = y;
-    pdf.setFontSize(8);
-    pdf.setFont('helvetica', 'bold');
-    pdf.text('Bank Details', L, y); y += 4;
-    pdf.setFont('helvetica', 'normal');
-    pdf.text(`Bank Name : ${profile?.bank_name || '-'}`, L, y); y += 3.5;
-    pdf.text(`A/C No    : ${profile?.account_number || '-'}`, L, y); y += 3.5;
-    pdf.text(`IFSC      : ${profile?.ifsc_code || '-'}`, L, y); y += 3.5;
-    if (profile?.upi_id) { pdf.text(`UPI ID    : ${profile.upi_id}`, L, y); y += 3.5; }
-    const bankEnd = y;
-
-    if (upiQrDataUrl) {
-      pdf.setFontSize(7);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text('Scan & Pay', R - 20, qrTop + 1, { align: 'center' });
-      pdf.setFont('helvetica', 'normal');
-      pdf.addImage(upiQrDataUrl, 'PNG', R - 40, qrTop + 4, 28, 28);
-    }
-
-    y = Math.max(bankEnd, qrTop + 36);
-    hr();
-
-    // ───── 7. TERMS & SIGNATURE ─────
+    bold(sel.business_name, m, y);
     pdf.setFontSize(7);
+    pdf.setTextColor(200, 200, 210);
+    const addrLines = pdf.splitTextToSize(`${sel.address}, ${sel.city}, ${sel.state}`, 80);
+    addrLines.forEach((l: string, i: number) => { pdf.text(l, m, y + 3 + i * 3); });
+    pdf.setFontSize(13);
     pdf.setFont('helvetica', 'bold');
-    pdf.text('Terms & Conditions', L, y);
+    pdf.setTextColor(255, 255, 255);
+    pdf.text(isGst ? 'TAX INVOICE' : 'CASH MEMO', r, y, { align: 'right' });
+    if (isGst) { pdf.setFontSize(6); pdf.setTextColor(252, 211, 77); pdf.text('Original', r, y + 4, { align: 'right' }); }
+    ln(16);
+    pdf.setTextColor(0, 0, 0);
+
+    // ───── 2. INVOICE META BAR ─────
+    pdf.setFillColor(248, 250, 252);
+    pdf.rect(m - 2, y - 3, r - m + 4, 8, 'F');
+    pdf.setTextColor(100, 116, 139);
+    pdf.setFontSize(7);
+    pdf.text(`${isGst ? 'Invoice' : 'Bill'} No: ${invoiceNumber}`, m, y + 1);
+    pdf.text(`Date: ${new Date(invoiceDate).toLocaleDateString('en-IN')}`, m + 50, y + 1);
+    if (dueDate) pdf.text(`Due: ${new Date(dueDate).toLocaleDateString('en-IN')}`, m + 95, y + 1);
+    if (isGst) pdf.text(`Place of Supply: ${placeOfSupply}`, r, y + 1, { align: 'right' });
+    ln(8);
+
+    // ───── 3. BILL FROM / BILL TO ─────
+    pdf.setFontSize(7);
+    pdf.setTextColor(100, 116, 139);
+    bold('Bill From', m, y);
+    bold('Bill To', 105, y);
+    ln(4);
+    pdf.setFontSize(7.5);
+    pdf.setTextColor(51, 65, 85);
+    let ly = y, ry = y;
+    pdf.setFont('helvetica', 'bold');
+    pdf.text(sel.business_name, m, ly); pdf.setFont('helvetica', 'normal'); ly += 4;
+    if (profile?.gstin) { pdf.setTextColor(100, 116, 139); pdf.text(`GSTIN: ${profile.gstin}`, m, ly); ly += 4; }
+    pdf.setTextColor(100, 116, 139);
+    pdf.text(`${sel.address}, ${sel.city}, ${sel.state}`, m, ly); ly += 4;
+    pdf.text(`Phone: ${sel.phone}`, m, ly); ly += 3;
+    pdf.setTextColor(51, 65, 85);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text(s.name, 105, ry); pdf.setFont('helvetica', 'normal'); ry += 4;
+    if (s.company_name) { pdf.text(s.company_name, 105, ry); ry += 4; }
+    if (s.gstin) { pdf.setTextColor(100, 116, 139); pdf.text(`GSTIN: ${s.gstin}`, 105, ry); ry += 4; }
+    pdf.setTextColor(100, 116, 139);
+    pdf.text(`${s.address || ''}, ${s.city || ''}, ${s.state || ''}`, 105, ry); ry += 4;
+    pdf.text(`Phone: ${s.mobile || ''}`, 105, ry); ry += 3;
+    if (s.email) pdf.text(`Email: ${s.email}`, 105, ry);
+    y = Math.max(ly, ry) + 2;
+    hr();
+
+    // ───── 4. ITEMS TABLE ─────
+    if (y > 260) { pdf.addPage(); y = 20; }
+    pdf.setFillColor(241, 245, 249);
+    pdf.rect(m, y - 3, r - m, 5.5, 'F');
+    pdf.setTextColor(71, 85, 105);
+    pdf.setFontSize(6.5);
+    pdf.setFont('helvetica', 'bold');
+    let cx = m;
+    const colW = (r - m) / (isGst ? 7 : 5);
+    const ct = (t: string, w: number, align: 'left' | 'right' | 'center' = 'left') => {
+      const x = cx; cx += w;
+      if (align === 'right') pdf.text(t, x + w - 2, y, { align: 'right' });
+      else if (align === 'center') pdf.text(t, x + w / 2, y, { align: 'center' });
+      else pdf.text(t, x + 1, y);
+    };
+    ct('#', colW * 0.3, 'center');
+    ct('Item', colW * 2.2);
+    if (isGst) ct('HSN', colW * 0.8, 'center');
+    ct('Qty', colW * 0.7, 'right');
+    ct('Price', colW * 1, 'right');
+    if (isGst) ct('GST%', colW * 0.8, 'right');
+    ct('Amount', colW * 1.2, 'right');
+    ln(5);
     pdf.setFont('helvetica', 'normal');
+    totals.items.forEach((item: any, i: number) => {
+      if (y > 275) { pdf.addPage(); y = 20; }
+      cx = m;
+      pdf.setTextColor(100, 116, 139);
+      ct(String(i + 1), colW * 0.3, 'center');
+      pdf.setTextColor(51, 65, 85);
+      ct(item.product_name || '', colW * 2.2);
+      if (isGst) { pdf.setTextColor(100, 116, 139); ct(item.hsn_code || '-', colW * 0.8, 'center'); }
+      pdf.setTextColor(100, 116, 139);
+      ct(String(item.quantity), colW * 0.7, 'right');
+      ct(`\u20B9${item.rate.toFixed(2)}`, colW * 1, 'right');
+      if (isGst) ct(`${item.gst_rate}%`, colW * 0.8, 'right');
+      pdf.setFont('helvetica', 'bold');
+      ct(`\u20B9${lineTotal(item).toFixed(2)}`, colW * 1.2, 'right');
+      pdf.setFont('helvetica', 'normal');
+      ln(4.5);
+      pdf.setDrawColor(230);
+      pdf.line(m, y - 1, r, y - 1);
+      pdf.setDrawColor(0);
+    });
+    ln(1);
+
+    // ───── 5. TOTALS PANEL ─────
+    pdf.setFillColor(248, 250, 252);
+    pdf.setDrawColor(226, 232, 240);
+    const tLeft = r - 80, tW = 78;
+    pdf.roundedRect(tLeft, y - 2, tW, 40, 2, 2, 'FD');
+    pdf.setDrawColor(0);
+    let ty2 = y + 1;
+    pdf.setTextColor(71, 85, 105);
+    pdf.setFontSize(7);
+    const tLine = (label: string, val: string, isBold = false) => {
+      if (isBold) { pdf.setFont('helvetica', 'bold'); pdf.setTextColor(30, 41, 59); }
+      pdf.text(label, tLeft + 3, ty2);
+      pdf.text(val, tLeft + tW - 3, ty2, { align: 'right' });
+      if (isBold) { pdf.setFont('helvetica', 'normal'); pdf.setTextColor(71, 85, 105); }
+      ty2 += 4;
+    };
+    if (isGst) {
+      tLine('Taxable Amount:', `\u20B9${taxableAmount.toFixed(2)}`);
+      if (!isIGST && totals.cgst_total > 0) tLine('CGST (9%):', `\u20B9${totals.cgst_total.toFixed(2)}`);
+      if (!isIGST && totals.sgst_total > 0) tLine('SGST (9%):', `\u20B9${totals.sgst_total.toFixed(2)}`);
+      if (isIGST && totals.igst_total > 0) tLine('IGST:', `\u20B9${totals.igst_total.toFixed(2)}`);
+      if (totalDiscount > 0) tLine('Discount:', `-\u20B9${totalDiscount.toFixed(2)}`);
+    } else {
+      tLine('Subtotal:', `\u20B9${taxableAmount.toFixed(2)}`);
+      if (totalDiscount > 0) tLine('Discount:', `-\u20B9${totalDiscount.toFixed(2)}`);
+      tLine('Delivery:', '\u20B90.00');
+    }
+    if (totals.round_off !== 0) tLine('Round Off:', `${totals.round_off.toFixed(2)}`);
+    pdf.setDrawColor(200);
+    pdf.line(tLeft + 3, ty2 - 2, tLeft + tW - 3, ty2 - 2);
+    pdf.setDrawColor(0);
+    pdf.setFontSize(8);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setTextColor(30, 41, 59);
+    pdf.text(isGst ? 'GRAND TOTAL' : 'TOTAL', tLeft + 3, ty2);
+    pdf.text(`\u20B9${totals.grand_total.toFixed(2)}`, tLeft + tW - 3, ty2, { align: 'right' });
+    pdf.setFont('helvetica', 'normal');
+    y = ty2 + 8;
+
+    // ───── 6. AMOUNT IN WORDS ─────
+    pdf.setFillColor(248, 250, 252);
+    pdf.rect(m, y - 1, r - m, 5, 'F');
+    pdf.setTextColor(100, 116, 139);
+    pdf.setFontSize(6.5);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('Amount in Words:', m, y + 1.5);
+    pdf.setFont('helvetica', 'normal');
+    pdf.setTextColor(51, 65, 85);
+    pdf.text(numberToWords(totals.grand_total), m + 24, y + 1.5);
+    ln(6);
+
+    // ───── 7. BANK DETAILS + QR ─────
+    if (y > 260) { pdf.addPage(); y = 20; }
+    pdf.setDrawColor(226, 232, 240);
+    pdf.line(m, y - 1, r, y - 1);
+    const qrTop = y + 1;
+    pdf.setFontSize(6.5);
+    pdf.setTextColor(100, 116, 139);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('Bank Details', m, y + 1); y += 4;
+    pdf.setFont('helvetica', 'normal');
+    pdf.setTextColor(71, 85, 105);
+    pdf.text(`Bank: ${profile?.bank_name || '-'}`, m, y); y += 3.5;
+    pdf.text(`A/C: ${profile?.account_number || '-'}`, m, y); y += 3.5;
+    pdf.text(`IFSC: ${profile?.ifsc_code || '-'}`, m, y); y += 3.5;
+    if (profile?.upi_id) { pdf.text(`UPI: ${profile.upi_id}`, m, y); y += 3.5; }
+    if (upiQrDataUrl) {
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(100, 116, 139);
+      pdf.text('Scan to Pay', r, qrTop + 1, { align: 'right' });
+      pdf.setFont('helvetica', 'normal');
+      pdf.addImage(upiQrDataUrl, 'PNG', r - 30, qrTop + 3, 22, 22);
+    }
+    y = Math.max(y, qrTop + 30);
+
+    // ───── 8. TERMS & SIGNATURE ─────
+    if (y > 260) { pdf.addPage(); y = 20; }
+    pdf.setDrawColor(226, 232, 240);
+    pdf.line(m, y - 1, r, y - 1);
+    const ty3 = y;
+    let tly = y + 2, aly = y + 2;
+    pdf.setFontSize(6.5);
+    pdf.setTextColor(100, 116, 139);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('Terms & Conditions', m, tly); tly += 4;
+    pdf.setFont('helvetica', 'normal');
+    pdf.setTextColor(71, 85, 105);
     const tLines = pdf.splitTextToSize(terms, 90);
-    pdf.text(tLines, L, y + 3);
+    pdf.text(tLines, m, tly);
+    tly += tLines.length * 3.5 + 2;
+    pdf.setTextColor(100, 116, 139);
     pdf.setFont('helvetica', 'bold');
-    pdf.text(`For ${sel.business_name}`, R, y, { align: 'right' });
-    y += 10;
-    pdf.line(R - 40, y, R, y);
-    y += 3;
+    pdf.text('Authorized Signature', r, aly, { align: 'right' }); aly += 20;
     pdf.setFont('helvetica', 'normal');
-    pdf.text('Authorized Signature', R, y, { align: 'right' });
+    pdf.setTextColor(71, 85, 105);
+    pdf.text(sel.business_name, r, aly, { align: 'right' });
+    y = Math.max(tly, aly + 5);
 
     window.open(URL.createObjectURL(pdf.output('blob')), '_blank');
   };
@@ -874,87 +905,93 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ type }) => {
             </div>
           </div>
 
-          {/* Printable Invoice Page Container */}
-          <div ref={printRef} className="bg-white text-black p-6 border border-slate-200 rounded-xl max-w-2xl mx-auto shadow-sm text-xs font-sans print-container select-text">
-            {/* ────────────── HEADER ────────────── */}
-            <div className="flex justify-between items-start border-b border-black pb-3">
-              <div className="space-y-0.5">
-                {profile?.logo_url ? (
-                  <img src={profile.logo_url} alt="Logo" className="h-10 object-contain mb-1 max-w-[120px]" />
-                ) : (
-                  <div className="font-extrabold text-sm tracking-wider uppercase text-slate-800">{sellerObj.business_name}</div>
-                )}
-                <div className="font-bold text-sm">{sellerObj.business_name}</div>
-                <div className="text-[9px] leading-relaxed max-w-[180px]">{sellerObj.address}, {sellerObj.city}, {sellerObj.state}</div>
-                <div className="text-[9px]">Phone: {sellerObj.phone} {sellerObj.alt_phone ? `/ ${sellerObj.alt_phone}` : ''}</div>
-                {profile?.email && <div className="text-[9px]">Email: {profile.email}</div>}
-                {profile?.gstin && <div className="text-[9px] font-bold">GSTIN: {profile.gstin}</div>}
-              </div>
-              <div className="text-right">
-                <div className="text-base font-extrabold uppercase tracking-wider border-b border-black pb-1 mb-1">
-                  {type === 'GST' ? 'TAX INVOICE' : 'CASH MEMO'}
+          {/* Printable Invoice Page Container — Modern Professional Layout */}
+          <div ref={printRef} className="bg-white text-slate-800 p-0 border border-slate-200 rounded-xl max-w-2xl mx-auto shadow-sm text-xs font-sans print-container select-text overflow-hidden">
+            {/* ────────────── HEADER BAR ────────────── */}
+            <div className="bg-slate-800 text-white px-6 py-4">
+              <div className="flex justify-between items-start">
+                <div className="flex items-center gap-3">
+                  {profile?.logo_url ? (
+                    <img src={profile.logo_url} alt="Logo" className="h-10 w-10 object-contain rounded bg-white p-1" />
+                  ) : null}
+                  <div>
+                    <div className="font-bold text-sm tracking-wide">{sellerObj.business_name}</div>
+                    <div className="text-[8px] text-slate-300 leading-relaxed mt-0.5">
+                      {sellerObj.address}, {sellerObj.city}, {sellerObj.state}
+                    </div>
+                  </div>
                 </div>
-                {type === 'GST' && <div className="text-[8px] font-bold uppercase tracking-widest text-gray-500 mb-1">Original</div>}
-                <div className="text-[9px] leading-relaxed">
-                  {type === 'GST' ? 'Invoice' : 'Bill'} No: <strong>{invoiceNumber}</strong><br />
-                  Date: {new Date(invoiceDate).toLocaleDateString('en-IN')}<br />
-                  {dueDate && <>Due Date: {new Date(dueDate).toLocaleDateString('en-IN')}<br /></>}
-                  {type === 'GST' && <>Place of Supply: <strong>{placeOfSupply}</strong><br /></>}
-                  {type === 'GST' && reverseCharge && <>Reverse Charge: <strong>Yes</strong><br /></>}
+                <div className="text-right">
+                  <div className="text-sm font-bold uppercase tracking-wider text-white">
+                    {type === 'GST' ? 'TAX INVOICE' : 'CASH MEMO'}
+                  </div>
+                  {type === 'GST' && <div className="text-[7px] uppercase tracking-widest text-amber-300 font-semibold">Original</div>}
                 </div>
               </div>
             </div>
 
-            {/* ────────────── BILL FROM / BILL TO ────────────── */}
-            <div className="grid grid-cols-2 gap-3 py-3 border-b border-black">
+            {/* ────────────── INVOICE META ────────────── */}
+            <div className="flex justify-between items-center px-6 py-2.5 bg-slate-50 border-b border-slate-200 text-[9px] text-slate-600">
+              <div className="flex gap-6">
+                <span><span className="font-semibold text-slate-700">{type === 'GST' ? 'Invoice' : 'Bill'} No:</span> {invoiceNumber}</span>
+                <span><span className="font-semibold text-slate-700">Date:</span> {new Date(invoiceDate).toLocaleDateString('en-IN')}</span>
+                {dueDate && <span><span className="font-semibold text-slate-700">Due:</span> {new Date(dueDate).toLocaleDateString('en-IN')}</span>}
+              </div>
               <div>
-                <div className="font-bold uppercase text-[9px] mb-1">Bill From</div>
-                <div className="text-[9px] leading-relaxed">
-                  <div className="font-bold">{sellerObj.business_name}</div>
-                  {profile?.gstin && <div>GSTIN: {profile.gstin}</div>}
-                  <div>{sellerObj.address}, {sellerObj.city}, {sellerObj.state}</div>
-                  <div>Phone: {sellerObj.phone}</div>
+                {type === 'GST' && <span><span className="font-semibold text-slate-700">Place of Supply:</span> {placeOfSupply}</span>}
+              </div>
+            </div>
+
+            {/* ────────────── BILL FROM / BILL TO ────────────── */}
+            <div className="grid grid-cols-2 gap-0 px-6 py-3 border-b border-slate-200">
+              <div className="pr-4">
+                <div className="text-[8px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Bill From</div>
+                <div className="text-[9px] leading-relaxed text-slate-700">
+                  <div className="font-semibold text-slate-800">{sellerObj.business_name}</div>
+                  {profile?.gstin && <div className="text-slate-500">GSTIN: {profile.gstin}</div>}
+                  <div className="text-slate-500">{sellerObj.address}, {sellerObj.city}, {sellerObj.state}</div>
+                  <div className="text-slate-500">Phone: {sellerObj.phone}</div>
                 </div>
               </div>
-              <div className="border-l border-black pl-3">
-                <div className="font-bold uppercase text-[9px] mb-1">Bill To</div>
-                <div className="text-[9px] leading-relaxed">
-                  <div className="font-bold">{customerDetails?.name || 'Customer Name'}</div>
-                  {customerDetails?.gstin && <div>GSTIN: {customerDetails.gstin}</div>}
-                  <div>{customerDetails?.address || ''}, {customerDetails?.city || ''}, {customerDetails?.state || ''}</div>
-                  <div>Phone: {customerDetails?.mobile || ''}</div>
-                  {customerDetails?.email && <div>Email: {customerDetails.email}</div>}
+              <div className="pl-4 border-l border-slate-200">
+                <div className="text-[8px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Bill To</div>
+                <div className="text-[9px] leading-relaxed text-slate-700">
+                  <div className="font-semibold text-slate-800">{customerDetails?.name || 'Customer Name'}</div>
+                  {customerDetails?.gstin && <div className="text-slate-500">GSTIN: {customerDetails.gstin}</div>}
+                  <div className="text-slate-500">{customerDetails?.address || ''}, {customerDetails?.city || ''}, {customerDetails?.state || ''}</div>
+                  <div className="text-slate-500">Phone: {customerDetails?.mobile || ''}</div>
+                  {customerDetails?.email && <div className="text-slate-500">Email: {customerDetails.email}</div>}
                 </div>
               </div>
             </div>
 
             {/* ────────────── ITEMS TABLE ────────────── */}
-            <div className="py-3">
-              <table className="w-full text-left border-collapse border border-black text-[9px]">
+            <div className="px-6 py-3">
+              <table className="w-full text-left border-collapse text-[9px]">
                 <thead>
-                  <tr className="bg-slate-100 border-b border-black font-bold uppercase text-[8px]">
-                    <th className="border-r border-black p-1 text-center w-6">#</th>
-                    <th className="border-r border-black p-1">Item</th>
-                    {type === 'GST' && <th className="border-r border-black p-1 text-center w-10">HSN</th>}
-                    <th className="border-r border-black p-1 text-right w-8">Qty</th>
-                    <th className="border-r border-black p-1 text-right w-12">Price</th>
-                    {type === 'GST' && <th className="border-r border-black p-1 text-right w-10">GST %</th>}
-                    <th className="p-1 text-right w-14">Amount</th>
+                  <tr className="bg-slate-100 text-slate-600 font-semibold uppercase text-[8px] tracking-wider">
+                    <th className="p-1.5 text-center w-6">#</th>
+                    <th className="p-1.5">Item</th>
+                    {type === 'GST' && <th className="p-1.5 text-center w-12">HSN</th>}
+                    <th className="p-1.5 text-right w-10">Qty</th>
+                    <th className="p-1.5 text-right w-14">Price</th>
+                    {type === 'GST' && <th className="p-1.5 text-right w-12">GST %</th>}
+                    <th className="p-1.5 text-right w-16">Amount</th>
                   </tr>
                 </thead>
                 <tbody>
                   {totals.items.map((item, idx) => (
-                    <tr key={idx} className="border-b border-black">
-                      <td className="border-r border-black p-1 text-center">{idx + 1}</td>
-                      <td className="border-r border-black p-1 font-semibold">
+                    <tr key={idx} className="border-b border-slate-100 last:border-b-0 hover:bg-slate-50/50">
+                      <td className="p-1.5 text-center text-slate-400">{idx + 1}</td>
+                      <td className="p-1.5 font-medium text-slate-800">
                         {item.product_name}
-                        {item.description && <div className="text-[7px] font-normal text-gray-600">{item.description}</div>}
+                        {item.description && <div className="text-[7px] text-slate-400 font-normal">{item.description}</div>}
                       </td>
-                      {type === 'GST' && <td className="border-r border-black p-1 text-center">{item.hsn_code || '-'}</td>}
-                      <td className="border-r border-black p-1 text-right">{item.quantity}</td>
-                      <td className="border-r border-black p-1 text-right">\u20B9{item.rate.toFixed(2)}</td>
-                      {type === 'GST' && <td className="border-r border-black p-1 text-right">{item.gst_rate}%</td>}
-                      <td className="p-1 text-right font-bold">\u20B9{(item.rate * (1 - item.discount_pct / 100) * item.quantity).toFixed(2)}</td>
+                      {type === 'GST' && <td className="p-1.5 text-center text-slate-500">{item.hsn_code || '-'}</td>}
+                      <td className="p-1.5 text-right text-slate-700">{item.quantity}</td>
+                      <td className="p-1.5 text-right text-slate-700">\u20B9{item.rate.toFixed(2)}</td>
+                      {type === 'GST' && <td className="p-1.5 text-right text-slate-600">{item.gst_rate}%</td>}
+                      <td className="p-1.5 text-right font-semibold text-slate-800">\u20B9{(item.rate * (1 - item.discount_pct / 100) * item.quantity).toFixed(2)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -962,97 +999,97 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ type }) => {
             </div>
 
             {/* ────────────── TOTALS PANEL ────────────── */}
-            <div className="flex justify-end mb-3">
-              <table className="text-[9px] w-52">
-                <tbody>
-                  <tr className="border-b border-black">
-                    <td className="py-1 pr-4 text-right font-semibold">{type === 'GST' ? 'Taxable Amount' : 'Subtotal'}</td>
-                    <td className="py-1 text-right font-bold">\u20B9{totals.subtotal.toFixed(2)}</td>
-                  </tr>
+            <div className="flex justify-end px-6 pb-3">
+              <div className="w-56 bg-slate-50 rounded-lg border border-slate-200 p-3">
+                <div className="space-y-1.5 text-[9px]">
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">{type === 'GST' ? 'Taxable Amount' : 'Subtotal'}</span>
+                    <span className="font-semibold text-slate-800">\u20B9{totals.subtotal.toFixed(2)}</span>
+                  </div>
                   {type === 'GST' && !isIGST && totals.cgst_total > 0 && (
-                    <tr className="border-b border-black">
-                      <td className="py-1 pr-4 text-right font-semibold">CGST (9%)</td>
-                      <td className="py-1 text-right">\u20B9{totals.cgst_total.toFixed(2)}</td>
-                    </tr>
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">CGST (9%)</span>
+                      <span className="text-slate-700">\u20B9{totals.cgst_total.toFixed(2)}</span>
+                    </div>
                   )}
                   {type === 'GST' && !isIGST && totals.sgst_total > 0 && (
-                    <tr className="border-b border-black">
-                      <td className="py-1 pr-4 text-right font-semibold">SGST (9%)</td>
-                      <td className="py-1 text-right">\u20B9{totals.sgst_total.toFixed(2)}</td>
-                    </tr>
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">SGST (9%)</span>
+                      <span className="text-slate-700">\u20B9{totals.sgst_total.toFixed(2)}</span>
+                    </div>
                   )}
                   {type === 'GST' && isIGST && totals.igst_total > 0 && (
-                    <tr className="border-b border-black">
-                      <td className="py-1 pr-4 text-right font-semibold">IGST</td>
-                      <td className="py-1 text-right">\u20B9{totals.igst_total.toFixed(2)}</td>
-                    </tr>
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">IGST</span>
+                      <span className="text-slate-700">\u20B9{totals.igst_total.toFixed(2)}</span>
+                    </div>
                   )}
                   {totalDiscount > 0 && (
-                    <tr className="border-b border-black">
-                      <td className="py-1 pr-4 text-right font-semibold">Discount</td>
-                      <td className="py-1 text-right">-\u20B9{totalDiscount.toFixed(2)}</td>
-                    </tr>
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">Discount</span>
+                      <span className="text-slate-600">-\u20B9{totalDiscount.toFixed(2)}</span>
+                    </div>
                   )}
                   {type !== 'GST' && (
-                    <tr className="border-b border-black">
-                      <td className="py-1 pr-4 text-right font-semibold">Delivery</td>
-                      <td className="py-1 text-right">\u20B90.00</td>
-                    </tr>
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">Delivery</span>
+                      <span className="text-slate-700">\u20B90.00</span>
+                    </div>
                   )}
                   {totals.round_off !== 0 && (
-                    <tr className="border-b border-black">
-                      <td className="py-1 pr-4 text-right font-semibold">Round Off</td>
-                      <td className="py-1 text-right">{totals.round_off.toFixed(2)}</td>
-                    </tr>
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">Round Off</span>
+                      <span className="text-slate-700">{totals.round_off.toFixed(2)}</span>
+                    </div>
                   )}
-                  <tr className="font-extrabold text-[11px]">
-                    <td className="py-1.5 pr-4 text-right uppercase">{type === 'GST' ? 'Grand Total' : 'TOTAL'}</td>
-                    <td className="py-1.5 text-right">\u20B9{totals.grand_total.toFixed(2)}</td>
-                  </tr>
-                </tbody>
-              </table>
+                  <div className="border-t border-slate-300 pt-1.5 mt-1.5 flex justify-between font-bold text-slate-800">
+                    <span className="uppercase text-[10px]">{type === 'GST' ? 'Grand Total' : 'TOTAL'}</span>
+                    <span className="text-sm">\u20B9{totals.grand_total.toFixed(2)}</span>
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* ────────────── AMOUNT IN WORDS ────────────── */}
-            <div className="py-2 border-t border-black">
-              <span className="font-bold text-[8px] uppercase tracking-wide">Amount in Words: </span>
-              <span className="font-semibold italic text-[9px]">{numberToWords(totals.grand_total)}</span>
+            <div className="px-6 py-2 border-t border-slate-200 bg-slate-50/50">
+              <span className="text-[8px] font-bold uppercase tracking-wide text-slate-500">Amount in Words: </span>
+              <span className="text-[9px] font-medium text-slate-700 italic">{numberToWords(totals.grand_total)}</span>
             </div>
 
-            {/* ────────────── BANK DETAILS + QR CODE ────────────── */}
-            <div className="grid grid-cols-2 gap-4 py-3 border-b border-black">
-              <div className="space-y-0.5 text-[8px] text-gray-700">
-                <div className="font-bold text-black uppercase text-[9px] mb-0.5">Bank Details</div>
-                <div>Bank Name : <strong className="text-black">{profile?.bank_name || '-'}</strong></div>
-                <div>A/C No   : <strong className="text-black">{profile?.account_number || '-'}</strong></div>
-                <div>IFSC     : <strong className="text-black">{profile?.ifsc_code || '-'}</strong></div>
-                {profile?.upi_id && <div>UPI ID   : <strong className="text-black">{profile.upi_id}</strong></div>}
+            {/* ────────────── BANK DETAILS + QR ────────────── */}
+            <div className="grid grid-cols-2 gap-0 px-6 py-3 border-t border-slate-200">
+              <div className="text-[8px] text-slate-500 space-y-0.5">
+                <div className="font-bold text-slate-700 uppercase text-[8px] tracking-wide mb-1">Bank Details</div>
+                <div>Bank: <span className="font-medium text-slate-700">{profile?.bank_name || '-'}</span></div>
+                <div>A/C: <span className="font-medium text-slate-700">{profile?.account_number || '-'}</span></div>
+                <div>IFSC: <span className="font-medium text-slate-700">{profile?.ifsc_code || '-'}</span></div>
+                {profile?.upi_id && <div>UPI: <span className="font-medium text-slate-700">{profile.upi_id}</span></div>}
               </div>
-              <div className="flex flex-col items-end text-right">
+              <div className="flex flex-col items-end justify-start">
                 {upiQrDataUrl && (
-                  <div className="flex flex-col items-center gap-0.5">
-                    <div className="font-bold text-black uppercase text-[8px] tracking-wide">Scan & Pay</div>
-                    <img src={upiQrDataUrl} alt="UPI QR" className="w-16 h-16 border border-black rounded" />
-                    <div className="text-[6px] text-gray-500 max-w-[80px] break-all">{profile?.upi_id}</div>
+                  <div className="flex flex-col items-center">
+                    <div className="text-[7px] font-bold uppercase tracking-wide text-slate-500 mb-0.5">Scan to Pay</div>
+                    <img src={upiQrDataUrl} alt="UPI QR" className="w-14 h-14 border border-slate-300 rounded" />
+                    <div className="text-[6px] text-slate-400 mt-0.5 max-w-[80px] break-all text-center">{profile?.upi_id}</div>
                   </div>
                 )}
                 {!upiQrDataUrl && profile?.upi_id && (
-                  <div className="text-[8px] text-gray-500 italic">UPI: {profile.upi_id}</div>
+                  <div className="text-[8px] text-slate-400 italic self-end">UPI: {profile.upi_id}</div>
                 )}
               </div>
             </div>
 
             {/* ────────────── TERMS & SIGNATURE ────────────── */}
-            <div className="grid grid-cols-2 gap-4 pt-3">
-              <div>
-                <div className="font-bold uppercase text-[8px] mb-0.5">Terms &amp; Conditions</div>
-                <div className="text-[8px] text-gray-600 leading-relaxed whitespace-pre-line">{terms}</div>
+            <div className="grid grid-cols-2 gap-0 px-6 py-3 border-t border-slate-200">
+              <div className="pr-4">
+                <div className="text-[8px] font-bold uppercase tracking-wide text-slate-500 mb-0.5">Terms &amp; Conditions</div>
+                <div className="text-[8px] text-slate-500 leading-relaxed whitespace-pre-line">{terms}</div>
               </div>
-              <div className="flex flex-col items-end justify-between">
+              <div className="flex flex-col items-end justify-end pl-4 border-l border-slate-200">
                 <div className="text-right">
-                  <div className="text-[8px] text-gray-500 font-semibold">For <strong className="text-black">{sellerObj.business_name}</strong></div>
-                  <div className="w-28 border-b border-dashed border-gray-400 mt-6 mb-0.5" />
-                  <div className="text-[9px] font-bold">Authorized Signature</div>
+                  <div className="text-[8px] text-slate-500">For <span className="font-semibold text-slate-700">{sellerObj.business_name}</span></div>
+                  <div className="w-28 border-b border-dashed border-slate-300 mt-5 mb-0.5" />
+                  <div className="text-[9px] font-semibold text-slate-700">Authorized Signature</div>
                 </div>
               </div>
             </div>
