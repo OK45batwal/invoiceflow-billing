@@ -139,7 +139,8 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({ isOpen, onClose, invoi
 
   const handlePrint = () => {
     onClose();
-    setTimeout(() => window.print(), 200);
+    const pdf = generatePdf();
+    window.open(URL.createObjectURL(pdf.output('blob')), '_blank');
   };
 
   const handleWhatsApp = async () => {
@@ -148,22 +149,20 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({ isOpen, onClose, invoi
     const pdfBlob = pdf.output('blob');
     const pdfFile = new File([pdfBlob], `${invoice.invoice_number}.pdf`, { type: 'application/pdf' });
 
-    const shareData = {
+    const shareData: ShareData = {
       files: [pdfFile],
       title: `Invoice ${invoice.invoice_number}`,
       text: `*${isGst ? 'TAX INVOICE' : 'INVOICE'}: ${invoice.invoice_number}*\nCustomer: ${invoice.customer_snapshot.name}\nAmount: \u20B9${Number(invoice.grand_total).toFixed(2)}`
     };
 
-    if (navigator.canShare && navigator.canShare(shareData)) {
-      try {
+    try {
+      if (navigator.canShare && navigator.canShare(shareData)) {
         await navigator.share(shareData);
-        showToast('Shared successfully!', 'success');
+        showToast('Shared!', 'success');
         onClose();
         return;
-      } catch (e: any) {
-        if (e.name === 'AbortError') { onClose(); return; }
       }
-    }
+    } catch (_) {}
 
     const url = URL.createObjectURL(pdfBlob);
     const a = document.createElement('a');
@@ -185,7 +184,7 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({ isOpen, onClose, invoi
     ].join('\n');
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
     setTimeout(() => URL.revokeObjectURL(url), 5000);
-    showToast('PDF downloaded & WhatsApp opened! Attach the PDF file.', 'success');
+    showToast('PDF downloaded & WhatsApp opened!', 'success');
     onClose();
   };
 

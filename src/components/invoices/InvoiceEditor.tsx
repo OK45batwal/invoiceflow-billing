@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import QRCode from 'qrcode';
+import { jsPDF } from 'jspdf';
 import { useApp } from '../../context/AppContext';
 import { Invoice, InvoiceItem, Customer, PaymentMode, PaymentStatus } from '../../types';
 import { calculateInvoiceTotals, numberToWords, INDIAN_STATES } from '../../utils/gstEngine';
@@ -301,9 +302,94 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ type }) => {
     }
   };
 
-  // Print Preview
+  // Print via PDF
   const handlePrint = () => {
-    window.print();
+    const data = getInvoiceData();
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    let y = 15;
+    const ln = () => { y += 6; };
+    const hr = () => { y += 3; pdf.line(10, y, 200, y); ln(); };
+    const bold = (t: string, x: number, y: number, opts?: any) => { pdf.setFont('helvetica', 'bold'); pdf.text(t, x, y, opts); pdf.setFont('helvetica', 'normal'); };
+    const s = data.customer_snapshot;
+    const sel = data.seller_snapshot;
+
+    const isGst = type === 'GST';
+    pdf.setFontSize(16);
+    pdf.text(isGst ? 'TAX INVOICE' : 'INVOICE', 105, y, { align: 'center' }); ln(); hr();
+    pdf.setFontSize(10);
+    pdf.text(`Invoice: ${invoiceNumber}`, 10, y); ln();
+    pdf.text(`Date: ${new Date(invoiceDate).toLocaleDateString('en-IN')}`, 10, y); ln();
+    if (dueDate) pdf.text(`Due Date: ${new Date(dueDate).toLocaleDateString('en-IN')}`, 10, y); ln();
+    pdf.text(`Place of Supply: ${placeOfSupply}`, 10, y); ln(); hr();
+
+    bold('Seller', 10, y); ln();
+    pdf.setFontSize(10);
+    pdf.text(`${sel.business_name}`, 10, y); ln();
+    pdf.text(`${sel.address}, ${sel.city}, ${sel.state}`, 10, y); ln();
+    pdf.text(`Phone: ${sel.phone}`, 10, y); ln();
+    if (profile?.gstin) pdf.text(`GSTIN: ${profile.gstin}`, 10, y);
+    if (profile?.pan) pdf.text(`PAN: ${profile.pan}`, 10, y);
+    ln(); hr();
+
+    bold('Customer', 10, y); ln();
+    pdf.setFontSize(10);
+    pdf.text(`${s.name}`, 10, y); ln();
+    if (s.company_name) pdf.text(s.company_name, 10, y); ln();
+    pdf.text(`${s.address}, ${s.city}, ${s.state}`, 10, y); ln();
+    pdf.text(`Mobile: ${s.mobile}`, 10, y); ln();
+    if (s.gstin) pdf.text(`GSTIN: ${s.gstin}`, 10, y);
+    ln(); hr();
+
+    bold('Items', 10, y); ln();
+    pdf.setFontSize(8);
+    const hdr = isGst
+      ? `#  Item                         HSN    Qty  Rate     Disc   GST%  ${isIGST ? 'IGST' : 'CGST  SGST'}  Amount`
+      : `#  Item                         HSN    Qty  Rate     Disc   Amount`;
+    pdf.setFont('helvetica', 'bold');
+    pdf.text(hdr, 10, y); ln();
+    pdf.setFont('helvetica', 'normal');
+    totals.items.forEach((item: any, i: number) => {
+      if (y > 270) { pdf.addPage(); y = 20; }
+      const n = (item.product_name || '').padEnd(24, ' ').slice(0, 24);
+      const h = (item.hsn_code || '-').padEnd(6, ' ');
+      const q = String(item.quantity).padStart(4, ' ');
+      const r = item.rate.toFixed(2).padStart(7, ' ');
+      const d = item.discount_pct ? item.discount_pct + '%' : '    ';
+      if (isGst) {
+        const g = String(item.gst_rate).padStart(4, ' ');
+        const t = isIGST ? item.igst_amount.toFixed(2).padStart(6, ' ') : `${item.cgst_amount.toFixed(2).padStart(5, ' ')} ${item.sgst_amount.toFixed(2).padStart(5, ' ')}`;
+        pdf.text(`${i + 1}. ${n} ${h} ${q} ${r} ${d} ${g} ${t} ${item.amount.toFixed(2).padStart(8, ' ')}`, 10, y);
+      } else {
+        pdf.text(`${i + 1}. ${n} ${h} ${q} ${r} ${d} ${item.amount.toFixed(2).padStart(8, ' ')}`, 10, y);
+      }
+      ln();
+    });
+    hr();
+
+    pdf.setFontSize(10);
+    pdf.text(`Subtotal:       \u20B9${totals.subtotal.toFixed(2)}`, 130, y, { align: 'right' }); ln();
+    if (isGst && totals.cgst_total > 0) pdf.text(`CGST:           \u20B9${totals.cgst_total.toFixed(2)}`, 130, y, { align: 'right' }); ln();
+    if (isGst && totals.sgst_total > 0) pdf.text(`SGST:           \u20B9${totals.sgst_total.toFixed(2)}`, 130, y, { align: 'right' }); ln();
+    if (isGst && totals.igst_total > 0) pdf.text(`IGST:           \u20B9${totals.igst_total.toFixed(2)}`, 130, y, { align: 'right' }); ln();
+    if (totals.round_off !== 0) pdf.text(`Round Off:      \u20B9${totals.round_off.toFixed(2)}`, 130, y, { align: 'right' }); ln();
+    pdf.setFontSize(14);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text(`Grand Total:    \u20B9${totals.grand_total.toFixed(2)}`, 130, y, { align: 'right' }); ln();
+    pdf.setFont('helvetica', 'normal');
+
+    pdf.setFontSize(9);
+    pdf.text(`Amount Chargeable (in words): ${numberToWords(totals.grand_total)}`, 10, y); ln();
+    if (profile?.bank_name) {
+      hr(); pdf.setFontSize(10); bold('Bank Details', 10, y); ln(); pdf.setFontSize(9);
+      pdf.text(`Bank: ${profile.bank_name}`, 10, y); ln();
+      if (profile.branch) pdf.text(`Branch: ${profile.branch}`, 10, y); ln();
+      if (profile.account_number) pdf.text(`Account: ${profile.account_number}`, 10, y); ln();
+      if (profile.ifsc_code) pdf.text(`IFSC: ${profile.ifsc_code}`, 10, y); ln();
+      if (profile.upi_id) pdf.text(`UPI: ${profile.upi_id}`, 10, y);
+    }
+    if (notes) { ln(); pdf.setFontSize(9); pdf.text(`Notes: ${notes}`, 10, y); }
+
+    window.open(URL.createObjectURL(pdf.output('blob')), '_blank');
   };
 
   const getInvoiceData = (): Invoice => ({
