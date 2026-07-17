@@ -118,41 +118,72 @@
 @media print {
   @page {
     size: A4 portrait;
-    margin: 8mm;
+    margin: 0;
   }
 
   html, body {
     background: white !important;
+    color: black !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    height: auto !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
 
-  body > div {
+  #root,
+  main,
+  .min-h-screen,
+  .flex,
+  .flex-col,
+  .flex-grow,
+  .p-6,
+  .p-4,
+  .md\:p-8,
+  .lg\:pl-64,
+  .lg\:pl-20 {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+    background: transparent !important;
     display: block !important;
-    background: white !important;
   }
 
-  .no-print {
+  .grid.grid-cols-1.xl\:grid-cols-12 {
+    display: block !important;
+  }
+
+  .no-print,
+  aside,
+  nav,
+  header,
+  button,
+  .toast-container,
+  .dialog-container {
     display: none !important;
   }
 
-  .print-container,
-  .print-container * {
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-  }
-
   .print-container {
+    display: block !important;
     width: 100% !important;
     max-width: 100% !important;
     min-width: 0 !important;
     border: none !important;
     box-shadow: none !important;
-    padding: 0 !important;
+    padding: 8mm !important;
     margin: 0 !important;
-    display: block !important;
     float: none !important;
     overflow: visible !important;
+    background: white !important;
+    color: #1e293b !important;
   }
 
   .print-container * {
