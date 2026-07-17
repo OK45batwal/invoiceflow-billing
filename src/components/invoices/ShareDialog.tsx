@@ -29,14 +29,14 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({ isOpen, onClose, invoi
     const m = 12, r = 198;
     let y = 20;
 
-    const s = invoice.customer_snapshot;
-    const sel = invoice.seller_snapshot;
+    const s = invoice.customer_snapshot || {} as any;
+    const sel = invoice.seller_snapshot || {} as any;
     const itemsToPrint = items || [];
 
-    const totalDiscount = itemsToPrint.reduce((sum, item) =>
+    const totalDiscount = (itemsToPrint as any[]).reduce((sum, item) =>
       sum + item.rate * item.quantity * item.discount_pct / 100, 0);
     const lineTotal = (item: any) => item.rate * (1 - item.discount_pct / 100) * item.quantity;
-    const taxableAmount = itemsToPrint.reduce((sum, item) => sum + lineTotal(item), 0);
+    const taxableAmount = (itemsToPrint as any[]).reduce((sum, item) => sum + lineTotal(item), 0);
     const isIGST = isGst && Number(invoice.igst_total) > 0;
 
     const addLine = () => { pdf.setDrawColor(200); pdf.line(m, y, r, y); pdf.setDrawColor(0); };
@@ -231,17 +231,14 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({ isOpen, onClose, invoi
 
   const handleDownload = () => {
     showToast('Generating PDF...', 'info');
-    const pdf = generatePdf();
-    const url = URL.createObjectURL(pdf.output('blob'));
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${invoice.invoice_number}.pdf`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(url), 5000);
-    showToast('PDF downloaded!', 'success');
-    onClose();
+    try {
+      const pdf = generatePdf();
+      pdf.save(`${invoice.invoice_number}.pdf`);
+      showToast('PDF downloaded!', 'success');
+      onClose();
+    } catch {
+      showToast('Failed to generate PDF', 'danger');
+    }
   };
 
   const handleWhatsApp = () => {
