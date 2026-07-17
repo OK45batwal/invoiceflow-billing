@@ -24,13 +24,12 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({ isOpen, onClose, invoi
   const { showToast } = useApp();
   const isGst = invoice.invoice_type === 'GST';
 
-  const downloadPDF = () => {
-    showToast('Generating PDF...', 'info');
+  const generatePdf = (): jsPDF => {
     const pdf = new jsPDF('p', 'mm', 'a4');
     let y = 15;
     const ln = () => { y += 6; };
     const hr = () => { y += 3; pdf.line(10, y, 200, y); ln(); };
-    const bold = (text: string, x: number, y: number, opts?: any) => { pdf.setFont('helvetica', 'bold'); pdf.text(text, x, y, opts); pdf.setFont('helvetica', 'normal'); };
+    const bold = (t: string, x: number, y: number, opts?: any) => { pdf.setFont('helvetica', 'bold'); pdf.text(t, x, y, opts); pdf.setFont('helvetica', 'normal'); };
     const s = invoice.customer_snapshot;
     const sel = invoice.seller_snapshot;
     const tot = invoice;
@@ -43,7 +42,6 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({ isOpen, onClose, invoi
     if (invoice.due_date) pdf.text(`Due Date: ${new Date(invoice.due_date).toLocaleDateString('en-IN')}`, 10, y); ln();
     pdf.text(`Place of Supply: ${invoice.place_of_supply}`, 10, y); ln(); hr();
 
-    pdf.setFontSize(12);
     bold('Seller', 10, y); ln();
     pdf.setFontSize(10);
     pdf.text(`${sel.business_name}`, 10, y); ln();
@@ -53,7 +51,6 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({ isOpen, onClose, invoi
     if (sel.pan) pdf.text(`PAN: ${sel.pan}`, 10, y);
     ln(); hr();
 
-    pdf.setFontSize(12);
     bold('Customer', 10, y); ln();
     pdf.setFontSize(10);
     pdf.text(`${s.name}`, 10, y); ln();
@@ -65,7 +62,6 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({ isOpen, onClose, invoi
 
     const igst = Number(invoice.igst_total) > 0;
     const itemsToPrint = items || [];
-    pdf.setFontSize(12);
     bold('Items', 10, y); ln();
     pdf.setFontSize(8);
     const hdr = isGst
@@ -122,6 +118,12 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({ isOpen, onClose, invoi
     }
     if (invoice.notes) { ln(); pdf.setFontSize(9); pdf.text(`Notes: ${invoice.notes}`, 10, y); }
 
+    return pdf;
+  };
+
+  const downloadPDF = () => {
+    showToast('Generating PDF...', 'info');
+    const pdf = generatePdf();
     const pdfBlob = pdf.output('blob');
     const url = URL.createObjectURL(pdfBlob);
     const a = document.createElement('a');
@@ -140,7 +142,37 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({ isOpen, onClose, invoi
     setTimeout(() => window.print(), 200);
   };
 
-  const handleWhatsApp = () => {
+  const handleWhatsApp = async () => {
+    showToast('Preparing PDF...', 'info');
+    const pdf = generatePdf();
+    const pdfBlob = pdf.output('blob');
+    const pdfFile = new File([pdfBlob], `${invoice.invoice_number}.pdf`, { type: 'application/pdf' });
+
+    const shareData = {
+      files: [pdfFile],
+      title: `Invoice ${invoice.invoice_number}`,
+      text: `*${isGst ? 'TAX INVOICE' : 'INVOICE'}: ${invoice.invoice_number}*\nCustomer: ${invoice.customer_snapshot.name}\nAmount: \u20B9${Number(invoice.grand_total).toFixed(2)}`
+    };
+
+    if (navigator.canShare && navigator.canShare(shareData)) {
+      try {
+        await navigator.share(shareData);
+        showToast('Shared successfully!', 'success');
+        onClose();
+        return;
+      } catch (e: any) {
+        if (e.name === 'AbortError') { onClose(); return; }
+      }
+    }
+
+    const url = URL.createObjectURL(pdfBlob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${invoice.invoice_number}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+
     const text = [
       `*${isGst ? 'TAX INVOICE' : 'INVOICE'}: ${invoice.invoice_number}*`,
       `Customer: ${invoice.customer_snapshot.name}${invoice.customer_snapshot.company_name ? ` (${invoice.customer_snapshot.company_name})` : ''}`,
@@ -148,10 +180,12 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({ isOpen, onClose, invoi
       `Date: ${new Date(invoice.invoice_date).toLocaleDateString('en-IN')}`,
       `Status: ${invoice.payment_status}`,
       ``,
-      `Download PDF: ${window.location.origin}/invoice/${invoice.id}`,
+      `PDF downloaded — please attach it from your downloads.`,
       `Powered by InvoiceFlow`
     ].join('\n');
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+    showToast('PDF downloaded & WhatsApp opened! Attach the PDF file.', 'success');
     onClose();
   };
 
