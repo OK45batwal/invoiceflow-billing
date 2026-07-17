@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import QRCode from 'qrcode';
-import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import { useApp } from '../../context/AppContext';
 import { Invoice, InvoiceItem, Customer, PaymentMode, PaymentStatus } from '../../types';
@@ -307,62 +306,84 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ type }) => {
   };
 
   const handleSharePDF = async () => {
-    if (!printRef.current) return;
-
     showToast('Generating PDF...', 'info');
 
-    try {
-      const canvas = await html2canvas(printRef.current, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: '#ffffff'
-      });
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      const pdfWidth = 210;
-      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-      if (pdfHeight > pdfWidth * 1.414) {
-        // Content exceeds one page
-        let heightLeft = pdfHeight;
-        let position = 0;
-        const pageHeight = pdfWidth * 1.414;
-        pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
-        heightLeft -= pageHeight;
-        while (heightLeft > 0) {
-          position -= pageHeight;
-          pdf.addPage();
-          pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
-          heightLeft -= pageHeight;
-        }
-      } else {
-        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-      }
-      const pdfBlob = pdf.output('blob');
-      const url = URL.createObjectURL(pdfBlob);
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    const pageW = 190;
+    let y = 15;
+    const ln = () => { y += 6; };
+    const hr = () => { y += 3; pdf.line(10, y, 200, y); ln(); };
 
-      const file = new File([pdfBlob], `${invoiceNumber}.pdf`, { type: 'application/pdf' });
+    pdf.setFontSize(16);
+    pdf.text('TAX INVOICE', 105, y, { align: 'center' }); ln(); hr();
+    pdf.setFontSize(10);
+    pdf.text(`Invoice: ${invoiceNumber}`, 10, y); ln();
+    pdf.text(`Date: ${new Date(invoiceDate).toLocaleDateString('en-IN')}`, 10, y); ln();
+    pdf.text(`Place of Supply: ${placeOfSupply}`, 10, y); ln(); hr();
 
-      if (navigator.share) {
-        try {
-          await navigator.share({ files: [file], title: invoiceNumber });
-          URL.revokeObjectURL(url);
-          showToast('PDF shared successfully!', 'success');
-          return;
-        } catch {}
-      }
+    pdf.setFontSize(12);
+    pdf.text('Seller', 10, y); ln();
+    pdf.setFontSize(10);
+    const sell = sellerObj;
+    pdf.text(`${sell.business_name}`, 10, y); ln();
+    pdf.text(`${sell.address}, ${sell.city}, ${sell.state}`, 10, y); ln();
+    pdf.text(`Phone: ${sell.phone}`, 10, y); ln();
+    if (profile?.gstin) pdf.text(`GSTIN: ${profile.gstin}`, 10, y); ln(); hr();
 
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${invoiceNumber}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
-      showToast('PDF downloaded! Share it manually on WhatsApp.', 'success');
-    } catch (err) {
-      showToast('Could not generate PDF. Opening WhatsApp text instead.', 'warning');
-      window.open(`https://wa.me/?text=${encodeURIComponent(`Invoice: ${invoiceNumber} - ₹${totals.grand_total.toFixed(2)}\nhttps://invoiceflow-billing.okbatwal.workers.dev`)}`, '_blank');
+    pdf.setFontSize(12);
+    pdf.text('Customer', 10, y); ln();
+    pdf.setFontSize(10);
+    if (customerDetails) {
+      pdf.text(`${customerDetails.name}`, 10, y); ln();
+      if (customerDetails.company_name) { pdf.text(customerDetails.company_name, 10, y); ln(); }
+      pdf.text(`${customerDetails.address}, ${customerDetails.city}, ${customerDetails.state}`, 10, y); ln();
+      pdf.text(`Mobile: ${customerDetails.mobile}`, 10, y); ln();
+      if (customerDetails.gstin) pdf.text(`GSTIN: ${customerDetails.gstin}`, 10, y);
     }
+    ln(); hr();
+
+    pdf.setFontSize(12);
+    pdf.text('Items', 10, y); ln();
+    pdf.setFontSize(9);
+    pdf.text('#  Item                         Qty  Rate     Disc   Amount', 10, y); ln();
+    pdf.setFontSize(8);
+    totals.items.forEach((item, i) => {
+      if (y > 270) { pdf.addPage(); y = 20; }
+      const line = `${i + 1}. ${(item.product_name || '').padEnd(28, ' ').slice(0, 28)} ${String(item.quantity).padStart(4, ' ')} ${item.rate.toFixed(2).padStart(7, ' ')} ${item.discount_pct ? item.discount_pct + '%' : '    '} ${item.amount.toFixed(2).padStart(8, ' ')}`;
+      pdf.text(line, 10, y); ln();
+    });
+    hr();
+
+    pdf.setFontSize(10);
+    pdf.text(`Subtotal:       ₹${totals.subtotal.toFixed(2)}`, 130, y, { align: 'right' }); ln();
+    if (totals.cgst_total > 0) pdf.text(`CGST:           ₹${totals.cgst_total.toFixed(2)}`, 130, y, { align: 'right' }); ln();
+    if (totals.sgst_total > 0) pdf.text(`SGST:           ₹${totals.sgst_total.toFixed(2)}`, 130, y, { align: 'right' }); ln();
+    if (totals.igst_total > 0) pdf.text(`IGST:           ₹${totals.igst_total.toFixed(2)}`, 130, y, { align: 'right' }); ln();
+    if (totals.round_off !== 0) pdf.text(`Round Off:      ₹${totals.round_off.toFixed(2)}`, 130, y, { align: 'right' }); ln();
+    pdf.setFontSize(14);
+    pdf.text(`Grand Total:    ₹${totals.grand_total.toFixed(2)}`, 130, y, { align: 'right' }); ln();
+
+    const pdfBlob = pdf.output('blob');
+    const url = URL.createObjectURL(pdfBlob);
+    const file = new File([pdfBlob], `${invoiceNumber}.pdf`, { type: 'application/pdf' });
+
+    if (navigator.share) {
+      try {
+        await navigator.share({ files: [file], title: invoiceNumber });
+        URL.revokeObjectURL(url);
+        showToast('PDF shared successfully!', 'success');
+        return;
+      } catch {}
+    }
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${invoiceNumber}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    showToast('PDF downloaded! Share it manually on WhatsApp.', 'success');
   };
 
   const isIGST = type === 'GST' && totals.igst_total > 0;
