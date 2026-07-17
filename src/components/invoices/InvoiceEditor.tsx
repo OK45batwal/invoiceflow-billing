@@ -392,12 +392,12 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ type }) => {
       else pdf.text(t, x + 1, y);
     };
     ct('#', colW * 0.3, 'center');
-    ct('Item', colW * 2.2);
+    ct('Item', isGst ? colW * 2.2 : colW * 2.0);
     if (isGst) ct('HSN', colW * 0.8, 'center');
     ct('Qty', colW * 0.7, 'right');
     ct('Price', colW * 1, 'right');
     if (isGst) ct('GST%', colW * 0.8, 'right');
-    ct('Amount', colW * 1.2, 'right');
+    ct('Amount', isGst ? colW * 1.2 : colW * 1.0, 'right');
     ln(5);
     pdf.setFont('helvetica', 'normal');
     totals.items.forEach((item: any, i: number) => {
@@ -406,14 +406,14 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ type }) => {
       pdf.setTextColor(100, 116, 139);
       ct(String(i + 1), colW * 0.3, 'center');
       pdf.setTextColor(51, 65, 85);
-      ct(item.product_name || '', colW * 2.2);
+      ct(item.product_name || '', isGst ? colW * 2.2 : colW * 2.0);
       if (isGst) { pdf.setTextColor(100, 116, 139); ct(item.hsn_code || '-', colW * 0.8, 'center'); }
       pdf.setTextColor(100, 116, 139);
       ct(String(item.quantity), colW * 0.7, 'right');
       ct(`\u20B9${item.rate.toFixed(2)}`, colW * 1, 'right');
       if (isGst) ct(`${item.gst_rate}%`, colW * 0.8, 'right');
       pdf.setFont('helvetica', 'bold');
-      ct(`\u20B9${lineTotal(item).toFixed(2)}`, colW * 1.2, 'right');
+      ct(`\u20B9${lineTotal(item).toFixed(2)}`, isGst ? colW * 1.2 : colW * 1.0, 'right');
       pdf.setFont('helvetica', 'normal');
       ln(4.5);
       pdf.setDrawColor(230);

@@ -43,6 +43,7 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({ isOpen, onClose, invoi
       sum + item.rate * item.quantity * item.discount_pct / 100, 0);
     const lineTotal = (item: any) => item.rate * (1 - item.discount_pct / 100) * item.quantity;
     const taxableAmount = itemsToPrint.reduce((sum, item) => sum + lineTotal(item), 0);
+    const isIGST = isGst && Number(invoice.igst_total) > 0;
 
     // === HEADER BAR (dark background) ===
     pdf.setFillColor(30, 41, 59); // slate-800
@@ -113,7 +114,6 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({ isOpen, onClose, invoi
     pdf.setFont('helvetica', 'bold');
     let cx = m;
     const colW = (r - m) / (isGst ? 7 : 5);
-    const cw = (w: number) => { const p = cx; cx += w; return p; };
     const ct = (t: string, w: number, align: 'left' | 'right' | 'center' = 'left') => {
       const x = cx;
       cx += w;
@@ -122,12 +122,12 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({ isOpen, onClose, invoi
       else pdf.text(t, x + 1, y);
     };
     ct('#', colW * 0.3, 'center');
-    ct('Item', colW * 2.2);
+    ct('Item', isGst ? colW * 2.2 : colW * 2.0);
     if (isGst) ct('HSN', colW * 0.8, 'center');
     ct('Qty', colW * 0.7, 'right');
     ct('Price', colW * 1, 'right');
     if (isGst) ct('GST%', colW * 0.8, 'right');
-    ct('Amount', colW * 1.2, 'right');
+    ct('Amount', isGst ? colW * 1.2 : colW * 1.0, 'right');
     ln(5);
     pdf.setFont('helvetica', 'normal');
     itemsToPrint.forEach((item: any, i: number) => {
@@ -136,14 +136,14 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({ isOpen, onClose, invoi
       pdf.setTextColor(100, 116, 139);
       ct(String(i + 1), colW * 0.3, 'center');
       pdf.setTextColor(51, 65, 85);
-      ct(item.product_name || '', colW * 2.2);
+      ct(item.product_name || '', isGst ? colW * 2.2 : colW * 2.0);
       if (isGst) { pdf.setTextColor(100, 116, 139); ct(item.hsn_code || '-', colW * 0.8, 'center'); }
       pdf.setTextColor(100, 116, 139);
       ct(String(item.quantity), colW * 0.7, 'right');
       ct(`\u20B9${item.rate.toFixed(2)}`, colW * 1, 'right');
       if (isGst) ct(`${item.gst_rate}%`, colW * 0.8, 'right');
       pdf.setFont('helvetica', 'bold');
-      ct(`\u20B9${lineTotal(item).toFixed(2)}`, colW * 1.2, 'right');
+      ct(`\u20B9${lineTotal(item).toFixed(2)}`, isGst ? colW * 1.2 : colW * 1.0, 'right');
       pdf.setFont('helvetica', 'normal');
       ln(4.5);
       pdf.setDrawColor(230);
@@ -170,8 +170,9 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({ isOpen, onClose, invoi
     };
     if (isGst) {
       tLine('Taxable Amount:', `\u20B9${taxableAmount.toFixed(2)}`);
-      if (Number(invoice.cgst_total) > 0) tLine('CGST (9%):', `\u20B9${Number(invoice.cgst_total).toFixed(2)}`);
-      if (Number(invoice.sgst_total) > 0) tLine('SGST (9%):', `\u20B9${Number(invoice.sgst_total).toFixed(2)}`);
+      if (!isIGST && Number(invoice.cgst_total) > 0) tLine('CGST (9%):', `\u20B9${Number(invoice.cgst_total).toFixed(2)}`);
+      if (!isIGST && Number(invoice.sgst_total) > 0) tLine('SGST (9%):', `\u20B9${Number(invoice.sgst_total).toFixed(2)}`);
+      if (isIGST && Number(invoice.igst_total) > 0) tLine('IGST:', `\u20B9${Number(invoice.igst_total).toFixed(2)}`);
       if (totalDiscount > 0) tLine('Discount:', `-\u20B9${totalDiscount.toFixed(2)}`);
     } else {
       tLine('Subtotal:', `\u20B9${taxableAmount.toFixed(2)}`);
@@ -179,14 +180,15 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({ isOpen, onClose, invoi
       tLine('Delivery:', '\u20B90.00');
     }
     if (Number(invoice.round_off) !== 0) tLine('Round Off:', `${Number(invoice.round_off).toFixed(2)}`);
-    pdf.setDrawColor(200);
-    pdf.line(tLeft + 3, ty2 - 2, tLeft + tW - 3, ty2 - 2);
+    pdf.setDrawColor(203, 213, 225);
+    pdf.line(tLeft + 3, ty2 - 1.5, tLeft + tW - 3, ty2 - 1.5);
     pdf.setDrawColor(0);
     pdf.setFont('helvetica', 'bold');
     pdf.setFontSize(8);
     pdf.setTextColor(30, 41, 59);
-    pdf.text(isGst ? 'GRAND TOTAL' : 'TOTAL', tLeft + 3, ty2);
-    pdf.text(`\u20B9${Number(invoice.grand_total).toFixed(2)}`, tLeft + tW - 3, ty2, { align: 'right' });
+    pdf.text(isGst ? 'GRAND TOTAL' : 'TOTAL', tLeft + 3, ty2 + 1);
+    pdf.text(`\u20B9${Number(invoice.grand_total).toFixed(2)}`, tLeft + tW - 3, ty2 + 1, { align: 'right' });
+    y = ty2 + 8;
     pdf.setFont('helvetica', 'normal');
     y = ty2 + 8;
 
