@@ -365,16 +365,6 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ type }) => {
 
     const pdfBlob = pdf.output('blob');
     const url = URL.createObjectURL(pdfBlob);
-    const file = new File([pdfBlob], `${invoiceNumber}.pdf`, { type: 'application/pdf' });
-
-    if (navigator.share) {
-      try {
-        await navigator.share({ files: [file], title: invoiceNumber });
-        URL.revokeObjectURL(url);
-        showToast('PDF shared successfully!', 'success');
-        return;
-      } catch {}
-    }
 
     const a = document.createElement('a');
     a.href = url;
@@ -382,8 +372,21 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ type }) => {
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-    showToast('PDF downloaded! Share it manually on WhatsApp.', 'success');
+
+    const waText = encodeURIComponent([
+      `*INVOICE: ${invoiceNumber}*`,
+      `Customer: ${customerDetails?.name || 'N/A'}`,
+      `Amount: ₹${totals.grand_total.toFixed(2)}`,
+      `Date: ${new Date(invoiceDate).toLocaleDateString('en-IN')}`,
+      ``,
+      `📎 PDF has been downloaded — please attach it here.`,
+      `Powered by InvoiceFlow`
+    ].join('\n'));
+
+    window.open(`https://wa.me/?text=${waText}`, '_blank');
+
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+    showToast(`PDF downloaded & WhatsApp opened! Attach the PDF file to send.`, 'success');
   };
 
   const isIGST = type === 'GST' && totals.igst_total > 0;
@@ -725,7 +728,7 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ type }) => {
                 className="h-9 px-3 rounded-lg bg-green-50 hover:bg-green-100 text-green-600 dark:bg-green-950/20 dark:text-green-400 text-xs font-bold flex items-center gap-1.5"
               >
                 <Share2 className="h-4 w-4" />
-                <span>Share PDF</span>
+                <span>PDF & WhatsApp</span>
               </button>
               <button
                 onClick={handlePrint}

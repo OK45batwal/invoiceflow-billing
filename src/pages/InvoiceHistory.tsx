@@ -176,15 +176,6 @@ export const InvoiceHistory: React.FC = () => {
 
     const pdfBlob = pdf.output('blob');
     const url = URL.createObjectURL(pdfBlob);
-    const file = new File([pdfBlob], `${inv.invoice_number}.pdf`, { type: 'application/pdf' });
-
-    if (navigator.share) {
-      try {
-        await navigator.share({ files: [file], title: inv.invoice_number });
-        URL.revokeObjectURL(url);
-        return;
-      } catch {}
-    }
 
     const a = document.createElement('a');
     a.href = url;
@@ -192,7 +183,20 @@ export const InvoiceHistory: React.FC = () => {
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+    const waText = encodeURIComponent([
+      `*INVOICE: ${inv.invoice_number}*`,
+      `Customer: ${inv.customer_snapshot.name}${inv.customer_snapshot.company_name ? ` (${inv.customer_snapshot.company_name})` : ''}`,
+      `Amount: ₹${Number(inv.grand_total).toFixed(2)}`,
+      `Date: ${new Date(inv.invoice_date).toLocaleDateString('en-IN')}`,
+      `Status: ${inv.payment_status}`,
+      ``,
+      `📎 PDF has been downloaded — please attach it here.`,
+      `Powered by InvoiceFlow`
+    ].join('\n'));
+
+    window.open(`https://wa.me/?text=${waText}`, '_blank');
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
   };
 
   const formatRupee = (value: number) => {
@@ -352,7 +356,7 @@ export const InvoiceHistory: React.FC = () => {
                         <button
                           onClick={() => handleSharePDF(inv)}
                           className="p-1.5 rounded-lg text-green-600 hover:bg-green-50 dark:text-green-400 dark:hover:bg-green-950/20 transition-colors"
-                          title="Share PDF"
+                          title="Download PDF & WhatsApp"
                         >
                           <Share2 className="h-4.5 w-4.5" />
                         </button>
