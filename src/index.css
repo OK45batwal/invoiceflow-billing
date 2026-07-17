@@ -116,12 +116,35 @@
 
 /* A4 Print Stylesheet */
 @media print {
-  body {
+  /* Force light mode variables */
+  .dark {
+    --color-bg: #ffffff !important;
+    --color-bg-card: #ffffff !important;
+    --color-text-primary: #000000 !important;
+    --color-text-secondary: #000000 !important;
+    --color-text-light: #6b7280 !important;
+  }
+
+  html, body {
     background: white !important;
     color: black !important;
     font-size: 11px !important;
     padding: 0 !important;
     margin: 0 !important;
+  }
+
+  /* Reset every element to light mode */
+  body * {
+    background-color: transparent !important;
+    color: black !important;
+    border-color: #000 !important;
+  }
+
+  /* Re-white specific containers */
+  .print-container,
+  .print-container * {
+    background-color: white !important;
+    color: black !important;
   }
 
   /* Hide UI elements on print */
@@ -149,7 +172,6 @@
     box-shadow: none !important;
     padding: 0 !important;
     margin: 0 !important;
-    background: white !important;
   }
 
   /* Page break rules */

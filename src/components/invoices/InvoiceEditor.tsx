@@ -14,7 +14,8 @@ import {
   UserPlus, 
   Building,
   ArrowLeft,
-  Info
+  Info,
+  Share2
 } from 'lucide-react';
 
 interface InvoiceEditorProps {
@@ -299,6 +300,20 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ type }) => {
   // Print Preview
   const handlePrint = () => {
     window.print();
+  };
+
+  const handleWhatsAppShare = () => {
+    const text = [
+      `🧾 *Invoice: ${invoiceNumber}*`,
+      `👤 Customer: ${customerDetails?.name || 'N/A'}`,
+      `💰 Amount: ₹${totals.grand_total.toFixed(2)}`,
+      `📅 Date: ${new Date(invoiceDate).toLocaleDateString('en-IN')}`,
+      `📊 Status: ${paymentStatus}`,
+      `━━━━━━━━━━━━`,
+      `Powered by InvoiceFlow`,
+      `https://invoiceflow-billing.okbatwal.workers.dev`
+    ].join('\n');
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
   };
 
   const isIGST = type === 'GST' && totals.igst_total > 0;
@@ -635,6 +650,13 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ type }) => {
           <div className="flex justify-between items-center pb-4 border-b border-slate-50 dark:border-slate-850 no-print">
             <h3 className="text-sm font-bold uppercase tracking-wider text-text-secondary dark:text-slate-400">A4 Live Print View</h3>
             <div className="flex gap-2">
+              <button
+                onClick={handleWhatsAppShare}
+                className="h-9 px-3 rounded-lg bg-green-50 hover:bg-green-100 text-green-600 dark:bg-green-950/20 dark:text-green-400 text-xs font-bold flex items-center gap-1.5"
+              >
+                <Share2 className="h-4 w-4" />
+                <span>WhatsApp</span>
+              </button>
               <button
                 onClick={handlePrint}
                 className="h-9 px-3 rounded-lg bg-slate-50 hover:bg-slate-100 text-text-primary dark:bg-slate-800 dark:text-slate-200 text-xs font-bold flex items-center gap-1.5"

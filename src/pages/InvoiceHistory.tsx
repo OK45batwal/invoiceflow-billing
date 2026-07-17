@@ -9,7 +9,8 @@ import {
   Copy, 
   Edit, 
   AlertTriangle,
-  Receipt
+  Receipt,
+  Share2
 } from 'lucide-react';
 
 export const InvoiceHistory: React.FC = () => {
@@ -103,6 +104,20 @@ export const InvoiceHistory: React.FC = () => {
         showToast(e.message, 'danger');
       }
     }
+  };
+
+  const handleWhatsAppShare = (inv: Invoice) => {
+    const text = [
+      `🧾 *Invoice: ${inv.invoice_number}*`,
+      `👤 Customer: ${inv.customer_snapshot.name}${inv.customer_snapshot.company_name ? ` (${inv.customer_snapshot.company_name})` : ''}`,
+      `💰 Amount: ₹${Number(inv.grand_total).toFixed(2)}`,
+      `📅 Date: ${new Date(inv.invoice_date).toLocaleDateString('en-IN')}`,
+      `📊 Status: ${inv.payment_status}`,
+      `━━━━━━━━━━━━`,
+      `Powered by InvoiceFlow`,
+      `https://invoiceflow-billing.okbatwal.workers.dev`
+    ].join('\n');
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
   };
 
   const formatRupee = (value: number) => {
@@ -258,6 +273,13 @@ export const InvoiceHistory: React.FC = () => {
                           title="Duplicate Invoice"
                         >
                           <Copy className="h-4.5 w-4.5" />
+                        </button>
+                        <button
+                          onClick={() => handleWhatsAppShare(inv)}
+                          className="p-1.5 rounded-lg text-green-600 hover:bg-green-50 dark:text-green-400 dark:hover:bg-green-950/20 transition-colors"
+                          title="Share on WhatsApp"
+                        >
+                          <Share2 className="h-4.5 w-4.5" />
                         </button>
                         <button
                           onClick={() => setDeleteConfirmId(inv.id || null)}
