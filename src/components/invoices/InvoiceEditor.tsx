@@ -305,8 +305,8 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ type }) => {
   };
 
   const handleSharePDF = async () => {
-    const { default: html2canvas } = await import('html2canvas');
-    const { default: jsPDF } = await import('jspdf');
+    const html2canvas = (await import('html2canvas')).default;
+    const { jsPDF } = await import('jspdf');
 
     if (!printRef.current) return;
 
@@ -325,16 +325,18 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ type }) => {
 
       const file = new File([pdfBlob], `${invoiceNumber}.pdf`, { type: 'application/pdf' });
 
-      if (navigator.share && navigator.canShare({ files: [file] })) {
-        await navigator.share({ files: [file], title: invoiceNumber });
-      } else {
-        const url = URL.createObjectURL(pdfBlob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${invoiceNumber}.pdf`;
-        a.click();
-        URL.revokeObjectURL(url);
+      if (navigator.share) {
+        try {
+          await navigator.share({ files: [file], title: invoiceNumber });
+          return;
+        } catch {}
       }
+      const url = URL.createObjectURL(pdfBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${invoiceNumber}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
     } catch {
       window.open(`https://wa.me/?text=${encodeURIComponent(`Invoice: ${invoiceNumber} - ₹${totals.grand_total.toFixed(2)}`)}`, '_blank');
     }

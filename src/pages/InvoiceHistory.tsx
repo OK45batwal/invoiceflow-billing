@@ -122,7 +122,7 @@ export const InvoiceHistory: React.FC = () => {
   };
 
   const handleSharePDF = async (inv: Invoice) => {
-    const { default: jsPDF } = await import('jspdf');
+    const { jsPDF } = await import('jspdf');
     const pdf = new jsPDF('p', 'mm', 'a4');
     const pageWidth = 190;
     let y = 20;
@@ -177,16 +177,18 @@ export const InvoiceHistory: React.FC = () => {
     const pdfBlob = pdf.output('blob');
     const file = new File([pdfBlob], `${inv.invoice_number}.pdf`, { type: 'application/pdf' });
 
-    if (navigator.share && navigator.canShare({ files: [file] })) {
-      await navigator.share({ files: [file], title: inv.invoice_number });
-    } else {
-      const url = URL.createObjectURL(pdfBlob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${inv.invoice_number}.pdf`;
-      a.click();
-      URL.revokeObjectURL(url);
+    if (navigator.share) {
+      try {
+        await navigator.share({ files: [file], title: inv.invoice_number });
+        return;
+      } catch {}
     }
+    const url = URL.createObjectURL(pdfBlob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${inv.invoice_number}.pdf`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   const formatRupee = (value: number) => {
