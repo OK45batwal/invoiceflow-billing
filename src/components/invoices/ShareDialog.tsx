@@ -196,13 +196,13 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({ isOpen, onClose, invoi
         } else if (isGst) {
           if (ci === 2) { v = item.hsn_code || '-'; pdf.setTextColor(100, 116, 139); }
           else if (ci === 3) { v = String(item.quantity); pdf.setTextColor(51, 65, 85); }
-          else if (ci === 4) { v = `₹${Number(item.rate).toFixed(2)}`; pdf.setTextColor(51, 65, 85); }
+          else if (ci === 4) { v = `Rs. ${Number(item.rate).toFixed(2)}`; pdf.setTextColor(51, 65, 85); }
           else if (ci === 5) { v = `${item.gst_rate ?? 0}%`; pdf.setTextColor(71, 85, 105); }
-          else if (ci === 6) { v = `₹${lineAmt(item).toFixed(2)}`; pdf.setFont('helvetica', 'bold'); pdf.setTextColor(30, 41, 59); }
+          else if (ci === 6) { v = `Rs. ${lineAmt(item).toFixed(2)}`; pdf.setFont('helvetica', 'bold'); pdf.setTextColor(30, 41, 59); }
         } else {
           if (ci === 2) { v = String(item.quantity); pdf.setTextColor(51, 65, 85); }
-          else if (ci === 3) { v = `₹${Number(item.rate).toFixed(2)}`; pdf.setTextColor(51, 65, 85); }
-          else if (ci === 4) { v = `₹${lineAmt(item).toFixed(2)}`; pdf.setFont('helvetica', 'bold'); pdf.setTextColor(30, 41, 59); }
+          else if (ci === 3) { v = `Rs. ${Number(item.rate).toFixed(2)}`; pdf.setTextColor(51, 65, 85); }
+          else if (ci === 4) { v = `Rs. ${lineAmt(item).toFixed(2)}`; pdf.setFont('helvetica', 'bold'); pdf.setTextColor(30, 41, 59); }
         }
         const tx = col.align === 'center' ? cx + col.w / 2 : col.align === 'right' ? cx + col.w - 2 : cx + 2;
         pdf.text(v, tx, y + 1.5, { align: col.align });
@@ -252,18 +252,18 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({ isOpen, onClose, invoi
       }
     };
 
-    totRow(isGst ? 'Taxable Amount' : 'Subtotal', `₹${Number(invoice.grand_total - (Number(invoice.cgst_total)||0) - (Number(invoice.sgst_total)||0) - (Number(invoice.igst_total)||0) - (Number(invoice.round_off)||0)).toFixed(2)}`);
-    if (isGst && !isIGST && Number(invoice.cgst_total) > 0) totRow('CGST (9%)', `₹${Number(invoice.cgst_total).toFixed(2)}`);
-    if (isGst && !isIGST && Number(invoice.sgst_total) > 0) totRow('SGST (9%)', `₹${Number(invoice.sgst_total).toFixed(2)}`);
-    if (isGst && isIGST && Number(invoice.igst_total) > 0) totRow('IGST', `₹${Number(invoice.igst_total).toFixed(2)}`);
-    if (totalDiscount > 0) totRow('Discount', `-₹${totalDiscount.toFixed(2)}`);
-    if (!isGst) totRow('Delivery', '₹0.00');
-    if (Number(invoice.round_off) !== 0) totRow('Round Off', `₹${Number(invoice.round_off).toFixed(2)}`);
+    totRow(isGst ? 'Taxable Amount' : 'Subtotal', `Rs. ${Number(invoice.grand_total - (Number(invoice.cgst_total)||0) - (Number(invoice.sgst_total)||0) - (Number(invoice.igst_total)||0) - (Number(invoice.round_off)||0)).toFixed(2)}`);
+    if (isGst && !isIGST && Number(invoice.cgst_total) > 0) totRow('CGST (9%)', `Rs. ${Number(invoice.cgst_total).toFixed(2)}`);
+    if (isGst && !isIGST && Number(invoice.sgst_total) > 0) totRow('SGST (9%)', `Rs. ${Number(invoice.sgst_total).toFixed(2)}`);
+    if (isGst && isIGST && Number(invoice.igst_total) > 0) totRow('IGST', `Rs. ${Number(invoice.igst_total).toFixed(2)}`);
+    if (totalDiscount > 0) totRow('Discount', `-Rs. ${totalDiscount.toFixed(2)}`);
+    if (!isGst) totRow('Delivery', 'Rs. 0.00');
+    if (Number(invoice.round_off) !== 0) totRow('Round Off', `Rs. ${Number(invoice.round_off).toFixed(2)}`);
 
     // Grand total line separator + total (matches live print view)
     pdf.setDrawColor(203, 213, 225); pdf.line(boxX + 3, bY - 1, boxX + boxW - 1, bY - 1); pdf.setDrawColor(0);
     bY += 3.5;
-    totRow(isGst ? 'GRAND TOTAL' : 'TOTAL', `₹${Number(invoice.grand_total).toFixed(2)}`, true);
+    totRow(isGst ? 'GRAND TOTAL' : 'TOTAL', `Rs. ${Number(invoice.grand_total).toFixed(2)}`, true);
 
     y += boxH + 3;
 

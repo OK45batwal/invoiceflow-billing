@@ -181,10 +181,10 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoiceId, onBack }) =
                     </td>
                     {isGst && <td className="p-1.5 text-center text-slate-500">{item.hsn_code || '-'}</td>}
                     <td className="p-1.5 text-right text-slate-700">{item.quantity}</td>
-                    <td className="p-1.5 text-right text-slate-700">{Number(item.rate).toFixed(2)}</td>
+                    <td className="p-1.5 text-right text-slate-700">₹{Number(item.rate).toFixed(2)}</td>
                     {isGst && <td className="p-1.5 text-right text-slate-600">{item.gst_rate}%</td>}
                     <td className="p-1.5 text-right font-semibold text-slate-800">
-                      {(Number(item.rate) * (1 - Number(item.discount_pct) / 100) * Number(item.quantity)).toFixed(2)}
+                      ₹{(Number(item.rate) * (1 - Number(item.discount_pct) / 100) * Number(item.quantity)).toFixed(2)}
                     </td>
                   </tr>
                 ))}
@@ -198,47 +198,47 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoiceId, onBack }) =
               <div className="space-y-1.5 text-[9px]">
                 <div className="flex justify-between">
                   <span className="text-slate-500">{isGst ? 'Taxable Amount' : 'Subtotal'}</span>
-                  <span className="font-semibold text-slate-800">{Number(totals.subtotal).toFixed(2)}</span>
+                  <span className="font-semibold text-slate-800">₹{Number(totals.subtotal).toFixed(2)}</span>
                 </div>
                 {isGst && totals.cgst_total > 0 && (
                   <div className="flex justify-between">
                     <span className="text-slate-500">CGST (9%)</span>
-                    <span className="text-slate-700">{totals.cgst_total.toFixed(2)}</span>
+                    <span className="text-slate-700">₹{totals.cgst_total.toFixed(2)}</span>
                   </div>
                 )}
                 {isGst && totals.sgst_total > 0 && (
                   <div className="flex justify-between">
                     <span className="text-slate-500">SGST (9%)</span>
-                    <span className="text-slate-700">{totals.sgst_total.toFixed(2)}</span>
+                    <span className="text-slate-700">₹{totals.sgst_total.toFixed(2)}</span>
                   </div>
                 )}
                 {isGst && totals.igst_total > 0 && (
                   <div className="flex justify-between">
                     <span className="text-slate-500">IGST</span>
-                    <span className="text-slate-700">{totals.igst_total.toFixed(2)}</span>
+                    <span className="text-slate-700">₹{totals.igst_total.toFixed(2)}</span>
                   </div>
                 )}
                 {totalDiscount > 0 && (
                   <div className="flex justify-between">
                     <span className="text-slate-500">Discount</span>
-                    <span className="text-slate-600">-{totalDiscount.toFixed(2)}</span>
+                    <span className="text-slate-600">-₹{totalDiscount.toFixed(2)}</span>
                   </div>
                 )}
                 {!isGst && (
                   <div className="flex justify-between">
                     <span className="text-slate-500">Delivery</span>
-                    <span className="text-slate-700">0.00</span>
+                    <span className="text-slate-700">₹0.00</span>
                   </div>
                 )}
                 {Number(totals.round_off) !== 0 && (
                   <div className="flex justify-between">
                     <span className="text-slate-500">Round Off</span>
-                    <span className="text-slate-700">{totals.round_off.toFixed(2)}</span>
+                    <span className="text-slate-700">₹{totals.round_off.toFixed(2)}</span>
                   </div>
                 )}
                 <div className="border-t border-slate-300 pt-1.5 mt-1.5 flex justify-between font-bold text-slate-800">
                   <span className="uppercase text-[10px]">{isGst ? 'Grand Total' : 'TOTAL'}</span>
-                  <span className="text-sm">{totals.grand_total.toFixed(2)}</span>
+                  <span className="text-sm">₹{totals.grand_total.toFixed(2)}</span>
                 </div>
               </div>
             </div>
