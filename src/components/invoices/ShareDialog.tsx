@@ -69,12 +69,29 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({ isOpen, onClose, invoi
 
   const handleCopyLink = () => {
     const url = `${window.location.origin}/invoice/${invoice.id}`;
-    navigator.clipboard.writeText(url).then(() => {
-      showToast('Invoice link copied!', 'success');
-    }).catch(() => {
-      showToast('Failed to copy link', 'danger');
-    });
+    try {
+      if (navigator.clipboard?.writeText) {
+        navigator.clipboard.writeText(url).then(() => {
+          showToast('Invoice link copied!', 'success');
+        }).catch(() => fallbackCopy(url));
+      } else {
+        fallbackCopy(url);
+      }
+    } catch {
+      fallbackCopy(url);
+    }
     onClose();
+  };
+
+  const fallbackCopy = (text: string) => {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); showToast('Invoice link copied!', 'success'); }
+    catch { showToast('Failed to copy link', 'danger'); }
+    document.body.removeChild(ta);
   };
 
   const actions = [

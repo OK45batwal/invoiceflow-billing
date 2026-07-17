@@ -4,6 +4,7 @@ import { Invoice } from '../types';
 import { calculateInvoiceTotals, numberToWords } from '../utils/gstEngine';
 import { ShareDialog } from '../components/invoices/ShareDialog';
 import { ArrowLeft, Share2, Printer, RefreshCw } from 'lucide-react';
+import QRCode from 'qrcode';
 
 interface InvoiceViewProps {
   invoiceId: string;
@@ -15,6 +16,32 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoiceId, onBack }) =
   const [invoice, setInvoice] = useState<Invoice | null>(null);
   const [loading, setLoading] = useState(true);
   const [shareOpen, setShareOpen] = useState(false);
+  const [upiQrDataUrl, setUpiQrDataUrl] = useState<string>('');
+
+  useEffect(() => {
+    const inv = invoices.find(i => i.id === invoiceId);
+    if (inv) {
+      setInvoice(inv);
+      setLoading(false);
+    } else {
+      refreshData().then(() => {
+        const found = invoices.find(i => i.id === invoiceId);
+        if (found) setInvoice(found);
+        else showToast('Invoice not found', 'danger');
+        setLoading(false);
+      });
+    }
+  }, [invoiceId]);
+
+  useEffect(() => {
+    if (invoice?.seller_snapshot?.upi_id) {
+      const upi = invoice.seller_snapshot.upi_id.replace(/[^a-zA-Z0-9@._\-]/g, '');
+      const upiString = `upi://pay?pa=${upi}&pn=${encodeURIComponent(invoice.seller_snapshot.business_name)}&am=${Number(invoice.grand_total).toFixed(2)}&cu=INR`;
+      QRCode.toDataURL(upiString, { width: 140, margin: 1, color: { dark: '#1e293b', light: '#ffffff' } })
+        .then(setUpiQrDataUrl)
+        .catch(() => {});
+    }
+  }, [invoice]);
 
   useEffect(() => {
     const inv = invoices.find(i => i.id === invoiceId);
@@ -103,9 +130,6 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoiceId, onBack }) =
                 </div>
               </div>
               <div className="text-right">
-                <div className="text-sm font-bold uppercase tracking-wider text-white">
-                  {isGst ? 'TAX INVOICE' : 'CASH MEMO'}
-                </div>
                 {isGst && <div className="text-[7px] uppercase tracking-widest text-amber-300 font-semibold">Original</div>}
               </div>
             </div>
@@ -248,8 +272,15 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoiceId, onBack }) =
               {sel.upi_id && <div>UPI: <span className="font-medium text-slate-700">{sel.upi_id}</span></div>}
             </div>
             <div className="flex flex-col items-end justify-start">
-              <div className="text-[7px] font-bold uppercase tracking-wide text-slate-500 mb-1">Scan to Pay</div>
-              <div className="text-[8px] text-slate-400 italic">QR Code</div>
+              {upiQrDataUrl ? (
+                <div className="flex flex-col items-center">
+                  <div className="text-[7px] font-bold uppercase tracking-wide text-slate-500 mb-0.5">Scan to Pay</div>
+                  <img src={upiQrDataUrl} alt="UPI QR" className="w-14 h-14 border border-slate-300 rounded" />
+                  <div className="text-[6px] text-slate-400 mt-0.5 max-w-[80px] break-all text-center">{sel.upi_id}</div>
+                </div>
+              ) : sel.upi_id ? (
+                <div className="text-[8px] text-slate-400 italic self-end">UPI: {sel.upi_id}</div>
+              ) : null}
             </div>
           </div>
 

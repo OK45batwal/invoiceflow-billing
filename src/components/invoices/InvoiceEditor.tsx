@@ -705,9 +705,6 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ type }) => {
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-sm font-bold uppercase tracking-wider text-white">
-                    {type === 'GST' ? 'TAX INVOICE' : 'CASH MEMO'}
-                  </div>
                   {type === 'GST' && <div className="text-[7px] uppercase tracking-widest text-amber-300 font-semibold">Original</div>}
                 </div>
               </div>
