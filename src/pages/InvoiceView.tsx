@@ -34,8 +34,7 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoiceId, onBack }) =
   }, [invoiceId]);
 
   useEffect(() => {
-    const isNonGst = invoice && invoice.invoice_type !== 'GST';
-    if (isNonGst && invoice?.seller_snapshot?.upi_id) {
+    if (invoice?.seller_snapshot?.upi_id) {
       const upi = invoice.seller_snapshot.upi_id.replace(/[^a-zA-Z0-9@._\-]/g, '');
       const upiString = `upi://pay?pa=${upi}&pn=${encodeURIComponent(invoice.seller_snapshot.business_name)}&am=${Number(invoice.grand_total).toFixed(2)}&cu=INR`;
       QRCode.toDataURL(upiString, { width: 140, margin: 1, color: { dark: '#1e293b', light: '#ffffff' } })

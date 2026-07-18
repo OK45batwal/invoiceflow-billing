@@ -45,7 +45,6 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({ isOpen, onClose, invoi
     const totalDiscount = rows.reduce((s: number, it: any) =>
       s + Number(it.rate) * Number(it.quantity) * ((Number(it.discount_pct) || 0) / 100), 0);
 
-    const hLine = (clr = 226) => { pdf.setDrawColor(clr); pdf.setLineWidth(0.3); pdf.line(M, y, R, y); pdf.setLineWidth(0.2); pdf.setDrawColor(0); };
     const pageGuard = (h = 16) => { if (y + h > PH - M) { pdf.addPage(); y = M; } };
 
     // ─── 1. HEADER BAR (slate-800 background) ────────────────────────────
@@ -406,8 +405,17 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({ isOpen, onClose, invoi
 
   const handleCopyLink = () => {
     const url = `${window.location.origin}/invoice/${invoice.id}`;
-    navigator.clipboard?.writeText(url)
-      .then(() => showToast('Invoice link copied!', 'success'))
+    const copy = (text: string) => {
+      if (navigator.clipboard?.writeText) {
+        return navigator.clipboard.writeText(text);
+      }
+      const ta = document.createElement('textarea');
+      ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); } catch { throw new Error(); }
+      document.body.removeChild(ta);
+    };
+    copy(url).then(() => showToast('Invoice link copied!', 'success'))
       .catch(() => showToast('Failed to copy link', 'danger'));
     onClose();
   };
