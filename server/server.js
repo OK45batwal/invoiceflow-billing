@@ -10,6 +10,16 @@ const PORT = process.env.PORT || 5001;
 // Detect if running inside Cloudflare Workers
 const isCloudflare = typeof globalThis.caches !== 'undefined' && typeof globalThis.WebSocketPair !== 'undefined';
 
+// Error handler: log full details server-side, return generic message to client
+function handleError(res, err, context = '') {
+  const fullMsg = context ? `[${context}] ${err.message}` : err.message;
+  console.error(fullMsg, err.stack || '');
+  const msg = process.env.NODE_ENV === 'production' 
+    ? 'An internal error occurred. Please try again later.'
+    : err.message;
+  res.status(500).json({ error: msg });
+}
+
 // Simple in-memory Cache Manager for APIs
 const apiCache = {
   store: new Map(),
@@ -84,7 +94,7 @@ app.get('/api/profile', async (req, res) => {
     apiCache.set(cacheKey, data, 300000); // 5 mins
     res.json(data);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    handleError(res, error, "GET profiles");
   }
 });
 
@@ -125,7 +135,7 @@ app.put('/api/profile/:type', async (req, res) => {
     apiCache.invalidate('profile');
     res.json(result);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    handleError(res, error, "PUT profile");
   }
 });
 
@@ -148,7 +158,7 @@ app.get('/api/customers', async (req, res) => {
     apiCache.set(cacheKey, data, 60000); // 1 min
     res.json(data);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    handleError(res, error, "GET customers");
   }
 });
 
@@ -163,7 +173,7 @@ app.post('/api/customers', async (req, res) => {
     apiCache.invalidate('stats');
     res.status(201).json(data[0]);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    handleError(res, error, "POST customer");
   }
 });
 
@@ -179,7 +189,7 @@ app.put('/api/customers/:id', async (req, res) => {
     apiCache.invalidate('stats');
     res.json(data[0]);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    handleError(res, error, "PUT customer");
   }
 });
 
@@ -194,7 +204,7 @@ app.delete('/api/customers/:id', async (req, res) => {
     apiCache.invalidate('stats');
     res.json({ message: 'Customer deleted successfully' });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    handleError(res, error, "DELETE customer");
   }
 });
 
@@ -217,7 +227,7 @@ app.get('/api/products', async (req, res) => {
     apiCache.set(cacheKey, data, 60000); // 1 min
     res.json(data);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    handleError(res, error, "GET products");
   }
 });
 
@@ -232,7 +242,7 @@ app.post('/api/products', async (req, res) => {
     apiCache.invalidate('stats');
     res.status(201).json(data[0]);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    handleError(res, error, "POST product");
   }
 });
 
@@ -248,7 +258,7 @@ app.put('/api/products/:id', async (req, res) => {
     apiCache.invalidate('stats');
     res.json(data[0]);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    handleError(res, error, "PUT product");
   }
 });
 
@@ -263,7 +273,7 @@ app.delete('/api/products/:id', async (req, res) => {
     apiCache.invalidate('stats');
     res.json({ message: 'Product deleted successfully' });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    handleError(res, error, "DELETE product");
   }
 });
 
@@ -299,7 +309,7 @@ app.get('/api/invoices', async (req, res) => {
     apiCache.set(cacheKey, data, 60000); // 1 min
     res.json(data);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    handleError(res, error, "GET invoices");
   }
 });
 
@@ -328,7 +338,7 @@ app.get('/api/invoices/:id', async (req, res) => {
     apiCache.set(cacheKey, responseData, 60000); // 1 min
     res.json(responseData);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    handleError(res, error, "GET invoice");
   }
 });
 
@@ -418,7 +428,7 @@ app.post('/api/invoices', async (req, res) => {
     apiCache.invalidate('reports');
     res.status(201).json({ ...newInvoice, items: itemsWithInvoiceId });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    handleError(res, error, "POST invoice");
   }
 });
 
@@ -467,7 +477,7 @@ app.put('/api/invoices/:id', async (req, res) => {
     apiCache.invalidate('reports');
     res.json({ ...invoice[0], items: itemsWithInvoiceId });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    handleError(res, error, "PUT invoice");
   }
 });
 
@@ -484,7 +494,7 @@ app.delete('/api/invoices/:id', async (req, res) => {
     apiCache.invalidate('reports');
     res.json({ message: 'Invoice deleted successfully' });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    handleError(res, error, "DELETE invoice");
   }
 });
 
@@ -567,7 +577,7 @@ app.get('/api/dashboard/stats', async (req, res) => {
     apiCache.set(cacheKey, statsData, 60000); // 1 min
     res.json(statsData);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    handleError(res, error, "GET dashboard stats");
   }
 });
 
@@ -630,7 +640,7 @@ app.get('/api/reports', async (req, res) => {
     apiCache.set(cacheKey, reportsData, 60000); // 1 min
     res.json(reportsData);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    handleError(res, error, "GET reports");
   }
 });
 
@@ -731,7 +741,7 @@ app.post('/api/restore', async (req, res) => {
       }
     });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    handleError(res, error, "POST restore");
   }
 });
 
