@@ -12,11 +12,12 @@ const isCloudflare = typeof globalThis.caches !== 'undefined' && typeof globalTh
 
 // Error handler: log full details server-side, return generic message to client
 function handleError(res, err, context = '') {
-  const fullMsg = context ? `[${context}] ${err.message}` : err.message;
-  console.error(fullMsg, err.stack || '');
-  const msg = process.env.NODE_ENV === 'production' 
+  const message = err?.message || 'Unknown error';
+  console.error(`[${context}] ${message}`);
+  if (err?.stack) console.error(err.stack);
+  const msg = process.env.NODE_ENV === 'production'
     ? 'An internal error occurred. Please try again later.'
-    : err.message;
+    : message;
   res.status(500).json({ error: msg });
 }
 
