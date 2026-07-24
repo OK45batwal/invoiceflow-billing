@@ -1,12 +1,12 @@
 @import "tailwindcss";
 
-@custom-variant dark (&:where(.dark, .dark *));
+@variant dark (&:where(.dark, .dark *));
 
 :root {
-  --color-primary: #6366f1;
-  --color-primary-light: #818cf8;
-  --color-primary-dark: #4f46e5;
-  --color-primary-shading: #f5f3ff;
+  --color-primary: #2563eb;
+  --color-primary-light: #3b82f6;
+  --color-primary-dark: #1d4ed8;
+  --color-primary-shading: #eff6ff;
   --color-bg: #f8fafc;
   --color-bg-card: #ffffff;
   --color-success: #10b981;
@@ -19,7 +19,7 @@
 
 .dark {
   --color-bg: #090d16;
-  --color-bg-card: #111827;
+  --color-bg-card: #0f172a;
   --color-text-primary: #f8fafc;
   --color-text-secondary: #cbd5e1;
   --color-text-light: #64748b;
@@ -41,11 +41,10 @@
 
   --font-sans: 'Inter', sans-serif;
 
-  --shadow-soft: 0 4px 20px -2px rgba(17, 24, 39, 0.04), 0 2px 8px -1px rgba(17, 24, 39, 0.02);
-  --shadow-card: 0 12px 30px -4px rgba(17, 24, 39, 0.06), 0 4px 12px -2px rgba(17, 24, 39, 0.03);
-  --shadow-premium: 0 24px 48px -8px rgba(17, 24, 39, 0.08), 0 8px 16px -4px rgba(17, 24, 39, 0.04);
+  --shadow-soft: 0 4px 20px -2px rgba(15, 23, 42, 0.05), 0 2px 8px -1px rgba(15, 23, 42, 0.02);
+  --shadow-card: 0 12px 30px -4px rgba(37, 99, 235, 0.08), 0 4px 12px -2px rgba(15, 23, 42, 0.03);
+  --shadow-premium: 0 20px 40px -8px rgba(37, 99, 235, 0.12), 0 8px 16px -4px rgba(15, 23, 42, 0.05);
 
-  /* Intermediate slate shades used throughout the app that fall outside Tailwind's default scale */
   --color-slate-250: #dde3ed;
   --color-slate-350: #b0bbcf;
   --color-slate-650: #3e4f66;
@@ -58,60 +57,122 @@
     background-color: var(--color-bg);
     color: var(--color-text-primary);
     transition: background-color 0.3s ease, color 0.3s ease;
+    -webkit-tap-highlight-color: transparent;
   }
 
-  /* Ensure ALL form controls inherit the correct foreground color in both themes.
-     Without this, browsers default inputs to black text even on dark backgrounds. */
   input,
   select,
   textarea {
     color: inherit;
   }
 
-  /* Dark mode: force form controls to render with a readable text color
-     in case a dark:bg-* is applied but dark:text-* is missing */
   .dark input,
   .dark select,
   .dark textarea {
     color-scheme: dark;
   }
 
-  /* Placeholder text should be softer in dark mode */
   .dark input::placeholder,
   .dark textarea::placeholder {
     color: #64748b;
   }
 }
 
-/* Custom Scrollbars */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: #CBD5E1;
-  border-radius: 4px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #94A3B8;
+/* Keyframe Animations & Micro-Interactions */
+@keyframes fadeSlideUp {
+  0% {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
-/* Glassmorphism utility */
-.glass {
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+@keyframes fadeIn {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
 }
 
-.dark .glass {
-  background: rgba(15, 23, 42, 0.7);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+@keyframes scaleIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgba(37, 99, 235, 0);
+  }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.animate-fade-slide-up {
+  animation: fadeSlideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.25s ease-out forwards;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-glow-pulse {
+  animation: pulseGlow 2.5s infinite;
+}
+
+.hover-lift {
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.hover-lift:hover {
+  transform: translateY(-3px) scale(1.005);
+}
+
+.btn-glow {
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.btn-glow:hover {
+  box-shadow: 0 8px 25px -4px rgba(37, 99, 235, 0.4);
+  transform: translateY(-1px);
+}
+.btn-glow:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+}
+
+.dark .glass-card {
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(30, 41, 59, 0.8);
+}
+
+/* Mobile Safe Bottom Padding for Bottom Nav */
+@media (max-width: 1023px) {
+  main {
+    padding-bottom: 6rem !important;
+  }
 }
 
 /* A4 Print Stylesheet */

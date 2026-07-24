@@ -8,7 +8,6 @@ import {
   Link,
   X
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { Invoice } from '../../types';
 import { numberToWords } from '../../utils/gstEngine';
 import { useApp } from '../../context/AppContext';
@@ -403,20 +402,22 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({ isOpen, onClose, invoi
     onClose();
   };
 
-  const handleCopyLink = () => {
+  const handleCopyLink = async () => {
     const url = `${window.location.origin}/invoice/${invoice.id}`;
-    const copy = (text: string) => {
+    try {
       if (navigator.clipboard?.writeText) {
-        return navigator.clipboard.writeText(text);
+        await navigator.clipboard.writeText(url);
+      } else {
+        const ta = document.createElement('textarea');
+        ta.value = url; ta.style.position = 'fixed'; ta.style.opacity = '0';
+        document.body.appendChild(ta); ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
       }
-      const ta = document.createElement('textarea');
-      ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
-      document.body.appendChild(ta); ta.select();
-      try { document.execCommand('copy'); } catch { throw new Error(); }
-      document.body.removeChild(ta);
-    };
-    copy(url).then(() => showToast('Invoice link copied!', 'success'))
-      .catch(() => showToast('Failed to copy link', 'danger'));
+      showToast('Invoice link copied!', 'success');
+    } catch {
+      showToast('Failed to copy link', 'danger');
+    }
     onClose();
   };
 
@@ -427,50 +428,41 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({ isOpen, onClose, invoi
     { icon: Link, label: 'Copy Link', desc: 'Copy shareable link', onClick: handleCopyLink, color: 'text-purple-600 bg-purple-50 dark:bg-purple-950/20 dark:text-purple-400' },
   ];
 
-  return (
-    <AnimatePresence>
-      {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={onClose}
-            className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm dark:bg-slate-950/60"
-          />
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 15 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 15 }}
-            transition={{ type: 'spring', duration: 0.4 }}
-            className="relative w-full max-w-md bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-premium z-10 p-6"
-          >
-            <div className="flex items-center justify-between mb-5">
-              <div>
-                <h3 className="text-lg font-semibold text-text-primary dark:text-slate-100">Share Invoice</h3>
-                <p className="text-xs text-text-secondary dark:text-slate-400 mt-0.5">{invoice.invoice_number} — ₹{Number(invoice.grand_total).toFixed(2)}</p>
-              </div>
-              <button onClick={onClose} className="p-1.5 rounded-lg text-text-secondary hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800 transition-colors">
-                <X className="h-5 w-5" />
-              </button>
-            </div>
+  if (!isOpen) return null;
 
-            <div className="grid grid-cols-2 gap-3">
-              {actions.map((action) => (
-                <button
-                  key={action.label}
-                  onClick={action.onClick}
-                  className={`flex flex-col items-center gap-2 p-4 rounded-xl border border-slate-100 dark:border-slate-800 hover:shadow-soft transition-all ${action.color}`}
-                >
-                  <action.icon className="h-6 w-6" />
-                  <span className="text-xs font-bold">{action.label}</span>
-                  <span className="text-[9px] text-text-secondary dark:text-slate-500">{action.desc}</span>
-                </button>
-              ))}
-            </div>
-          </motion.div>
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
+      <div
+        onClick={onClose}
+        className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm dark:bg-slate-950/60 transition-opacity duration-200"
+      />
+      <div
+        className="relative w-full max-w-md bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-premium z-10 p-6 transition-all duration-200"
+      >
+        <div className="flex items-center justify-between mb-5">
+          <div>
+            <h3 className="text-lg font-semibold text-text-primary dark:text-slate-100">Share Invoice</h3>
+            <p className="text-xs text-text-secondary dark:text-slate-400 mt-0.5">{invoice.invoice_number} — ₹{Number(invoice.grand_total).toFixed(2)}</p>
+          </div>
+          <button onClick={onClose} className="p-1.5 rounded-lg text-text-secondary hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800 transition-colors">
+            <X className="h-5 w-5" />
+          </button>
         </div>
-      )}
-    </AnimatePresence>
+
+        <div className="grid grid-cols-2 gap-3">
+          {actions.map((action) => (
+            <button
+              key={action.label}
+              onClick={action.onClick}
+              className={`flex flex-col items-center gap-2 p-4 rounded-xl border border-slate-100 dark:border-slate-800 hover:shadow-soft transition-all ${action.color}`}
+            >
+              <action.icon className="h-6 w-6" />
+              <span className="text-xs font-bold">{action.label}</span>
+              <span className="text-[9px] text-text-secondary dark:text-slate-500">{action.desc}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 };

@@ -154,35 +154,35 @@ export const Customers: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 pb-12">
+    <div className="space-y-6 pb-12 animate-fade-slide-up">
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-5 shadow-soft flex items-center justify-between">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-5 shadow-soft flex items-center justify-between hover-lift">
           <div className="space-y-1">
-            <span className="text-[10px] font-extrabold text-text-secondary dark:text-slate-400 uppercase tracking-wider">Total Customers</span>
-            <h2 className="text-2xl font-black text-text-primary dark:text-slate-100">{customers.length}</h2>
+            <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total Customers</span>
+            <h2 className="text-2xl font-black text-slate-900 dark:text-white">{customers.length}</h2>
           </div>
-          <div className="p-3 rounded-xl bg-primary/10 text-primary dark:bg-primary-dark/20 dark:text-primary-light">
+          <div className="p-3 rounded-2xl bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400">
             <Users className="h-5 w-5" />
           </div>
         </div>
 
-        <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-5 shadow-soft flex items-center justify-between">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-5 shadow-soft flex items-center justify-between hover-lift">
           <div className="space-y-1">
-            <span className="text-[10px] font-extrabold text-text-secondary dark:text-slate-400 uppercase tracking-wider">GST Registered</span>
-            <h2 className="text-2xl font-black text-success">{customers.filter(c => c.gstin).length}</h2>
+            <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider">GST Registered</span>
+            <h2 className="text-2xl font-black text-emerald-600 dark:text-emerald-400">{customers.filter(c => c.gstin).length}</h2>
           </div>
-          <div className="p-3 rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/20 dark:text-emerald-400">
+          <div className="p-3 rounded-2xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400">
             <Building className="h-5 w-5" />
           </div>
         </div>
 
-        <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-5 shadow-soft flex items-center justify-between">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-5 shadow-soft flex items-center justify-between hover-lift">
           <div className="space-y-1">
-            <span className="text-[10px] font-extrabold text-text-secondary dark:text-slate-400 uppercase tracking-wider">Regular (Non-GST)</span>
-            <h2 className="text-2xl font-black text-text-primary dark:text-slate-100">{customers.filter(c => !c.gstin).length}</h2>
+            <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider">Regular (Non-GST)</span>
+            <h2 className="text-2xl font-black text-slate-900 dark:text-white">{customers.filter(c => !c.gstin).length}</h2>
           </div>
-          <div className="p-3 rounded-xl bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+          <div className="p-3 rounded-2xl bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
             <Users className="h-5 w-5" />
           </div>
         </div>
@@ -193,26 +193,26 @@ export const Customers: React.FC = () => {
         <div className="flex flex-col sm:flex-row gap-3 flex-grow max-w-xl">
           <div className="relative flex-grow">
             <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-              <Search className="h-4.5 w-4.5 text-text-light dark:text-slate-500" />
+              <Search className="h-4.5 w-4.5 text-slate-400 dark:text-slate-500" />
             </div>
             <input
               type="text"
               placeholder="Search customers by name, company, mobile..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full h-10 pl-10 pr-4 text-sm bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-text-primary dark:text-slate-200"
+              className="w-full h-10 pl-10 pr-4 text-sm bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-slate-900 dark:text-slate-100 font-medium"
             />
           </div>
 
           {/* Type Filter Selector */}
-          <div className="flex bg-slate-50 dark:bg-slate-800 p-1 rounded-xl border border-slate-100 dark:border-slate-800/80 self-start sm:self-auto">
+          <div className="flex bg-slate-100/80 dark:bg-slate-800 p-1 rounded-2xl border border-slate-200/60 dark:border-slate-800 self-start sm:self-auto">
             <button
               type="button"
               onClick={() => setTypeFilter('ALL')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all
                 ${typeFilter === 'ALL'
-                  ? 'bg-white dark:bg-slate-700 text-primary dark:text-slate-200 shadow-soft'
-                  : 'text-text-secondary dark:text-slate-400 hover:text-text-primary'
+                  ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-white shadow-soft'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-900'
                 }
               `}
             >
@@ -221,10 +221,10 @@ export const Customers: React.FC = () => {
             <button
               type="button"
               onClick={() => setTypeFilter('GST')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all
                 ${typeFilter === 'GST'
-                  ? 'bg-white dark:bg-slate-700 text-primary dark:text-slate-200 shadow-soft'
-                  : 'text-text-secondary dark:text-slate-400 hover:text-text-primary'
+                  ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-white shadow-soft'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-900'
                 }
               `}
             >
@@ -233,10 +233,10 @@ export const Customers: React.FC = () => {
             <button
               type="button"
               onClick={() => setTypeFilter('REGULAR')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all
                 ${typeFilter === 'REGULAR'
-                  ? 'bg-white dark:bg-slate-700 text-primary dark:text-slate-200 shadow-soft'
-                  : 'text-text-secondary dark:text-slate-400 hover:text-text-primary'
+                  ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-white shadow-soft'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-900'
                 }
               `}
             >
@@ -247,7 +247,7 @@ export const Customers: React.FC = () => {
 
         <button
           onClick={handleOpenCreate}
-          className="h-10 px-4 flex items-center justify-center gap-2 rounded-xl bg-primary hover:bg-primary-dark text-white font-semibold text-sm shadow-soft hover:shadow-premium transition-all duration-200"
+          className="h-10 px-4 flex items-center justify-center gap-2 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm shadow-card shadow-blue-600/30 btn-glow active:scale-95 transition-all"
         >
           <PlusCircle className="h-4.5 w-4.5" />
           <span>Create Customer</span>

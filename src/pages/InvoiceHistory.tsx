@@ -193,7 +193,7 @@ export const InvoiceHistory: React.FC = () => {
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="border-b border-slate-100 dark:border-slate-800 text-[10px] font-bold text-text-secondary dark:text-slate-450 uppercase tracking-wider">
+              <tr className="border-b border-slate-100 dark:border-slate-800 text-[10px] font-bold text-text-secondary dark:text-slate-400 uppercase tracking-wider">
                 <th className="pb-3.5 pl-2">Invoice No</th>
                 <th className="pb-3.5">Customer / Company</th>
                 <th className="pb-3.5">Type</th>

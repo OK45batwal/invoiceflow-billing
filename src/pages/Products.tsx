@@ -160,39 +160,39 @@ export const Products: React.FC = () => {
   const categories = ['Goods', 'Services', 'Electronics', 'Apparel', 'Food & Beverages', 'Hardware', 'Software', 'Others'];
 
   return (
-    <div className="space-y-6 pb-12">
+    <div className="space-y-6 pb-12 animate-fade-slide-up">
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-5 shadow-soft flex items-center justify-between">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-5 shadow-soft flex items-center justify-between hover-lift">
           <div className="space-y-1">
-            <span className="text-[10px] font-extrabold text-text-secondary dark:text-slate-400 uppercase tracking-wider">Total Catalog Items</span>
-            <h2 className="text-2xl font-black text-text-primary dark:text-slate-100">{products.length}</h2>
+            <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total Catalog Items</span>
+            <h2 className="text-2xl font-black text-slate-900 dark:text-white">{products.length}</h2>
           </div>
-          <div className="p-3 rounded-xl bg-primary/10 text-primary dark:bg-primary-dark/20 dark:text-primary-light">
+          <div className="p-3 rounded-2xl bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400">
             <Package className="h-5 w-5" />
           </div>
         </div>
 
-        <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-5 shadow-soft flex items-center justify-between">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-5 shadow-soft flex items-center justify-between hover-lift">
           <div className="space-y-1">
-            <span className="text-[10px] font-extrabold text-text-secondary dark:text-slate-400 uppercase tracking-wider">Total Inventory Value</span>
-            <h2 className="text-2xl font-black text-success">
+            <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total Inventory Value</span>
+            <h2 className="text-2xl font-black text-emerald-600 dark:text-emerald-400">
               {formatRupee(products.reduce((sum, p) => sum + (Number(p.selling_price) || 0) * (Number(p.stock) || 0), 0))}
             </h2>
           </div>
-          <div className="p-3 rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/20 dark:text-emerald-400">
+          <div className="p-3 rounded-2xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400">
             <IndianRupee className="h-5 w-5" />
           </div>
         </div>
 
-        <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-5 shadow-soft flex items-center justify-between">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-5 shadow-soft flex items-center justify-between hover-lift">
           <div className="space-y-1">
-            <span className="text-[10px] font-extrabold text-text-secondary dark:text-slate-400 uppercase tracking-wider">Low / Out of Stock</span>
+            <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider">Low / Out of Stock</span>
             <h2 className="text-2xl font-black text-rose-500">
               {products.filter(p => Number(p.stock) <= 10).length}
             </h2>
           </div>
-          <div className="p-3 rounded-xl bg-rose-50 text-rose-600 dark:bg-rose-950/20 dark:text-rose-400">
+          <div className="p-3 rounded-2xl bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400">
             <AlertTriangle className="h-5 w-5" />
           </div>
         </div>
@@ -204,14 +204,14 @@ export const Products: React.FC = () => {
           {/* Search bar */}
           <div className="relative flex-grow max-w-md">
             <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-              <Search className="h-4.5 w-4.5 text-text-light dark:text-slate-500" />
+              <Search className="h-4.5 w-4.5 text-slate-400 dark:text-slate-500" />
             </div>
             <input
               type="text"
               placeholder="Search catalog by name, sku, HSN..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full h-10 pl-10 pr-4 text-sm bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-text-primary dark:text-slate-200"
+              className="w-full h-10 pl-10 pr-4 text-sm bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-slate-900 dark:text-slate-100 font-medium"
             />
           </div>
 

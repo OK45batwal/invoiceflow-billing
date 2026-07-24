@@ -3,8 +3,7 @@ import { AppProvider, useApp } from './context/AppContext';
 import { Sidebar } from './components/layout/Sidebar';
 import { Navbar } from './components/layout/Navbar';
 import { Dashboard } from './pages/Dashboard';
-import { GSTInvoice } from './pages/GSTInvoice';
-import { NonGSTInvoice } from './pages/NonGSTInvoice';
+import { InvoiceEditor } from './components/invoices/InvoiceEditor';
 import { InvoiceHistory } from './pages/InvoiceHistory';
 import { InvoiceView } from './pages/InvoiceView';
 import { Customers } from './pages/Customers';
@@ -29,7 +28,7 @@ const AppContent: React.FC = () => {
       setShareInvoiceId(m[1]);
       refreshData();
     }
-  }, []);
+  }, [refreshData]);
 
   // Dynamic Page Router
   const renderPage = () => {
@@ -37,9 +36,9 @@ const AppContent: React.FC = () => {
       case 'dashboard':
         return <Dashboard />;
       case 'gst-invoice':
-        return <GSTInvoice />;
+        return <InvoiceEditor type="GST" />;
       case 'nongst-invoice':
-        return <NonGSTInvoice />;
+        return <InvoiceEditor type="Non-GST" />;
       case 'invoice-history':
         return <InvoiceHistory />;
       case 'customers':
@@ -76,7 +75,7 @@ const AppContent: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-bg dark:bg-bg-dark transition-colors duration-300">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-300">
       {/* Sidebar Panel */}
       <Sidebar 
         collapsed={collapsed} 

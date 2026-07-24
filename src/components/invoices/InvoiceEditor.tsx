@@ -141,7 +141,7 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ type }) => {
     })
       .then(url => setUpiQrDataUrl(url))
       .catch(() => setUpiQrDataUrl(''));
-  }, [profile?.upi_id, profile?.business_name, items, type, invoiceNumber, placeOfSupply]);
+  }, [profile, items, type, invoiceNumber, placeOfSupply]);
 
   // Handle customer selection change
   const handleCustomerChange = (id: string) => {
