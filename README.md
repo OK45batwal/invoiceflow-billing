@@ -35,7 +35,22 @@
 
 ---
 
-## 🎨 Aesthetic & Brand Identity
+## 📸 Interactive Visual Gallery
+
+<table border="0">
+  <tr>
+    <td width="65%">
+      <p align="center"><b>📊 Desktop Bento Dashboard</b></p>
+      <img src="public/screenshots/dashboard_v2.png" alt="Desktop Dashboard View" style="border-radius: 12px; border: 1px solid #e2e8f0;" />
+    </td>
+    <td width="35%">
+      <p align="center"><b>📱 Mobile App Dock View</b></p>
+      <img src="public/screenshots/mobile_v2.png" alt="Mobile App View" style="border-radius: 12px; border: 1px solid #e2e8f0;" />
+    </td>
+  </tr>
+</table>
+
+---
 
 InvoiceFlow Billing features a custom brand mark incorporating three meaningful financial elements:
 - **The Folded Invoice Page (`I`)**: Structured bill document containing 3 detail lines `[ ≡ ]` representing GST compliance and billing data.
